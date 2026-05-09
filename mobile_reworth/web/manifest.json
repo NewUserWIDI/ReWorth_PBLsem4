@@ -1,6 +1,6 @@
 {
-    "name": "reworth_pblsem4",
-    "short_name": "reworth_pblsem4",
+    "name": "mobile_reworth",
+    "short_name": "mobile_reworth",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,4 +1,4 @@
-package com.example.reworth_pblsem4
+package com.example.mobile_reworth
 
 import io.flutter.embedding.android.FlutterActivity
 
