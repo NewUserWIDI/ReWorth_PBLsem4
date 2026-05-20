@@ -91,8 +91,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.poppins(
-                              fontSize: 33,
-                              height: 1.15,
+                              fontSize: 20,
+                              height: 1.2,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF111111),
                             ),
@@ -132,7 +132,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                           Text(
                             _rupiah(product.harga),
                             style: GoogleFonts.poppins(
-                              fontSize: 28,
+                              fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF111111),
                             ),
@@ -406,7 +406,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 14.5,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF111111),
             ),
@@ -429,7 +429,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     return Text(
       title,
       style: GoogleFonts.poppins(
-        fontSize: 20,
+        fontSize: 15,
         fontWeight: FontWeight.w700,
         color: const Color(0xFF111111),
       ),
@@ -440,8 +440,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     return Text(
       value,
       style: GoogleFonts.poppins(
-        fontSize: 15.5,
-        height: 1.8,
+        fontSize: 13.5,
+        height: 1.65,
         fontWeight: FontWeight.w400,
         color: const Color.fromRGBO(17, 17, 17, 0.82),
       ),
@@ -597,7 +597,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 text,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w700,
-                  fontSize: 18,
+                  fontSize: 15,
                 ),
               ),
               style: FilledButton.styleFrom(

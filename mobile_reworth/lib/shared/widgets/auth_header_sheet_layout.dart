@@ -5,12 +5,16 @@ class AuthHeaderSheetLayout extends StatelessWidget {
     super.key,
     required this.title,
     required this.child,
+    this.headerLeading,
+    this.headerTrailing,
     this.headerHeight = 212,
     this.overlap = 22,
   });
 
   final String title;
   final Widget child;
+  final Widget? headerLeading;
+  final Widget? headerTrailing;
   final double headerHeight;
   final double overlap;
 
@@ -57,6 +61,20 @@ class AuthHeaderSheetLayout extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (headerLeading != null || headerTrailing != null)
+                    SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            headerLeading ?? const SizedBox(width: 44, height: 44),
+                            headerTrailing ?? const SizedBox(width: 44, height: 44),
+                          ],
+                        ),
+                      ),
+                    ),
                   SafeArea(
                     bottom: false,
                     child: Padding(

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../core/constants/app_spacing.dart';
-import '../features/auth/application/auth_controller.dart';
-import '../features/auth/presentation/pages/home_page.dart';
-import '../features/auth/presentation/pages/login_page.dart';
-import '../features/auth/presentation/pages/profile_page.dart';
-import '../features/auth/presentation/pages/register_page.dart';
-import '../features/auth/presentation/pages/welcome_page.dart';
-import '../features/market/presentation/pages/market_page.dart';
-import '../features/market/presentation/pages/product_detail_page.dart';
-import '../features/market/presentation/pages/cart_page.dart';
-import '../features/market/domain/market_product.dart';
-import '../shared/widgets/app_card.dart';
-import '../shared/widgets/top_curved_header_layout.dart';
+import 'package:mobile_reworth/core/constants/app_spacing.dart';
+import 'package:mobile_reworth/features/auth/application/auth_controller.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/home_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/profile_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
+import 'package:mobile_reworth/features/cart/presentation/pages/cart_page.dart';
+import 'package:mobile_reworth/features/market/domain/market_product.dart';
+import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
+import 'package:mobile_reworth/features/market/presentation/pages/product_detail_page.dart';
+import 'package:mobile_reworth/features/market/presentation/pages/wishlist_page.dart';
+import 'package:mobile_reworth/features/seller_registration/presentation/pages/seller_registration_page.dart';
+import 'package:mobile_reworth/shared/widgets/app_card.dart';
+import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authControllerProvider);
@@ -96,10 +98,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/seller-registration',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Registrasi Seller',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const SellerRegistrationPage(),
       ),
       GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
       GoRoute(
@@ -128,8 +127,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/wishlist',
-        builder: (context, state) =>
-            const _PlaceholderPage(title: 'Wishlist', useGradientHeader: true),
+        builder: (context, state) => const WishlistPage(),
       ),
       GoRoute(
         path: '/address',

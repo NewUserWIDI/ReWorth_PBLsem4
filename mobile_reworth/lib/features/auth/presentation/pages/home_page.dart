@@ -1,224 +1,519 @@
-import 'dart:math' show pi;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Ganti path sesuai folder project kamu
 import '../../application/auth_controller.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
-  // --- FIGMA COLORS ---
-  static const Color featDark = Color(0xFF34600F); // #34600F
-  static const Color featMid = Color(0xFF509317);  // #509317 (Warna tambahan untuk gradasi streak)
-  static const Color featLight = Color(0xFF6BC61F); // #6BC61F
-  static const Color featGlowColor = Color(0xFFB5FF77); // #B5FF77
-  static const Color greyMilestone = Color(0xFFD9D9D9); // Abu-abu milestone
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
 
-  static const Color figmaSoftGrey = Color(0xFF8C8C8C);
-  static const Color figmaSearchGrey = Color(0xFFF5F5F5);
+class _HomePageState extends ConsumerState<HomePage> {
+  final TextEditingController _searchController = TextEditingController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authControllerProvider);
-    final user = authState.currentUser;
-    
-    final userName = (user?.nama ?? '').trim().isEmpty ? 'Fatma Azzahra Alif H.' : user!.nama;
-    final points = user?.poin ?? 181;
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = ref.watch(authControllerProvider);
+    final user = auth.currentUser;
+
+    final userName = (user?.nama.trim().isNotEmpty ?? false)
+        ? user!.nama
+        : 'Fatma Azzahra Alif H.';
+    final points = user?.poin ?? 0;
+    final streak = user?.streak ?? 0;
+    final activeNodes = streak > 0 ? streak.clamp(0, 5) : 3;
+    final query = _searchController.text.trim().toLowerCase();
+    final activities = _allActivities.where((activity) {
+      if (query.isEmpty) return true;
+      return activity.value.toLowerCase().contains(query) ||
+          activity.description.toLowerCase().contains(query) ||
+          activity.status.toLowerCase().contains(query);
+    }).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              _buildGreetingHeader(userName),
-              const SizedBox(height: 28),
-              _buildSearchBar(),
-              const SizedBox(height: 32), 
-              _buildTotalPointCard(points),
-              const SizedBox(height: 32),
-              _buildFeatureSection(),
-              const SizedBox(height: 24),
-              _buildBanner(),
-              const SizedBox(height: 32),
-              _buildActivitySection(),
-              const SizedBox(height: 32),
-              
-              // --- SECTION REWARD STREAK (FIXED GLOW & GIFT) ---
-              _buildStreakSection(),
-              
-              const SizedBox(height: 40),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 36),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 26),
+                _GreetingHeader(name: userName),
+                const SizedBox(height: 20),
+                _SearchBar(
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 24),
+                _TotalPointCard(points: points),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _FeatureCard(
+                          title: 'Lapor\nSampah',
+                          imageAsset: 'assets/images/3d_trash.png',
+                          onTap: () => context.go('/report'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _FeatureCard(
+                          title: 'Mini\nMarket',
+                          imageAsset: 'assets/images/cart_3d.png',
+                          onTap: () => context.go('/market'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/images/banner_home.png',
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Aktifitas Terbaru',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111111),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < activities.length; i++) ...[
+                        _ActivityCard(
+                          value: activities[i].value,
+                          description: activities[i].description,
+                          status: activities[i].status,
+                          statusColor: activities[i].statusColor,
+                          icon: activities[i].icon,
+                        ),
+                        if (i != activities.length - 1) const SizedBox(height: 10),
+                      ],
+                      if (activities.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Text(
+                            'Aktivitas tidak ditemukan.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF6F6F6F),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _StreakRewardCard(activeCount: activeNodes),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  // --- WIDGET HELPER (Tetap Sama) ---
+class _GreetingHeader extends StatelessWidget {
+  const _GreetingHeader({required this.name});
 
-  Widget _buildGreetingHeader(String userName) {
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('selamat datang', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: figmaSoftGrey)),
-            const SizedBox(height: 4),
-            Text(userName, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.w700, color: Colors.black)),
-          ])),
-          Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white, border: Border.all(color: featLight.withOpacity(0.4), width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 15, offset: const Offset(0, 5))]), child: const Icon(Icons.notifications_none_rounded, color: featLight, size: 30)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'selamat datang',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF8C8C8C),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111111),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                color: const Color(0xFF8BC34A).withValues(alpha: 0.4),
+                width: 1.4,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.notifications_none_rounded,
+              size: 28,
+              color: Color(0xFF5BBF3D),
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSearchBar() {
-    return Container(height: 56, margin: const EdgeInsets.symmetric(horizontal: 24), padding: const EdgeInsets.symmetric(horizontal: 18), decoration: BoxDecoration(color: figmaSearchGrey, borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(Icons.search_rounded, color: figmaSoftGrey.withOpacity(0.7), size: 24), const SizedBox(width: 12), Text('Cari toko/seller', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: figmaSoftGrey))]));
-  }
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+  });
 
-  Widget _buildTotalPointCard(int points) {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Container(width: double.infinity, height: 145, clipBehavior: Clip.antiAlias, decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), gradient: const LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, stops: [0.0, 0.50, 0.74, 0.97], colors: [Color(0xFF3B6D11), Color(0xFF498615), Color(0xFF6BC61F), Color(0xFF7ED038)]), boxShadow: [BoxShadow(color: Color(0xFF3B6D11).withOpacity(0.3), blurRadius: 25, offset: const Offset(0, 12))]), child: Stack(children: [Positioned(top: -5, right: -15, child: Transform.rotate(angle: -11.7 * (pi / 180), child: Opacity(opacity: 0.3, child: Image.asset('assets/images/logo_reworth.png', width: 160, fit: BoxFit.contain)))), Padding(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text('TOTAL POIN', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.85), letterSpacing: 1.1)), const SizedBox(height: 2), Text('$points', style: GoogleFonts.poppins(fontSize: 48, fontWeight: FontWeight.w800, color: Colors.white))]))])));
-  }
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
 
-  Widget _buildFeatureSection() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Row(children: [Expanded(child: _buildFeatureCard(title: "Lapor\nSampah", assetPath: 'assets/images/3d_trash.png', isCart: false)), const SizedBox(width: 18), Expanded(child: _buildFeatureCard(title: "Mini\nMarket", assetPath: 'assets/images/cart_3d.png', isCart: true))]));
-  }
-
-  Widget _buildFeatureCard({required String title, required String assetPath, required bool isCart}) {
-    return Container(height: 125, clipBehavior: Clip.antiAlias, decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [featDark, featLight]), boxShadow: [BoxShadow(color: featDark.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))]), child: Stack(children: [Positioned(right: -40, bottom: -40, child: Container(width: 170, height: 170, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.05), width: 1), boxShadow: [BoxShadow(color: Colors.white.withOpacity(0.2), blurRadius: 40, spreadRadius: 5)]))), Positioned(right: -10, bottom: -15, child: Container(width: 100, height: 100, decoration: BoxDecoration(shape: BoxShape.circle, color: featGlowColor.withOpacity(0.7)))), Padding(padding: const EdgeInsets.all(20), child: Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, height: 1.2))), Positioned(right: isCart ? -5 : 0, bottom: isCart ? -5 : -5, child: Image.asset(assetPath, height: isCart ? 95 : 105, fit: BoxFit.contain))]));
-  }
-
-  Widget _buildBanner() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.asset('assets/images/banner_home.png', width: double.infinity, fit: BoxFit.cover)));
-  }
-
-  Widget _buildActivitySection() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Aktifitas Terbaru", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700)), const SizedBox(height: 16), _buildActivityCard("+ 10", "Poin Bertambah dari Lapor Sampah", "Berhasil", Colors.green, Icons.add_circle_outline), _buildActivityCard("+ 10", "Poin Bertambah dari Lapor Sampah", "Berhasil", Colors.green, Icons.add_circle_outline), _buildActivityCard("+ 10", "Anda mengisi formulir pengajuan Seller", "Pending", Colors.orange, Icons.schedule_rounded), _buildActivityCard("Ditolak", "Pelaporan sampah anda ditolak admin", "Ditolak", Colors.red, Icons.cancel_outlined)]));
-  }
-
-  Widget _buildActivityCard(String val, String desc, String status, Color color, IconData icon) {
-    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]), child: Row(children: [Icon(icon, size: 24, color: Colors.black87), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(val, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)), Text(desc, style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54))])), Row(children: [Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 6), Text(status, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: color))])]));
-  }
-
-  // --- REVISI FINAL: REWARD STREAK SESUAI ARAHAN SUPER DETAIL ---
-  Widget _buildStreakSection() {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
-        height: 145, // Tinggi stabil sesuai request sebelumnya
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.search_rounded,
+              size: 23,
+              color: const Color(0xFF8C8C8C).withValues(alpha: 0.75),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                onChanged: onChanged,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF111111),
+                ),
+                decoration: InputDecoration.collapsed(
+                  hintText: 'Cari aktivitas',
+                  hintStyle: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF8C8C8C),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeActivity {
+  const _HomeActivity({
+    required this.value,
+    required this.description,
+    required this.status,
+    required this.statusColor,
+    required this.icon,
+  });
+
+  final String value;
+  final String description;
+  final String status;
+  final Color statusColor;
+  final IconData icon;
+}
+
+const _allActivities = <_HomeActivity>[
+  _HomeActivity(
+    value: '+ 10',
+    description: 'Poin Bertambah dari Lapor Sampah',
+    status: 'Berhasil',
+    statusColor: Color(0xFF43A047),
+    icon: Icons.add_circle_outline_rounded,
+  ),
+  _HomeActivity(
+    value: '+ 10',
+    description: 'Poin Bertambah dari Lapor Sampah',
+    status: 'Berhasil',
+    statusColor: Color(0xFF43A047),
+    icon: Icons.add_circle_outline_rounded,
+  ),
+  _HomeActivity(
+    value: '+ 10',
+    description: 'Anda mengisi formulir pengajuan Seller',
+    status: 'Pending',
+    statusColor: Color(0xFFF57C00),
+    icon: Icons.schedule_rounded,
+  ),
+  _HomeActivity(
+    value: 'Ditolak',
+    description: 'Pelaporan sampah anda ditolak admin',
+    status: 'Ditolak',
+    statusColor: Color(0xFFE53935),
+    icon: Icons.cancel_outlined,
+  ),
+];
+
+class _TotalPointCard extends StatelessWidget {
+  const _TotalPointCard({required this.points});
+
+  final int points;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        height: 112,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [featDark, featMid, featLight], // Gradasi 3 warna figma
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
+            stops: [0, 0.45, 1],
+            colors: [Color(0xFF1F5E23), Color(0xFF2E7D32), Color(0xFF5BBF3D)],
           ),
           boxShadow: [
-            BoxShadow(color: featDark.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Stack(
           children: [
-            // REVISI: ELIPS 1 (Glow Putih + Border Tipis Transparan)
             Positioned(
-              right: -50, bottom: -50,
+              right: -12,
+              top: -10,
               child: Container(
-                width: 190, height: 190,
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  // Border ini yang bikin elips pertama "kelihatan" bulatnya
-                  border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.15),
-                      blurRadius: 50,
-                      spreadRadius: 5,
-                    ),
-                  ],
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.10),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
             ),
-            
-            // REVISI: ELIPS 2 (Cerah B5FF77)
             Positioned(
-              right: -15, bottom: -20,
-              child: Container(
-                width: 115, height: 115,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: featGlowColor.withOpacity(0.7),
+              right: 20,
+              top: 14,
+              child: Opacity(
+                opacity: 0.18,
+                child: Image.asset(
+                  'assets/images/logo_reworth.png',
+                  width: 76,
+                  height: 76,
                 ),
               ),
             ),
-            
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 15),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.whatshot_rounded, color: Colors.white, size: 22),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Yuk Kumpulkan Poin dan Dapatkan Reward!",
-                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                    ],
+                  Text(
+                    'TOTAL POIN',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                      color: Colors.white.withValues(alpha: 0.82),
+                    ),
                   ),
                   const Spacer(),
-                  
-                  // TIMELINE SECTION (Line di Tengah Elips)
-                  SizedBox(
-                    height: 50, // Ruang untuk dot dan teks
-                    child: Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        // GARIS HITAM TEGAS (Berhenti di elips ke-5 / 25 Poin)
-                        LayoutBuilder(builder: (context, constraints) {
-                          // 0.78 adalah estimasi posisi dot ke-5 agar line tidak bablas ke gift
-                          return Container(
-                            height: 3, 
-                            width: constraints.maxWidth * 0.78, 
-                            color: Colors.black
-                          );
-                        }),
-                        
-                        // DOTS & KETERANGAN (3 Hijau, 2 Abu)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildStreakDot("5 Poin", true),
-                            _buildStreakDot("10 Poin", true),
-                            _buildStreakDot("15 Poin", true),
-                            _buildStreakDot("20 Poin", false),
-                            _buildStreakDot("25 Poin", false),
-                            const SizedBox(width: 60), // Space lebar untuk gift
-                          ],
-                        ),
-                      ],
+                  Text(
+                    '$points',
+                    style: GoogleFonts.poppins(
+                      fontSize: 48,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-            // REVISI: ICON 3D GIFT RAKSASA
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.title,
+    required this.imageAsset,
+    required this.onTap,
+  });
+
+  final String title;
+  final String imageAsset;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        height: 120,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
+            stops: [0, 0.45, 1],
+            colors: [Color(0xFF1F5E23), Color(0xFF2E7D32), Color(0xFF5BBF3D)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
             Positioned(
-              right: -10,
-              bottom: -10,
-              child: Image.asset(
-                'assets/images/gift.png',
-                height: 100, // Ukuran diledakkan biar gak kekecilan
-                fit: BoxFit.contain,
+              right: 2,
+              top: 12,
+              child: Container(
+                width: 102,
+                height: 102,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.10),
+                      blurRadius: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: 16,
+              top: 26,
+              child: Container(
+                width: 74,
+                height: 74,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0xFFDFF8B7), Color(0xFFA8EA63)],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 15,
+              bottom: 8,
+              child: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  imageAsset,
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: 90,
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    height: 1.2,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.94),
+                  ),
+                ),
               ),
             ),
           ],
@@ -226,31 +521,362 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildStreakDot(String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ELIPS TIMELINE LEBIH BESAR
-        Container(
-          width: 18, 
-          height: 18,
-          decoration: BoxDecoration(
-            color: isActive ? featLight : greyMilestone,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3), // Stroke putih lebih mantap
+class _ActivityCard extends StatelessWidget {
+  const _ActivityCard({
+    required this.value,
+    required this.description,
+    required this.status,
+    required this.statusColor,
+    required this.icon,
+  });
+
+  final String value;
+  final String description;
+  final String status;
+  final Color statusColor;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 8), // Jarak teks diposisikan lebih naik
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            color: Colors.white, 
-            fontSize: 11, // Teks diperbesar
-            fontWeight: FontWeight.w700
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 23, color: const Color(0xFF2A2A2A)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6F6F6F),
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                status,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakRewardCard extends StatelessWidget {
+  const _StreakRewardCard({required this.activeCount});
+
+  final int activeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    const labels = ['5 Poin', '10 Poin', '15 Poin', '20 Poin', '25 Poin'];
+    final active = activeCount.clamp(0, labels.length);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        height: 162,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
+            stops: [0, 0.5, 1],
+            colors: [Color(0xFF1F5E23), Color(0xFF2E7D32), Color(0xFF4FAF3D)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
-      ],
+        child: Stack(
+          children: [
+            Positioned(
+              right: -30,
+              bottom: -34,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFB7F164).withValues(alpha: 0.12),
+                      const Color(0xFFB7F164).withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 16,
+              bottom: 14,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.10),
+                      blurRadius: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: 28,
+              bottom: 26,
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0xFFD8FF9D), Color(0xFFA8EA63)],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 48,
+              bottom: 48,
+              child: Transform.rotate(
+                angle: -0.06,
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/gift.png',
+                    width: 54,
+                    height: 54,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.whatshot_rounded,
+                        color: Colors.white,
+                        size: 19,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Yuk Kumpulkan Poin dan Dapatkan Reward!',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 19,
+                            height: 1.2,
+                            letterSpacing: -0.2,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const nodeSize = 18.0;
+                      const lineHeight = 4.0;
+                      const rightReserved = 132.0;
+                      final usableWidth = (constraints.maxWidth - rightReserved)
+                          .clamp(120.0, constraints.maxWidth);
+                      final centerY = nodeSize / 2;
+                      final spacing = labels.length > 1
+                          ? (usableWidth - nodeSize) / (labels.length - 1)
+                          : 0.0;
+
+                      final progressEnd = active <= 0
+                          ? 0.0
+                          : (active >= labels.length
+                                ? (usableWidth - nodeSize / 2)
+                                : (nodeSize / 2 + (active - 1) * spacing));
+
+                      return SizedBox(
+                        height: 76,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: nodeSize / 2,
+                              right:
+                                  constraints.maxWidth -
+                                  usableWidth +
+                                  nodeSize / 2,
+                              top: centerY - lineHeight / 2,
+                              child: Container(
+                                height: lineHeight,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                              ),
+                            ),
+                            if (progressEnd > 0)
+                              Positioned(
+                                left: nodeSize / 2,
+                                width: progressEnd,
+                                top: centerY - lineHeight / 2,
+                                child: Container(
+                                  height: lineHeight,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFC6FF7B),
+                                    borderRadius: BorderRadius.circular(999),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFFC6FF7B,
+                                        ).withValues(alpha: 0.18),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              left: 0,
+                              width: usableWidth,
+                              top: 0,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: List.generate(labels.length, (index) {
+                                  final isActive = index < active;
+                                  return SizedBox(
+                                    width: nodeSize,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: nodeSize,
+                                          height: nodeSize,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isActive
+                                                ? Colors.white
+                                                : Colors.white.withValues(
+                                                    alpha: 0.35,
+                                                  ),
+                                            border: Border.all(
+                                              color: isActive
+                                                  ? const Color(0xFFC6FF7B)
+                                                  : Colors.white,
+                                              width: 3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                            Positioned(
+                              left: 0,
+                              width: usableWidth,
+                              top: 40,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: labels
+                                    .map(
+                                      (label) => Text(
+                                        label,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.92,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

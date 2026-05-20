@@ -156,8 +156,8 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.poppins(
-                  fontSize: 32,
-                  height: 1.04,
+                  fontSize: 18,
+                  height: 1.2,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF111111),
                 ),
@@ -186,45 +186,40 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   Widget _buildSearchBar() {
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (_) => setState(() {}),
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: const Color(0xFF111111),
-        ),
-        cursorColor: AppColors.primary,
-        decoration: InputDecoration(
-          isDense: true,
-          filled: false,
-          fillColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-          hintText: 'Cari produk',
-          hintStyle: GoogleFonts.poppins(
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-            color: const Color.fromRGBO(17, 17, 17, 0.42),
-          ),
-          prefixIcon: const Icon(
+      child: Row(
+        children: [
+          const Icon(
             Icons.search_rounded,
             size: 20,
-            color: Color.fromRGBO(122, 122, 122, 0.50),
+            color: Color.fromRGBO(122, 122, 122, 0.65),
           ),
-          prefixIconConstraints: const BoxConstraints(
-            minWidth: 30,
-            minHeight: 30,
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF111111),
+              ),
+              cursorColor: AppColors.primary,
+              decoration: InputDecoration.collapsed(
+                hintText: 'Cari produk',
+                hintStyle: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                  color: const Color.fromRGBO(17, 17, 17, 0.42),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -326,7 +321,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           Text(
             'Punya produk olahan sampah?',
             style: GoogleFonts.poppins(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: Colors.white,
               height: 1.15,
@@ -336,7 +331,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           Text(
             'Yuk jual hasil kreativitasmu dan jangkau lebih banyak pembeli di ReWorth Mini Market.',
             style: GoogleFonts.poppins(
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
               color: Colors.white.withValues(alpha: 0.88),
               height: 1.35,
