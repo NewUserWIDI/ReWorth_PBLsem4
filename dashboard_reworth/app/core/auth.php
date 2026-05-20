@@ -58,10 +58,9 @@ function is_logged_in(): bool
 function redirect_by_role(string $role): never
 {
     match ($role) {
-        'admin' => redirect('app/modules/admin/dashboard.php'),
-        'dlh' => redirect('app/modules/dlh/dashboard.php'),
-        'seller' => redirect('app/modules/seller/dashboard.php'),
-        default => redirect('public/login.php'),
+        'admin' => redirect('dashboard.php?role=admin&page=dashboard'),
+        'dlh' => redirect('dashboard.php?role=dlh&page=dashboard'),
+        'seller' => redirect('dashboard.php?role=seller&page=dashboard'),
+        default => redirect('login.php'),
     };
 }
-

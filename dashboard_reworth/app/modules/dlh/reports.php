@@ -26,7 +26,7 @@ render_layout('Laporan Sampah', function (): void {
                             <td><?= e($report['alamat']) ?></td>
                             <td><?= e($report['keparahan']) ?></td>
                             <td><?php badge_status($report['status']); ?></td>
-                            <td><a class="btn btn-secondary" href="<?= e(url('app/modules/dlh/report_detail.php?id=' . $report['id'])) ?>">Detail</a></td>
+                            <td><a class="btn btn-secondary" href="<?= e(url('dashboard.php?role=dlh&page=report_detail&id=' . $report['id'])) ?>">Detail</a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -35,4 +35,3 @@ render_layout('Laporan Sampah', function (): void {
     </section>
     <?php
 });
-

@@ -18,8 +18,8 @@ function render_layout(string $title, callable $content): void
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= e($title) ?> - <?= e(APP_NAME) ?></title>
-        <link rel="stylesheet" href="<?= e(url('public/assets/css/app.css')) ?>">
-        <link rel="stylesheet" href="<?= e(url('public/assets/css/dashboard.css')) ?>">
+        <link rel="stylesheet" href="<?= e(asset_url('css/app.css')) ?>">
+        <link rel="stylesheet" href="<?= e(asset_url('css/dashboard.css')) ?>">
     </head>
     <body>
         <div class="dashboard-shell">
@@ -38,9 +38,8 @@ function render_layout(string $title, callable $content): void
                 <?php render_footer(); ?>
             </main>
         </div>
-        <script src="<?= e(url('public/assets/js/app.js')) ?>"></script>
+        <script src="<?= e(asset_url('js/app.js')) ?>"></script>
     </body>
     </html>
     <?php
 }
-

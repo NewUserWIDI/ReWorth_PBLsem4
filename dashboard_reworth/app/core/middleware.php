@@ -7,7 +7,7 @@ require_once __DIR__ . '/auth.php';
 function require_login(): void
 {
     if (!is_logged_in()) {
-        redirect('public/login.php');
+        redirect('login.php');
     }
 }
 
@@ -29,7 +29,6 @@ function require_active_seller(): void
     $user = current_user();
     if (($user['status'] ?? '') !== 'aktif') {
         set_flash('warning', 'Akun seller belum aktif.');
-        redirect('public/login.php');
+        redirect('login.php');
     }
 }
-

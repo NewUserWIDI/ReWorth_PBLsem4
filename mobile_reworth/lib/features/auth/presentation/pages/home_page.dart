@@ -9,11 +9,12 @@ import '../../application/auth_controller.dart';
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  // --- FIGMA COLORS (Sama dengan Fitur) ---
-  static const Color featDark = Color(0xFF34600F);
-  static const Color featLight = Color(0xFF6BC61F);
-  static const Color featGlowColor = Color(0xFFB5FF77);
-  static const Color greyMilestone = Color(0xFFD9D9D9); // Abu-abu untuk poin blm capai
+  // --- FIGMA COLORS ---
+  static const Color featDark = Color(0xFF1F5E23);
+  static const Color featMid = Color(0xFF2E7D32);
+  static const Color featLight = Color(0xFF5BBF3D);
+  static const Color featGlowColor = Color(0xFFB7F164);
+  static const Color greyMilestone = Color(0xFFD9D9D9); // Abu-abu milestone
 
   static const Color figmaSoftGrey = Color(0xFF8C8C8C);
   static const Color figmaSearchGrey = Color(0xFFF5F5F5);
@@ -48,7 +49,7 @@ class HomePage extends ConsumerWidget {
               _buildActivitySection(),
               const SizedBox(height: 32),
               
-              // --- SECTION REWARD STREAK (FIXED GLOW & COIN) ---
+              // --- SECTION REWARD STREAK (FIXED GLOW & GIFT) ---
               _buildStreakSection(),
               
               const SizedBox(height: 40),
@@ -59,8 +60,7 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  // ... (Widget Header, Search, Point Card, Fitur, Banner, Activity tetap sama seperti sebelumnya) ...
-  // Sertakan di sini agar kode utuh bisa di-copy:
+  // --- WIDGET HELPER (Tetap Sama) ---
 
   Widget _buildGreetingHeader(String userName) {
     return Padding(
@@ -73,26 +73,130 @@ class HomePage extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(userName, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.poppins(fontSize: 19, fontWeight: FontWeight.w700, color: Colors.black)),
           ])),
-          Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white, border: Border.all(color: featLight.withOpacity(0.4), width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 15, offset: const Offset(0, 5))]), child: const Icon(Icons.notifications_none_rounded, color: featLight, size: 30)),
+          Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white, border: Border.all(color: featLight.withValues(alpha: 0.4), width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 15, offset: const Offset(0, 5))]), child: const Icon(Icons.notifications_none_rounded, color: featLight, size: 30)),
         ],
       ),
     );
   }
 
   Widget _buildSearchBar() {
-    return Container(height: 56, margin: const EdgeInsets.symmetric(horizontal: 24), padding: const EdgeInsets.symmetric(horizontal: 18), decoration: BoxDecoration(color: figmaSearchGrey, borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(Icons.search_rounded, color: figmaSoftGrey.withOpacity(0.7), size: 24), const SizedBox(width: 12), Text('Cari toko/seller', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: figmaSoftGrey))]));
+    return Container(height: 56, margin: const EdgeInsets.symmetric(horizontal: 24), padding: const EdgeInsets.symmetric(horizontal: 18), decoration: BoxDecoration(color: figmaSearchGrey, borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(Icons.search_rounded, color: figmaSoftGrey.withValues(alpha: 0.7), size: 24), const SizedBox(width: 12), Text('Cari toko/seller', style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: figmaSoftGrey))]));
   }
 
   Widget _buildTotalPointCard(int points) {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Container(width: double.infinity, height: 145, clipBehavior: Clip.antiAlias, decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), gradient: const LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, stops: [0.0, 0.50, 0.74, 0.97], colors: [Color(0xFF3B6D11), Color(0xFF498615), Color(0xFF6BC61F), Color(0xFF7ED038)]), boxShadow: [BoxShadow(color: Color(0xFF3B6D11).withOpacity(0.3), blurRadius: 25, offset: const Offset(0, 12))]), child: Stack(children: [Positioned(top: -5, right: -15, child: Transform.rotate(angle: -11.7 * (pi / 180), child: Opacity(opacity: 0.3, child: Image.asset('assets/images/logo_reworth.png', width: 160, fit: BoxFit.contain)))), Padding(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text('TOTAL POIN', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.85), letterSpacing: 1.1)), const SizedBox(height: 2), Text('$points', style: GoogleFonts.poppins(fontSize: 48, fontWeight: FontWeight.w800, color: Colors.white))]))])));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: double.infinity,
+        height: 112,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
+            stops: [0.0, 0.45, 1.0],
+            colors: [featDark, featMid, featLight],
+          ),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 10))],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 8,
+              right: 22,
+              child: Transform.rotate(
+                angle: -11.7 * (pi / 180),
+                child: Opacity(
+                  opacity: 0.20,
+                  child: Image.asset('assets/images/logo_reworth.png', width: 92, height: 92, fit: BoxFit.contain),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('TOTAL POIN', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.82), letterSpacing: 1.2)),
+                  const Spacer(),
+                  Text('$points', style: GoogleFonts.poppins(fontSize: 52, height: 0.95, fontWeight: FontWeight.w800, color: Colors.white)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildFeatureSection() {
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Row(children: [Expanded(child: _buildFeatureCard(title: "Lapor\nSampah", assetPath: 'assets/images/3d_trash.png', isCart: false)), const SizedBox(width: 18), Expanded(child: _buildFeatureCard(title: "Mini\nMarket", assetPath: 'assets/images/cart_3d.png', isCart: true))]));
+    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Row(children: [Expanded(child: _buildFeatureCard(title: "Lapor\nSampah", assetPath: 'assets/images/3d_trash.png', isCart: false)), const SizedBox(width: 16), Expanded(child: _buildFeatureCard(title: "Mini\nMarket", assetPath: 'assets/images/cart_3d.png', isCart: true))]));
   }
 
   Widget _buildFeatureCard({required String title, required String assetPath, required bool isCart}) {
-    return Container(height: 125, clipBehavior: Clip.antiAlias, decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [featDark, featLight]), boxShadow: [BoxShadow(color: featDark.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8))]), child: Stack(children: [Positioned(right: -40, bottom: -40, child: Container(width: 170, height: 170, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.05), width: 1), boxShadow: [BoxShadow(color: Colors.white.withOpacity(0.2), blurRadius: 40, spreadRadius: 5)]))), Positioned(right: -10, bottom: -15, child: Container(width: 100, height: 100, decoration: BoxDecoration(shape: BoxShape.circle, color: featGlowColor.withOpacity(0.7)))), Padding(padding: const EdgeInsets.all(20), child: Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, height: 1.2))), Positioned(right: isCart ? -5 : 0, bottom: isCart ? -5 : -5, child: Image.asset(assetPath, height: isCart ? 95 : 105, fit: BoxFit.contain))]));
+    return Container(
+      height: 120,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(begin: Alignment.bottomLeft, end: Alignment.topRight, stops: [0.0, 0.45, 1.0], colors: [featDark, featMid, featLight]),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 24, offset: const Offset(0, 8))],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -12,
+            top: -10,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.09)),
+            ),
+          ),
+          Positioned(
+            right: 4,
+            bottom: 10,
+            child: Container(
+              width: 104,
+              height: 104,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.5),
+                boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.10), blurRadius: 20)],
+              ),
+            ),
+          ),
+          Positioned(
+            right: 18,
+            bottom: 24,
+            child: Container(
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(center: Alignment(-0.28, -0.35), colors: [Color(0xFFDFF8B7), Color(0xFFA8EA63)]),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: 82,
+              child: Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.94), height: 1.35)),
+            ),
+          ),
+          Positioned(
+            right: isCart ? 28 : 27,
+            bottom: isCart ? 27 : 22,
+            child: Container(
+              decoration: BoxDecoration(boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 8))]),
+              child: Image.asset(assetPath, height: isCart ? 68 : 76, fit: BoxFit.contain),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildBanner() {
@@ -104,112 +208,221 @@ class HomePage extends ConsumerWidget {
   }
 
   Widget _buildActivityCard(String val, String desc, String status, Color color, IconData icon) {
-    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]), child: Row(children: [Icon(icon, size: 24, color: Colors.black87), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(val, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)), Text(desc, style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54))])), Row(children: [Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 6), Text(status, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: color))])]));
+    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))]), child: Row(children: [Icon(icon, size: 24, color: Colors.black87), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(val, style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 14)), Text(desc, style: GoogleFonts.poppins(fontSize: 11, color: Colors.black54))])), Row(children: [Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)), const SizedBox(width: 6), Text(status, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: color))])]));
   }
 
-  // --- REVISI FINAL: REWARD STREAK DENGAN ELIPS GLOW ASLI & COIN ---
+  // --- REVISI FINAL: REWARD STREAK SESUAI ARAHAN SUPER DETAIL ---
   Widget _buildStreakSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
-        height: 140,
+        width: double.infinity,
+        height: 196,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          // GRADASI SAMA DENGAN FITUR
+          borderRadius: BorderRadius.circular(24),
           gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [featDark, featLight],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Color(0xFF1F5F24),
+              Color(0xFF2E7D32),
+              Color(0xFF4FAF3D),
+            ],
           ),
           boxShadow: [
-            BoxShadow(color: featDark.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8)),
+            BoxShadow(
+              color: const Color(0xFF1F5F24).withValues(alpha: 0.22),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
         child: Stack(
           children: [
-            // ELIPS 1: GLOW PUTIH BESAR (TEKNIK BOX SHADOW)
+            // Ambient glow khusus area gift agar depth terasa tanpa membuat card berkabut.
             Positioned(
-              right: -40, bottom: -40,
+              right: -54,
+              top: -10,
               child: Container(
-                width: 170, height: 170,
+                width: 180,
+                height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.12),
+                  boxShadow: [BoxShadow(color: const Color(0xFFB7F164).withValues(alpha: 0.12), blurRadius: 40)],
+                ),
+              ),
+            ),
+
+            // Outer transparent ring.
+            Positioned(
+              right: 14,
+              top: 42,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1.5),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.2),
-                      blurRadius: 45,
-                      spreadRadius: 8,
-                    ),
+                    BoxShadow(color: Colors.white.withValues(alpha: 0.10), blurRadius: 20),
                   ],
                 ),
               ),
             ),
-            // ELIPS 2: HIJAU CERAH
+
+            // Inner green circle.
             Positioned(
-              right: -10, bottom: -15,
+              right: 26,
+              top: 54,
               child: Container(
-                width: 105, height: 105,
-                decoration: BoxDecoration(
+                width: 96,
+                height: 96,
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: featGlowColor.withOpacity(0.7),
+                  gradient: RadialGradient(
+                    center: Alignment(-0.28, -0.35),
+                    radius: 0.95,
+                    colors: [
+                      Color(0xFFD8FF9D),
+                      Color(0xFFA8EA63),
+                    ],
+                  ),
                 ),
               ),
             ),
-            
+
+            Positioned(
+              right: 38,
+              top: 70,
+              child: Transform.rotate(
+                angle: -4 * (pi / 180),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/images/gift.png',
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      // ICON FIRE/STREAK
-                      const Icon(Icons.whatshot_rounded, color: Colors.white, size: 22),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Yuk Kumpulkan Poin dan Dapatkan Reward!",
-                        style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
-                      ),
-                    ],
+                  SizedBox(
+                    width: 198,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 24),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Yuk Kumpulkan Poin dan Dapatkan Reward!",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                              height: 1.32,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
-                  // TIMELINE PROGRESS
-                  Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      // GARIS HITAM TEGAS
-                      Container(height: 3, width: double.infinity, color: Colors.black.withOpacity(0.8)),
-                      // GARIS AKTIF (SAMPAI 15 POIN)
-                      LayoutBuilder(builder: (context, constraints) {
-                        return Container(height: 3, width: constraints.maxWidth * 0.53, color: featGlowColor);
-                      }),
-                      // DOTS MILESTONE (3 HIJAU, 2 ABU)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildStreakDot("5 Poin", true),
-                          _buildStreakDot("10 Poin", true),
-                          _buildStreakDot("15 Poin", true),
-                          _buildStreakDot("20 Poin", false),
-                          _buildStreakDot("25 Poin", false),
-                          const SizedBox(width: 45), // Jarak ke koin
-                        ],
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 70,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final trackerWidth = constraints.maxWidth - 126;
+                        final segment = (trackerWidth - 18) / 4;
+                        final labels = ['5 Poin', '10 Poin', '15 Poin', '20 Poin', '25 Poin'];
+                        final activeStates = [true, true, true, false, false];
+
+                        return SizedBox(
+                          width: trackerWidth,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Positioned(
+                                top: 12,
+                                left: 9,
+                                right: 9,
+                                child: Container(
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 12,
+                                left: 9,
+                                width: segment * 2,
+                                child: Container(
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFC6FF7B),
+                                    borderRadius: BorderRadius.circular(99),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFC6FF7B).withValues(alpha: 0.18),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              for (var i = 0; i < labels.length; i++)
+                                Positioned(
+                                  left: i * segment,
+                                  top: 3,
+                                  child: _buildStreakNode(activeStates[i]),
+                                ),
+                              for (var i = 0; i < labels.length; i++)
+                                Positioned(
+                                  left: (i * segment) - 18,
+                                  top: 34,
+                                  width: 54,
+                                  child: Text(
+                                    labels[i],
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.visible,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white.withValues(alpha: 0.92),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
-              ),
-            ),
-            // ICON 3D COIN (MEPET GARIS CARD)
-            Positioned(
-              right: -5,
-              bottom: -5,
-              child: Image.asset(
-                'assets/images/coin.png',
-                height: 85,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.monetization_on, color: Colors.orange, size: 60),
               ),
             ),
           ],
@@ -218,25 +431,15 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStreakDot(String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 15,
-          height: 14,
-          decoration: BoxDecoration(
-            color: isActive ? featLight : greyMilestone,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2.5), // STROKE PUTIH TEBAL
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: GoogleFonts.poppins(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
-        ),
-      ],
+  Widget _buildStreakNode(bool isActive) {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.35),
+        shape: BoxShape.circle,
+        border: Border.all(color: isActive ? const Color(0xFFC6FF7B) : Colors.white.withValues(alpha: 0.82), width: isActive ? 3 : 2),
+      ),
     );
   }
 }

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../core/middleware.php';
 require_role('dlh');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('app/modules/dlh/reports.php');
+    redirect('dashboard.php?role=dlh&page=reports');
 }
 
 $id = $_POST['id'] ?? '';
@@ -16,7 +16,7 @@ $reason = trim($_POST['reason'] ?? '');
 
 if ($action === 'reject' && $reason === '') {
     set_flash('danger', 'Alasan penolakan wajib diisi.');
-    redirect('app/modules/dlh/report_detail.php?id=' . urlencode($id));
+    redirect('dashboard.php?role=dlh&page=report_detail&id=' . urlencode($id));
 }
 
 if ($action === 'valid') {
@@ -25,5 +25,4 @@ if ($action === 'valid') {
     set_flash('success', 'Laporan ' . $id . ' ditolak dengan alasan: ' . $reason . ' (mock).');
 }
 
-redirect('app/modules/dlh/reports.php');
-
+redirect('dashboard.php?role=dlh&page=reports');

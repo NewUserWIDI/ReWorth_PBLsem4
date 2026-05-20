@@ -1,0 +1,30 @@
+# Java/Gradle crash logs and local replay logs
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# Flutter/Dart local caches and generated output
+mobile_reworth/.dart_tool/
+mobile_reworth/build/
+mobile_reworth/.flutter-plugins-dependencies
+
+# IDE/user-local files
+mobile_reworth/.idea/
+mobile_reworth/*.iml
+
+# Android local/generated files
+mobile_reworth/android/.gradle/
+mobile_reworth/android/.kotlin/
+mobile_reworth/android/local.properties
+mobile_reworth/android/*.log
+mobile_reworth/android/replay_pid*.log
+mobile_reworth/android/app/src/main/java/
+
+# Flutter generated platform files
+mobile_reworth/ios/Flutter/Generated.xcconfig
+mobile_reworth/ios/Flutter/flutter_export_environment.sh
+mobile_reworth/ios/Flutter/ephemeral/
+mobile_reworth/ios/Runner/GeneratedPluginRegistrant.*
+mobile_reworth/linux/flutter/ephemeral/
+mobile_reworth/macos/Flutter/ephemeral/
+mobile_reworth/windows/flutter/ephemeral/

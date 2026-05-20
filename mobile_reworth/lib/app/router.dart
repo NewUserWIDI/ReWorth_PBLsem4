@@ -8,6 +8,7 @@ import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/pages/welcome_page.dart';
+import '../features/market/presentation/pages/market_page.dart';
 import '../shared/widgets/app_card.dart';
 import '../shared/widgets/top_curved_header_layout.dart';
 
@@ -40,7 +41,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomePage()),
           GoRoute(path: '/report', builder: (context, state) => const _PlaceholderPage(title: 'Laporkan Sampah Liar', useGradientHeader: true)),
-          GoRoute(path: '/market', builder: (context, state) => const _PlaceholderPage(title: 'Mini Market')),
+          GoRoute(path: '/market', builder: (context, state) => const MarketPage()),
           GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
         ],
       ),

@@ -142,6 +142,41 @@ function mock_orders(): array
     ];
 }
 
+function mock_seller_weekly_revenue(): array
+{
+    return [
+        ['label' => 'Sen', 'value' => 82000],
+        ['label' => 'Sel', 'value' => 56000],
+        ['label' => 'Rab', 'value' => 132000],
+        ['label' => 'Kam', 'value' => 96000],
+        ['label' => 'Jum', 'value' => 268000],
+        ['label' => 'Sab', 'value' => 204000],
+        ['label' => 'Min', 'value' => 118000],
+    ];
+}
+
+function mock_seller_recent_orders(): array
+{
+    return [
+        ['id' => 'ORD-1035', 'pembeli' => 'Maria Ulfa', 'total' => 78500, 'status' => 'diproses', 'tanggal' => '2026-05-12'],
+        ['id' => 'ORD-1034', 'pembeli' => 'Lestari Dwi', 'total' => 117000, 'status' => 'baru', 'tanggal' => '2026-05-12'],
+        ['id' => 'ORD-1033', 'pembeli' => 'Budi Santoso', 'total' => 134000, 'status' => 'baru', 'tanggal' => '2026-05-11'],
+        ['id' => 'ORD-1032', 'pembeli' => 'Siti Nurhaliza', 'total' => 98000, 'status' => 'diproses', 'tanggal' => '2026-05-11'],
+        ['id' => 'ORD-1031', 'pembeli' => 'Ahmad Saputra', 'total' => 145000, 'status' => 'baru', 'tanggal' => '2026-05-10'],
+    ];
+}
+
+function mock_seller_low_stock(): array
+{
+    return [
+        ['nama' => 'Pupuk Organik 50 ml', 'stok' => 0],
+        ['nama' => 'Eco Enzyme 1Lt', 'stok' => 0],
+        ['nama' => 'Pupuk Kompos 2Kg', 'stok' => 5],
+        ['nama' => 'Maggot BSF', 'stok' => 6],
+        ['nama' => 'Biogas Starter', 'stok' => 8],
+    ];
+}
+
 function mock_rewards(): array
 {
     return [
@@ -149,4 +184,3 @@ function mock_rewards(): array
         ['id' => 'RWD-002', 'user' => 'Bima Saputra', 'jenis' => 'Kuota WhatsApp 1GB', 'poin' => 30, 'status' => 'selesai'],
     ];
 }
-

@@ -30,13 +30,13 @@ render_layout('Detail Laporan', function () use ($report): void {
 
     <section class="panel">
         <div class="panel-header"><h2>Verifikasi Laporan</h2></div>
-        <form method="post" action="<?= e(url('app/modules/dlh/verification_action.php')) ?>" class="action-row" data-confirm="Validasi laporan ini?">
+        <form method="post" action="<?= e(url('dashboard.php?role=dlh&page=verification_action')) ?>" class="action-row" data-confirm="Validasi laporan ini?">
             <input type="hidden" name="id" value="<?= e($report['id']) ?>">
             <input type="hidden" name="action" value="valid">
             <button class="btn btn-primary" type="submit">Validasi Laporan</button>
         </form>
         <hr>
-        <form method="post" action="<?= e(url('app/modules/dlh/verification_action.php')) ?>" data-confirm="Tolak laporan ini?">
+        <form method="post" action="<?= e(url('dashboard.php?role=dlh&page=verification_action')) ?>" data-confirm="Tolak laporan ini?">
             <input type="hidden" name="id" value="<?= e($report['id']) ?>">
             <input type="hidden" name="action" value="reject">
             <label class="form-field">
@@ -48,4 +48,3 @@ render_layout('Detail Laporan', function () use ($report): void {
     </section>
     <?php
 });
-

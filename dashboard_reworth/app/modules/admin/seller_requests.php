@@ -12,7 +12,7 @@ require_role('admin');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     set_flash('success', $action === 'approve' ? 'Pengajuan seller disetujui (mock).' : 'Pengajuan seller ditolak (mock).');
-    redirect('app/modules/admin/seller_requests.php');
+    redirect('dashboard.php?role=admin&page=seller_requests');
 }
 
 render_layout('Pengajuan Seller', function (): void {
@@ -50,4 +50,3 @@ render_layout('Pengajuan Seller', function (): void {
     </section>
     <?php
 });
-

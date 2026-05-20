@@ -14,6 +14,14 @@ function url(string $path): string
     return rtrim(APP_BASE_URL, '/') . '/' . ltrim($path, '/');
 }
 
+function asset_url(string $path): string
+{
+    $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '');
+    $assetPath = str_contains($scriptName, '/public/') ? 'assets/' . ltrim($path, '/') : 'public/assets/' . ltrim($path, '/');
+
+    return url($assetPath);
+}
+
 function redirect(string $path): never
 {
     header('Location: ' . url($path));
@@ -62,4 +70,3 @@ function status_badge_class(string $status): string
         default => 'badge-neutral',
     };
 }
-
