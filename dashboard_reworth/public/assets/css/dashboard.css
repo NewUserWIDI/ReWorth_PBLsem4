@@ -725,7 +725,6 @@
     grid-template-columns: repeat(2, minmax(160px, 1fr));
   }
 }
-
 @media (max-width: 560px) {
   .main-area {
     padding: 18px;

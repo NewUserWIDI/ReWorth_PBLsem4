@@ -18,6 +18,7 @@ function sidebar_items(string $role): array
         'dlh' => [
             ['Dashboard DLH', 'dashboard.php?role=dlh&page=dashboard'],
             ['Laporan Sampah', 'dashboard.php?role=dlh&page=reports'],
+            ['Data Pelapor', 'dashboard.php?role=dlh&page=reporters'],
         ],
         'seller' => [
             ['Dashboard Toko', 'dashboard.php?role=seller&page=dashboard'],

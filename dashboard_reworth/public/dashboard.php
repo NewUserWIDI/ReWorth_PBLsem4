@@ -29,6 +29,7 @@ $routes = [
     'dlh' => [
         'dashboard' => __DIR__ . '/../app/modules/dlh/dashboard.php',
         'reports' => __DIR__ . '/../app/modules/dlh/reports.php',
+        'reporters' => __DIR__ . '/../app/modules/dlh/reporters.php',
         'report_detail' => __DIR__ . '/../app/modules/dlh/report_detail.php',
         'verification_action' => __DIR__ . '/../app/modules/dlh/verification_action.php',
     ],
