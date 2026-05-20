@@ -26,6 +26,7 @@ class MarketRepository {
     final imagesRaw = await _supabase.from('gambar_produk').select();
     final imageRows = List<Map<String, dynamic>>.from(imagesRaw as List);
     final imageMap = <int, String>{};
+    final imageGalleryMap = <int, List<String>>{};
 
     for (final row in imageRows) {
       final idProduk = _toInt(row['id_produk']);
@@ -38,6 +39,7 @@ class MarketRepository {
       if (url == null || url.isEmpty) {
         continue;
       }
+      imageGalleryMap.putIfAbsent(idProduk, () => <String>[]).add(url);
       if (current == null || isPrimary) {
         imageMap[idProduk] = url;
       }
@@ -69,7 +71,13 @@ class MarketRepository {
 
     final categoryNames = <int, String>{};
     final categoryIds = productRows
-        .map((row) => _firstInt(row, const ['id_kategori', 'kategori_id', 'id_category']))
+        .map(
+          (row) => _firstInt(row, const [
+            'id_kategori',
+            'kategori_id',
+            'id_category',
+          ]),
+        )
         .whereType<int>()
         .toSet()
         .toList();
@@ -80,7 +88,9 @@ class MarketRepository {
             .from('kategori_produk')
             .select('id_kategori, nama_kategori')
             .inFilter('id_kategori', categoryIds);
-        final categoryRows = List<Map<String, dynamic>>.from(categoriesRaw as List);
+        final categoryRows = List<Map<String, dynamic>>.from(
+          categoriesRaw as List,
+        );
         for (final row in categoryRows) {
           final id = _toInt(row['id_kategori']);
           final name = row['nama_kategori']?.toString().trim();
@@ -97,34 +107,101 @@ class MarketRepository {
     return productRows.map((row) {
       final idProduk = _toInt(row['id_produk']) ?? 0;
       final sellerId = row['id_seller']?.toString() ?? '';
-      final categoryId = _firstInt(row, const ['id_kategori', 'kategori_id', 'id_category']);
-      final dbCategoryName = categoryId == null ? null : categoryNames[categoryId];
-      final productName = _firstString(row, const ['nama_produk', 'nama']) ?? 'Produk';
+      final categoryId = _firstInt(row, const [
+        'id_kategori',
+        'kategori_id',
+        'id_category',
+      ]);
+      final dbCategoryName = categoryId == null
+          ? null
+          : categoryNames[categoryId];
+      final productName =
+          _firstString(row, const ['nama_produk', 'nama']) ?? 'Produk';
+      final productCategory = (dbCategoryName == null || dbCategoryName.isEmpty)
+          ? _fallbackCategory(productName)
+          : dbCategoryName;
+      final stok = _firstInt(row, const ['stok', 'stock']) ?? 0;
+      final deskripsi =
+          _firstString(row, const [
+            'deskripsi',
+            'deskripsi_produk',
+            'description',
+          ]) ??
+          'Produk ramah lingkungan dari Mini Market ReWorth yang diolah dari material berkelanjutan.';
+      final manfaat =
+          _firstString(row, const ['manfaat', 'benefit']) ??
+          'Membantu gaya hidup lebih ramah lingkungan.';
+      final berat =
+          _firstString(row, const ['berat', 'volume', 'ukuran']) ?? '-';
+      final jenis =
+          _firstString(row, const ['jenis', 'jenis_produk']) ?? productCategory;
+      final caraPakai =
+          _firstString(row, const [
+            'cara_penggunaan',
+            'cara_pakai',
+            'cara_penggunaan_produk',
+            'usage',
+          ]) ??
+          'Gunakan produk sesuai kebutuhan. Simpan di tempat sejuk dan kering.';
+      final rating =
+          _firstDouble(row, const ['rating', 'rating_rata_rata']) ?? 0;
+      final jumlahUlasan =
+          _firstInt(row, const [
+            'jumlah_ulasan',
+            'total_ulasan',
+            'review_count',
+          ]) ??
+          0;
 
       return MarketProduct(
         idProduk: idProduk,
         namaProduk: productName,
-        harga: _firstDouble(row, const ['harga', 'harga_produk', 'harga_jual', 'price']) ?? 0,
-        stok: _firstInt(row, const ['stok', 'stock']) ?? 0,
+        harga:
+            _firstDouble(row, const [
+              'harga',
+              'harga_produk',
+              'harga_jual',
+              'price',
+            ]) ??
+            0,
+        stok: stok,
         gambarUrl: imageMap[idProduk],
+        gambarGaleri: imageGalleryMap[idProduk] ?? const [],
         namaToko: sellerNames[sellerId] ?? 'Toko ReWorth',
-        kategori: (dbCategoryName == null || dbCategoryName.isEmpty) ? _fallbackCategory(productName) : dbCategoryName,
+        kategori: productCategory,
+        jenis: jenis,
+        berat: berat,
+        manfaat: manfaat,
+        deskripsi: deskripsi,
+        caraPenggunaan: caraPakai,
+        rating: rating,
+        jumlahUlasan: jumlahUlasan,
+        lokasiToko:
+            _firstString(row, const ['lokasi_toko', 'lokasi', 'asal_produk']) ??
+            'Indonesia',
       );
     }).toList();
   }
 
   static String _fallbackCategory(String productName) {
     final name = productName.toLowerCase();
-    if (name.contains('kompos') || name.contains('eco enzyme') || name.contains('pupuk')) {
+    if (name.contains('kompos') ||
+        name.contains('eco enzyme') ||
+        name.contains('pupuk')) {
       return 'Kompos';
     }
-    if (name.contains('tas') || name.contains('kerajinan') || name.contains('pot') || name.contains('dekorasi')) {
+    if (name.contains('tas') ||
+        name.contains('kerajinan') ||
+        name.contains('pot') ||
+        name.contains('dekorasi')) {
       return 'Kerajinan';
     }
     if (name.contains('stainless') || name.contains('sedotan')) {
       return 'Eco Living';
     }
-    if (name.contains('kaca') || name.contains('lilin') || name.contains('pensil')) {
+    if (name.contains('kaca') ||
+        name.contains('lilin') ||
+        name.contains('pensil')) {
       return 'Aksesoris';
     }
     return 'Daur Ulang';

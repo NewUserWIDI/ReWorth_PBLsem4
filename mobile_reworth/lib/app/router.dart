@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/constants/app_spacing.dart';
@@ -9,6 +9,9 @@ import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/pages/welcome_page.dart';
 import '../features/market/presentation/pages/market_page.dart';
+import '../features/market/presentation/pages/product_detail_page.dart';
+import '../features/market/presentation/pages/cart_page.dart';
+import '../features/market/domain/market_product.dart';
 import '../shared/widgets/app_card.dart';
 import '../shared/widgets/top_curved_header_layout.dart';
 
@@ -33,30 +36,122 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/welcome', builder: (context, state) => const WelcomePage()),
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomePage(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-      GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterPage(),
+      ),
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-          GoRoute(path: '/report', builder: (context, state) => const _PlaceholderPage(title: 'Laporkan Sampah Liar', useGradientHeader: true)),
-          GoRoute(path: '/market', builder: (context, state) => const MarketPage()),
-          GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
+          GoRoute(
+            path: '/report',
+            builder: (context, state) => const _PlaceholderPage(
+              title: 'Laporkan Sampah Liar',
+              useGradientHeader: true,
+            ),
+          ),
+          GoRoute(
+            path: '/market',
+            builder: (context, state) => const MarketPage(),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfilePage(),
+          ),
         ],
       ),
-      GoRoute(path: '/report-history', builder: (context, state) => const _PlaceholderPage(title: 'Riwayat Laporan', useGradientHeader: true)),
-      GoRoute(path: '/history', builder: (context, state) => const _PlaceholderPage(title: 'Riwayat Laporan', useGradientHeader: true)),
-      GoRoute(path: '/rewards', builder: (context, state) => const _PlaceholderPage(title: 'Tukar Poin Reward', useGradientHeader: true)),
-      GoRoute(path: '/reward', builder: (context, state) => const _PlaceholderPage(title: 'Tukar Poin Reward', useGradientHeader: true)),
-      GoRoute(path: '/seller-registration', builder: (context, state) => const _PlaceholderPage(title: 'Registrasi Seller', useGradientHeader: true)),
-      GoRoute(path: '/cart', builder: (context, state) => const _PlaceholderPage(title: 'Keranjang', useGradientHeader: true)),
-      GoRoute(path: '/checkout', builder: (context, state) => const _PlaceholderPage(title: 'Checkout', useGradientHeader: true)),
-      GoRoute(path: '/order-history', builder: (context, state) => const _PlaceholderPage(title: 'Riwayat Pesanan', useGradientHeader: true)),
-      GoRoute(path: '/wishlist', builder: (context, state) => const _PlaceholderPage(title: 'Wishlist', useGradientHeader: true)),
-      GoRoute(path: '/address', builder: (context, state) => const _PlaceholderPage(title: 'Alamat Tersimpan', useGradientHeader: true)),
-      GoRoute(path: '/payment-method', builder: (context, state) => const _PlaceholderPage(title: 'Metode Pembayaran', useGradientHeader: true)),
-      GoRoute(path: '/profile-edit', builder: (context, state) => const _PlaceholderPage(title: 'Edit Profile', useGradientHeader: true)),
+      GoRoute(
+        path: '/report-history',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Riwayat Laporan',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/history',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Riwayat Laporan',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/rewards',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Tukar Poin Reward',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/reward',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Tukar Poin Reward',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/seller-registration',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Registrasi Seller',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
+      GoRoute(
+        path: '/market/product/:id',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          return ProductDetailPage(
+            productId: id,
+            initialProduct: state.extra is MarketProduct
+                ? state.extra as MarketProduct
+                : null,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) =>
+            const _PlaceholderPage(title: 'Checkout', useGradientHeader: true),
+      ),
+      GoRoute(
+        path: '/order-history',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Riwayat Pesanan',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/wishlist',
+        builder: (context, state) =>
+            const _PlaceholderPage(title: 'Wishlist', useGradientHeader: true),
+      ),
+      GoRoute(
+        path: '/address',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Alamat Tersimpan',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/payment-method',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Metode Pembayaran',
+          useGradientHeader: true,
+        ),
+      ),
+      GoRoute(
+        path: '/profile-edit',
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Edit Profile',
+          useGradientHeader: true,
+        ),
+      ),
     ],
   );
 });
@@ -84,10 +179,26 @@ class _MainShell extends StatelessWidget {
         currentIndex: index,
         onTap: (value) => context.go(_tabs[value]),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.report_gmailerrorred_outlined), activeIcon: Icon(Icons.report_gmailerrorred), label: 'Lapor'),
-          BottomNavigationBarItem(icon: Icon(Icons.storefront_outlined), activeIcon: Icon(Icons.storefront), label: 'Market'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.report_gmailerrorred_outlined),
+            activeIcon: Icon(Icons.report_gmailerrorred),
+            label: 'Lapor',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.storefront_outlined),
+            activeIcon: Icon(Icons.storefront),
+            label: 'Market',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -115,10 +226,7 @@ class _PlaceholderPage extends StatelessWidget {
     );
 
     if (useGradientHeader) {
-      return TopCurvedHeaderLayout(
-        title: title,
-        child: content,
-      );
+      return TopCurvedHeaderLayout(title: title, child: content);
     }
 
     return Scaffold(

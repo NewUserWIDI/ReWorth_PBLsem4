@@ -8,6 +8,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../features/auth/application/auth_controller.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/loading_view.dart';
+import '../../application/cart_controller.dart';
 import '../../application/market_controller.dart';
 import '../../domain/market_product.dart';
 
@@ -44,13 +45,12 @@ class _MarketPageState extends ConsumerState<MarketPage> {
             await ref.read(marketProductsProvider.future);
           },
           child: productsAsync.when(
-            loading: () => const LoadingView(message: 'Memuat produk mini market...'),
+            loading: () =>
+                const LoadingView(message: 'Memuat produk mini market...'),
             error: (error, _) => ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(AppSpacing.s16),
-              children: [
-                _MarketError(message: error.toString()),
-              ],
+              children: [_MarketError(message: error.toString())],
             ),
             data: (products) {
               final categories = _buildCategories(products);
@@ -74,19 +74,22 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                   if (filteredProducts.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 34),
-                      child: EmptyState(message: 'Belum ada produk tersedia untuk filter ini.'),
+                      child: EmptyState(
+                        message: 'Belum ada produk tersedia untuk filter ini.',
+                      ),
                     )
                   else
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: filteredProducts.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.62,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.62,
+                          ),
                       itemBuilder: (context, index) {
                         final product = filteredProducts[index];
                         return _ProductCard(
@@ -102,10 +105,21 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                             });
                           },
                           onTapAdd: () {
+                            ref
+                                .read(cartControllerProvider.notifier)
+                                .addProduct(product);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${product.namaProduk} ditambahkan ke keranjang')),
+                              SnackBar(
+                                content: Text(
+                                  '${product.namaProduk} ditambahkan ke keranjang',
+                                ),
+                              ),
                             );
                           },
+                          onTapCard: () => context.push(
+                            '/market/product/${product.idProduk}',
+                            extra: product,
+                          ),
                         );
                       },
                     ),
@@ -206,7 +220,10 @@ class _MarketPageState extends ConsumerState<MarketPage> {
             size: 20,
             color: Color.fromRGBO(122, 122, 122, 0.50),
           ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 30,
+            minHeight: 30,
+          ),
         ),
       ),
     );
@@ -273,7 +290,9 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isActive ? Colors.white : const Color.fromRGBO(17, 17, 17, 0.65),
+                  color: isActive
+                      ? Colors.white
+                      : const Color.fromRGBO(17, 17, 17, 0.65),
                 ),
               ),
             ),
@@ -352,14 +371,21 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   }
 
   List<String> _buildCategories(List<MarketProduct> products) {
-    final fromDb = products.map((p) => p.kategori.trim()).where((v) => v.isNotEmpty).toSet().toList()..sort();
+    final fromDb =
+        products
+            .map((p) => p.kategori.trim())
+            .where((v) => v.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     return ['Semua', ...fromDb];
   }
 
   List<MarketProduct> _filterProducts(List<MarketProduct> products) {
     final query = _searchController.text.trim().toLowerCase();
     return products.where((product) {
-      final passCategory = _selectedCategory == 'Semua' || product.kategori == _selectedCategory;
+      final passCategory =
+          _selectedCategory == 'Semua' || product.kategori == _selectedCategory;
       if (!passCategory) return false;
       if (query.isEmpty) return true;
       return product.namaProduk.toLowerCase().contains(query) ||
@@ -370,10 +396,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
 }
 
 class _ActionIcon extends StatefulWidget {
-  const _ActionIcon({
-    required this.icon,
-    required this.onTap,
-  });
+  const _ActionIcon({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -401,7 +424,9 @@ class _ActionIconState extends State<_ActionIcon> {
           height: 42,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _pressed ? const Color.fromRGBO(91, 191, 61, 0.12) : const Color.fromRGBO(91, 191, 61, 0.05),
+            color: _pressed
+                ? const Color.fromRGBO(91, 191, 61, 0.12)
+                : const Color.fromRGBO(91, 191, 61, 0.05),
             border: Border.all(color: const Color.fromRGBO(91, 191, 61, 0.32)),
           ),
           child: Icon(
@@ -447,12 +472,14 @@ class _ProductCard extends StatefulWidget {
     required this.isFavorite,
     required this.onTapFavorite,
     required this.onTapAdd,
+    required this.onTapCard,
   });
 
   final MarketProduct product;
   final bool isFavorite;
   final VoidCallback onTapFavorite;
   final VoidCallback onTapAdd;
+  final VoidCallback onTapCard;
 
   @override
   State<_ProductCard> createState() => _ProductCardState();
@@ -465,162 +492,182 @@ class _ProductCardState extends State<_ProductCard> {
   @override
   Widget build(BuildContext context) {
     final p = widget.product;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+        onTap: widget.onTapCard,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 156,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F8F5),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: _ProductImage(url: p.gambarUrl),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: GestureDetector(
-                    onTapDown: (_) => setState(() => _pressedFavorite = true),
-                    onTapCancel: () => setState(() => _pressedFavorite = false),
-                    onTapUp: (_) => setState(() => _pressedFavorite = false),
-                    onTap: widget.onTapFavorite,
-                    child: AnimatedScale(
-                      duration: const Duration(milliseconds: 140),
-                      scale: _pressedFavorite ? 0.92 : 1,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                Stack(
+                  children: [
+                    Container(
+                      height: 156,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8F5),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: _ProductImage(url: p.gambarUrl),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTapDown: (_) =>
+                            setState(() => _pressedFavorite = true),
+                        onTapCancel: () =>
+                            setState(() => _pressedFavorite = false),
+                        onTapUp: (_) =>
+                            setState(() => _pressedFavorite = false),
+                        onTap: widget.onTapFavorite,
+                        child: AnimatedScale(
+                          duration: const Duration(milliseconds: 140),
+                          scale: _pressedFavorite ? 0.92 : 1,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.95),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          widget.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                          color: widget.isFavorite ? const Color(0xFFE53935) : const Color(0xFF6B6B6B),
-                          size: 20,
+                            child: Icon(
+                              widget.isFavorite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: widget.isFavorite
+                                  ? const Color(0xFFE53935)
+                                  : const Color(0xFF6B6B6B),
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  p.namaProduk,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                    color: const Color(0xFF111111),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              p.namaProduk,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-                color: const Color(0xFF111111),
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              _rupiah(p.harga),
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF111111),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Stok ${p.stok}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF4FAF3D),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        p.namaToko,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: const Color.fromRGBO(17, 17, 17, 0.58),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 7),
+                Text(
+                  _rupiah(p.harga),
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111111),
                   ),
                 ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTapDown: (_) => setState(() => _pressedAdd = true),
-                  onTapCancel: () => setState(() => _pressedAdd = false),
-                  onTapUp: (_) => setState(() => _pressedAdd = false),
-                  onTap: widget.onTapAdd,
-                  child: AnimatedScale(
-                    duration: const Duration(milliseconds: 140),
-                    scale: _pressedAdd ? 0.94 : 1,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 140),
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF2E7D32), Color(0xFF5BBF3D)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2E7D32).withValues(alpha: _pressedAdd ? 0.16 : 0.22),
-                            blurRadius: _pressedAdd ? 12 : 18,
-                            offset: const Offset(0, 8),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Stok ${p.stok}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF4FAF3D),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            p.namaToko,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color.fromRGBO(17, 17, 17, 0.58),
+                            ),
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTapDown: (_) => setState(() => _pressedAdd = true),
+                      onTapCancel: () => setState(() => _pressedAdd = false),
+                      onTapUp: (_) => setState(() => _pressedAdd = false),
+                      onTap: widget.onTapAdd,
+                      child: AnimatedScale(
+                        duration: const Duration(milliseconds: 140),
+                        scale: _pressedAdd ? 0.94 : 1,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 140),
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF2E7D32), Color(0xFF5BBF3D)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF2E7D32,
+                                ).withValues(alpha: _pressedAdd ? 0.16 : 0.22),
+                                blurRadius: _pressedAdd ? 12 : 18,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
