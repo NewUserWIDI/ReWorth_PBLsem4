@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../shared/widgets/app_button.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../application/auth_controller.dart';
+import '../widgets/premium_auth_widgets.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -15,13 +15,14 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController(text: 'demo@reworth.app');
+  final _emailController = TextEditingController(text: 'demo@reworth.app');
   final _passwordController = TextEditingController(text: 'password123');
   bool _obscurePassword = true;
+  bool _rememberMe = false;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -29,114 +30,167 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
+    final size = MediaQuery.sizeOf(context);
+    final compact = size.width < 370;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
+      backgroundColor: const Color(0xFF020705),
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          Container(
-            height: 164,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF2F6510),
-                  Color(0xFF3B6D11),
-                  Color(0xFF4E8F1D),
-                  Color(0xFFB5FF77),
-                ],
-                stops: [0.0, 0.66, 0.88, 1.0],
-              ),
-            ),
-            child: const SafeArea(
-              bottom: false,
-              child: Center(
-                child: Text(
-                  'Masuk ke ReWorth',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-              decoration: const BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Login akun Anda', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                      const SizedBox(height: AppSpacing.s12),
-                      const Text('Username', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF2E5A14))),
-                      const SizedBox(height: AppSpacing.s8),
-                      _AuthInputField(
-                        controller: _usernameController,
-                        keyboardType: TextInputType.emailAddress,
-                        hint: 'demo@reworth.app',
-                        prefixIcon: Icons.person,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) return 'Username wajib diisi';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.s12),
-                      const Text('Kata Sandi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF2E5A14))),
-                      const SizedBox(height: AppSpacing.s8),
-                      _AuthInputField(
-                        controller: _passwordController,
-                        hint: 'Masukkan kata sandi',
-                        prefixIcon: Icons.lock,
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF355F1C)),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Password wajib diisi';
-                          if (value.length < 8) return 'Password minimal 8 karakter';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 26),
-                      AppButton(
-                        label: 'Login',
-                        loading: auth.isLoading,
-                        onPressed: () async {
-                          if (!_formKey.currentState!.validate()) return;
-
-                          final result = await ref.read(authControllerProvider).login(
-                                email: _usernameController.text,
-                                password: _passwordController.text,
-                              );
-
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
-                          if (result.success) {
-                            context.go('/home');
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 6),
-                      TextButton(
-                        onPressed: () => context.go('/register'),
-                        child: const Text('Belum punya akun? Daftar'),
-                      ),
-                    ],
+          const PremiumAuthBackground(),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    34,
+                    24,
+                    34 + MediaQuery.viewInsetsOf(context).bottom,
                   ),
-                ),
-              ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - 68,
+                    ),
+                    child: Center(
+                      child: GlassAuthCard(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Masuk ke ReWorth',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: compact ? 25 : 28,
+                                  height: 1.15,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Login akun Anda',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  height: 1.45,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white.withValues(alpha: 0.68),
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              GlassTextField(
+                                controller: _emailController,
+                                hintText: 'E-mail',
+                                icon: Icons.mail_outline_rounded,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'E-mail wajib diisi';
+                                  }
+                                  if (!value.contains('@')) {
+                                    return 'Format e-mail belum valid';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              GlassTextField(
+                                controller: _passwordController,
+                                hintText: 'Kata Sandi',
+                                icon: Icons.lock_outline_rounded,
+                                obscureText: _obscurePassword,
+                                textInputAction: TextInputAction.done,
+                                suffixIcon: IconButton(
+                                  splashRadius: 20,
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    color: const Color(0xFFA8F5B8),
+                                    size: 22,
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Kata sandi wajib diisi';
+                                  }
+                                  if (value.length < 8) {
+                                    return 'Minimal 8 karakter';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 14),
+                              _LoginOptionRow(
+                                rememberMe: _rememberMe,
+                                onRememberChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                onForgotPassword: () {},
+                              ),
+                              const SizedBox(height: 28),
+                              PrimaryNeonButton(
+                                label: 'Masuk',
+                                loading: auth.isLoading,
+                                onPressed: () async {
+                                  final isValid =
+                                      _formKey.currentState?.validate() ??
+                                      false;
+                                  if (!isValid) return;
+
+                                  final result = await ref
+                                      .read(authControllerProvider)
+                                      .login(
+                                        email: _emailController.text,
+                                        password: _passwordController.text,
+                                      );
+
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: const Color(0xFF122617),
+                                      behavior: SnackBarBehavior.floating,
+                                      content: Text(
+                                        result.message,
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                  if (result.success) {
+                                    context.go('/home');
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 22),
+                              _AuthSwitchText(
+                                normalText: 'Belum punya akun?',
+                                actionText: 'Daftar',
+                                onTap: () => context.go('/register'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -145,37 +199,97 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 }
 
-class _AuthInputField extends StatelessWidget {
-  const _AuthInputField({
-    required this.controller,
-    required this.hint,
-    required this.prefixIcon,
-    this.validator,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.keyboardType,
+class _LoginOptionRow extends StatelessWidget {
+  const _LoginOptionRow({
+    required this.rememberMe,
+    required this.onRememberChanged,
+    required this.onForgotPassword,
   });
 
-  final TextEditingController controller;
-  final String hint;
-  final IconData prefixIcon;
-  final String? Function(String?)? validator;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final TextInputType? keyboardType;
+  final bool rememberMe;
+  final ValueChanged<bool?> onRememberChanged;
+  final VoidCallback onForgotPassword;
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
-      decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(prefixIcon, color: const Color(0xFF355F1C)),
-        suffixIcon: suffixIcon,
+    return Row(
+      children: [
+        Transform.scale(
+          scale: 0.86,
+          child: Checkbox(
+            value: rememberMe,
+            onChanged: onRememberChanged,
+            activeColor: const Color(0xFF41EA67),
+            checkColor: const Color(0xFF06160B),
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.34),
+              width: 1.2,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+        ),
+        Text(
+          'Ingat saya',
+          style: GoogleFonts.poppins(
+            fontSize: 12.8,
+            color: Colors.white.withValues(alpha: 0.62),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const Spacer(),
+        GestureDetector(
+          onTap: onForgotPassword,
+          child: Text(
+            'Lupa kata sandi?',
+            style: GoogleFonts.poppins(
+              fontSize: 13.2,
+              color: const Color(0xFF41EA67),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AuthSwitchText extends StatelessWidget {
+  const _AuthSwitchText({
+    required this.normalText,
+    required this.actionText,
+    required this.onTap,
+  });
+
+  final String normalText;
+  final String actionText;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          style: GoogleFonts.poppins(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.64),
+          ),
+          children: [
+            TextSpan(text: '$normalText '),
+            TextSpan(
+              text: actionText,
+              style: GoogleFonts.poppins(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF41EA67),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
