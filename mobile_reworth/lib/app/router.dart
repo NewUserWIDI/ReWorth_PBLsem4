@@ -5,7 +5,7 @@ import 'package:mobile_reworth/core/constants/app_spacing.dart';
 import 'package:mobile_reworth/features/auth/application/auth_controller.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/home_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart';
-import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
 import 'package:mobile_reworth/features/cart/presentation/pages/cart_page.dart';
@@ -64,7 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/profile',
-            builder: (context, state) => const ProfilePage(),
+            builder: (context, state) => const _PlaceholderPage(
+              title: 'Profile',
+              useGradientHeader: true,
+            ),
           ),
         ],
       ),

@@ -4,7 +4,7 @@ class ProfileUser {
   final String fotoProfil;
   final int totalPoin;
   final int laporanValid;
-  final int jumlahPoin;
+  final int setorSampahKg;
 
   ProfileUser({
     required this.nama,
@@ -12,6 +12,6 @@ class ProfileUser {
     required this.fotoProfil,
     required this.totalPoin,
     required this.laporanValid,
-    required this.jumlahPoin,
+    required this.setorSampahKg,
   });
 }
