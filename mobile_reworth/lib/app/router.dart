@@ -12,6 +12,7 @@ import 'package:mobile_reworth/features/market/domain/market_product.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/product_detail_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/wishlist_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/seller_registration/presentation/pages/seller_registration_page.dart';
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
@@ -63,10 +64,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/profile',
-            builder: (context, state) => const _PlaceholderPage(
-              title: 'Profile',
-              useGradientHeader: true,
-            ),
+            builder: (context, state) => const ProfilePage(),
           ),
         ],
       ),

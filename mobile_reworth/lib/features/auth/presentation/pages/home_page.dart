@@ -119,7 +119,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                           statusColor: activities[i].statusColor,
                           icon: activities[i].icon,
                         ),
-                        if (i != activities.length - 1) const SizedBox(height: 10),
+                        if (i != activities.length - 1)
+                          const SizedBox(height: 10),
                       ],
                       if (activities.isEmpty)
                         Padding(
@@ -215,10 +216,7 @@ class _GreetingHeader extends StatelessWidget {
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar({
-    required this.controller,
-    required this.onChanged,
-  });
+  const _SearchBar({required this.controller, required this.onChanged});
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -251,7 +249,15 @@ class _SearchBar extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF111111),
                 ),
-                decoration: InputDecoration.collapsed(
+                decoration: InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                   hintText: 'Cari aktivitas',
                   hintStyle: GoogleFonts.poppins(
                     fontSize: 14,
@@ -325,6 +331,7 @@ class _TotalPointCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
+        width: double.infinity,
         height: 112,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -622,6 +629,7 @@ class _StreakRewardCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
+        width: double.infinity,
         height: 162,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
@@ -732,12 +740,11 @@ class _StreakRewardCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Yuk Kumpulkan Poin dan Dapatkan Reward!',
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
-                            fontSize: 19,
+                            fontSize: 16,
                             height: 1.2,
-                            letterSpacing: -0.2,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
@@ -745,12 +752,12 @@ class _StreakRewardCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   LayoutBuilder(
                     builder: (context, constraints) {
                       const nodeSize = 18.0;
                       const lineHeight = 4.0;
-                      const rightReserved = 132.0;
+                      const rightReserved = 116.0;
                       final usableWidth = (constraints.maxWidth - rightReserved)
                           .clamp(120.0, constraints.maxWidth);
                       final centerY = nodeSize / 2;
@@ -765,7 +772,7 @@ class _StreakRewardCard extends StatelessWidget {
                                 : (nodeSize / 2 + (active - 1) * spacing));
 
                       return SizedBox(
-                        height: 76,
+                        height: 58,
                         child: Stack(
                           children: [
                             Positioned(
@@ -846,19 +853,26 @@ class _StreakRewardCard extends StatelessWidget {
                             Positioned(
                               left: 0,
                               width: usableWidth,
-                              top: 40,
+                              top: 34,
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: labels
                                     .map(
-                                      (label) => Text(
-                                        label,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white.withValues(
-                                            alpha: 0.92,
+                                      (label) => SizedBox(
+                                        width: 34,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            label,
+                                            maxLines: 1,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.92,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),

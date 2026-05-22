@@ -88,7 +88,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                             crossAxisCount: 2,
                             mainAxisSpacing: 16,
                             crossAxisSpacing: 16,
-                            childAspectRatio: 0.62,
+                            childAspectRatio: 0.48,
                           ),
                       itemBuilder: (context, index) {
                         final product = filteredProducts[index];
@@ -209,7 +209,15 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                 color: const Color(0xFF111111),
               ),
               cursorColor: AppColors.primary,
-              decoration: InputDecoration.collapsed(
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
                 hintText: 'Cari produk',
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 15,
@@ -511,16 +519,17 @@ class _ProductCardState extends State<_ProductCard> {
               children: [
                 Stack(
                   children: [
-                    Container(
-                      height: 156,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F8F5),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: _ProductImage(url: p.gambarUrl),
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F8F5),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: _ProductImage(url: p.gambarUrl),
+                        ),
                       ),
                     ),
                     Positioned(
@@ -572,22 +581,24 @@ class _ProductCardState extends State<_ProductCard> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    fontSize: 17,
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w600,
-                    height: 1.2,
+                    height: 1.18,
                     color: const Color(0xFF111111),
                   ),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 5),
                 Text(
                   _rupiah(p.harga),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF111111),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const Spacer(),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
