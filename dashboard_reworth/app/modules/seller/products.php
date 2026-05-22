@@ -21,9 +21,10 @@ render_layout('Produk Saya', function (): void {
     <section class="panel">
         <div class="panel-header">
             <h2>Produk Toko</h2>
-            <a class="btn btn-primary" href="<?= e(url('dashboard.php?role=seller&page=product_form')) ?>">Tambah Produk</a>
+            <a class="btn btn-primary" href="<?= e(url('app/modules/seller/product_form.php')) ?>">Tambah Produk</a>
         </div>
         <?php simple_table(['ID', 'Produk', 'Harga', 'Stok', 'Status'], $rows, [4]); ?>
     </section>
     <?php
 });
+

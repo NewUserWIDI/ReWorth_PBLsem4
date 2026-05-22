@@ -7,6 +7,9 @@ import 'package:mobile_reworth/features/auth/presentation/pages/home_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/profile_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/report_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/report_history_page.dart';
 import 'package:mobile_reworth/features/cart/presentation/pages/cart_page.dart';
 import 'package:mobile_reworth/features/market/domain/market_product.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
@@ -42,21 +45,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/welcome',
         builder: (context, state) => const WelcomePage(),
       ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginPage(),
+      ),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
+      
+      // ==================== SHELL ROUTE (BOTTOM NAVIGATION) ====================
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
-          GoRoute(path: '/home', builder: (context, state) => const HomePage()),
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomePage(),
+          ),
+          // ✅ MENGGUNAKAN ReportPage (bukan placeholder)
           GoRoute(
             path: '/report',
-            builder: (context, state) => const _PlaceholderPage(
-              title: 'Laporkan Sampah Liar',
-              useGradientHeader: true,
-            ),
+            builder: (context, state) => const ReportPage(),
           ),
           GoRoute(
             path: '/market',
@@ -68,12 +77,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      
+      // ==================== ROUTES DI LUAR BOTTOM NAVIGATION ====================
+      
+      // ✅ MENGGUNAKAN ReportHistoryPage (bukan placeholder)
       GoRoute(
         path: '/report-history',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Riwayat Laporan',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const ReportHistoryPage(),
       ),
       GoRoute(
         path: '/history',
@@ -100,7 +110,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/seller-registration',
         builder: (context, state) => const SellerRegistrationPage(),
       ),
-      GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
+      GoRoute(
+        path: '/cart',
+        builder: (context, state) => const CartPage(),
+      ),
       GoRoute(
         path: '/market/product/:id',
         builder: (context, state) {
@@ -115,8 +128,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/checkout',
-        builder: (context, state) =>
-            const _PlaceholderPage(title: 'Checkout', useGradientHeader: true),
+        builder: (context, state) => const _PlaceholderPage(
+          title: 'Checkout',
+          useGradientHeader: true,
+        ),
       ),
       GoRoute(
         path: '/order-history',

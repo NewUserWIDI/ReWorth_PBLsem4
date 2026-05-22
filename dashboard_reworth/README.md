@@ -15,11 +15,6 @@ Buka:
 http://localhost:8000/public/login.php
 ```
 
-Jika document root diarahkan langsung ke folder `dashboard_reworth/public`, buka:
-```text
-http://localhost:8000/login.php
-```
-
 Jika memakai XAMPP/Laragon dan project ada di subfolder, buka contoh:
 ```text
 http://localhost/ReWorth_PBLsem4/dashboard_reworth/public/login.php

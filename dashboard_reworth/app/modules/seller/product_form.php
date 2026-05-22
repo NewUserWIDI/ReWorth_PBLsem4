@@ -9,7 +9,7 @@ require_active_seller();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     set_flash('success', 'Produk disimpan ke mock data.');
-    redirect('dashboard.php?role=seller&page=products');
+    redirect('app/modules/seller/products.php');
 }
 
 render_layout('Tambah Produk', function (): void {
@@ -27,3 +27,4 @@ render_layout('Tambah Produk', function (): void {
     </section>
     <?php
 });
+

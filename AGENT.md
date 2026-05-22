@@ -1,4 +1,4 @@
-# AGENT.md � ReWorth V1 Baseline (Terkunci)
+﻿# AGENT.md — ReWorth V1 Baseline (Terkunci)
 
 ## 1) Ringkasan Eksekusi
 - Fokus fase saat ini: frontend mobile pada folder `mobile_reworth`.
@@ -15,8 +15,8 @@ ReWorth adalah platform komunitas untuk pengelolaan sampah berbasis circular eco
 ## 3) Scope V1 Mobile (Yang Wajib Dibangun Sekarang)
 ### In Scope
 - Authentication: register, login, logout.
-- Beranda: total poin, streak, shortcut fitur, aktivitas terbaru,nama user 
-- Lapor Sampah: foto, alamat/lokasi, deskripsi, jenis sampah, tingkat keparahan.
+- Beranda: total poin, streak, shortcut fitur, aktivitas terbaru.
+- Lapor Sampah: edukasi singkat pra-lapor + foto, alamat/lokasi, deskripsi, jenis sampah, tingkat keparahan.
 - Riwayat Laporan: list + detail + status + alasan penolakan.
 - Tukar Poin: reward pulsa/kuota.
 - Mini Market: katalog, kategori, detail produk, wishlist, cart, checkout, riwayat pesanan.
@@ -48,6 +48,9 @@ ReWorth adalah platform komunitas untuk pengelolaan sampah berbasis circular eco
 - Monitoring aktivitas user, DLH, seller, reward, transaksi.
 
 ## 5) Aturan Bisnis Inti V1 (Lock)
+- Saat user menekan menu Lapor Sampah, tampilkan edukasi singkat dulu tentang kriteria laporan yang layak.
+- Laporan tidak disarankan untuk sampah kecil/satu item yang tidak berdampak signifikan karena dapat membebani proses operasional DLH.
+- Laporan yang diprioritaskan: sampah yang mengganggu pejalan kaki, menyumbat gorong-gorong/drainase, mengotori lingkungan secara signifikan, memicu polusi, atau menyebabkan/berpotensi menyebabkan kerusakan fasilitas.
 - Status awal laporan: `menunggu_verifikasi`.
 - Laporan valid: user mendapat 10 poin.
 - Tiap validasi valid menambah streak +1.
@@ -106,7 +109,7 @@ lib/
 2. Bangun fondasi app: theme, router, constants, shared widgets.
 3. Bangun fitur auth (register/login/logout flow).
 4. Bangun beranda (poin, streak, shortcut, aktivitas).
-5. Bangun waste report (form laporan + riwayat + detail).
+5. Bangun waste report (edukasi pra-lapor + form laporan + riwayat + detail).
 6. Implement domain rule poin/streak sesuai lock 10/5.
 7. Bangun rewards (list reward, validasi poin, transaksi penukaran).
 8. Bangun marketplace bertahap: katalog -> detail -> wishlist -> cart -> checkout -> order history.
@@ -119,6 +122,7 @@ lib/
 Mobile dianggap selesai jika:
 - seluruh flow utama berjalan: auth, lapor, riwayat, poin/reward, mini market, profile,
 - aturan bisnis inti berjalan sesuai baseline,
+- edukasi pra-lapor tampil sebelum form laporan dan kriteria kelayakan laporan tersampaikan jelas,
 - navigasi/state antar halaman tidak putus,
 - validasi form inti aktif,
 - tidak ada error kritikal pada alur utama.
@@ -132,6 +136,7 @@ Mobile dianggap selesai jika:
 
 ### Widget/Integration Smoke
 - Login/register.
+- Saat klik Lapor Sampah, edukasi pra-lapor muncul sebelum form.
 - Submit laporan.
 - Cek riwayat + status laporan.
 - Tukar poin reward.
@@ -140,11 +145,14 @@ Mobile dianggap selesai jika:
 ## 12) Alur Fitur Utama
 ### Lapor Sampah
 1. User login.
-2. User isi form laporan dan kirim.
-3. Status jadi `menunggu_verifikasi`.
-4. Nanti DLH verifikasi di dashboard.
-5. Jika valid: +10 poin, streak +1, bonus jika streak ke-5.
-6. Jika ditolak: user lihat alasan penolakan di riwayat.
+2. User menekan menu Lapor Sampah, lalu aplikasi menampilkan edukasi singkat kriteria laporan layak.
+3. Edukasi menekankan bahwa sampah kecil/satu item yang tidak berdampak tidak perlu dilaporkan.
+4. Edukasi menekankan prioritas: gangguan pejalan kaki, sumbatan gorong-gorong, polusi, kerusakan/mengotori fasilitas/lingkungan.
+5. User lanjut isi form laporan dan kirim.
+6. Status jadi `menunggu_verifikasi`.
+7. Nanti DLH verifikasi di dashboard.
+8. Jika valid: +10 poin, streak +1, bonus jika streak ke-5.
+9. Jika ditolak: user lihat alasan penolakan di riwayat.
 
 ### Tukar Poin
 1. User buka halaman reward.
