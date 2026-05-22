@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/report_controller.dart';
+import '../../domain/report.dart';
 import '../../domain/waste_type.dart';
-import '../../domain/severity_level.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_radius.dart';
@@ -46,7 +46,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s24),
             child: const TabBar(
               tabs: [
                 Tab(text: 'Aktif'),
@@ -93,14 +93,14 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.history, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.s16),
             Text(
               'Belum ada laporan $status',
               style: AppTypography.body.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.s16),
             TextButton.icon(
               onPressed: () => controller.loadReportHistory(),
               icon: const Icon(Icons.refresh, size: 16, color: Colors.green),
@@ -121,7 +121,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
       onRefresh: () => controller.loadReportHistory(),
       color: Colors.green,
       child: ListView.builder(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.s16),
         itemCount: reports.length,
         itemBuilder: (context, index) {
           final report = reports[index];
@@ -136,10 +136,10 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     final isCompleted = status == 'selesai';
     
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.s16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.shade200,
@@ -153,24 +153,24 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
         children: [
           // Header Card
           Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(AppSpacing.s16),
             decoration: BoxDecoration(
               color: _getStatusColor(status).withOpacity(0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppRadius.lg),
-                topRight: Radius.circular(AppRadius.lg),
+                topLeft: Radius.circular(AppRadius.r16),
+                topRight: Radius.circular(AppRadius.r16),
               ),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
+                    horizontal: AppSpacing.s8,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: _getWasteTypeColor(report.wasteType),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderRadius: BorderRadius.circular(AppRadius.r12),
                   ),
                   child: Text(
                     'Laporan Sampah - ${report.wasteType.label}',
@@ -188,14 +188,14 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
           
           // Body Card
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(AppSpacing.s16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: AppSpacing.xs),
+                    const SizedBox(width: AppSpacing.s4),
                     Expanded(
                       child: Text(
                         report.street,
@@ -207,11 +207,11 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.s4),
                 Row(
                   children: [
                     Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: AppSpacing.xs),
+                    const SizedBox(width: AppSpacing.s4),
                     Text(
                       _getTimeAgo(report.createdAt),
                       style: AppTypography.caption.copyWith(
@@ -220,18 +220,18 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.s16),
                 
                 // Progress Steps (4 langkah)
                 _buildProgressSteps(report, isCompleted: isCompleted, isRejected: isRejected),
                 
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.s16),
                 
                 // Alasan Penolakan (khusus status ditolak)
                 if (isRejected && report.rejectionReason != null)
                   _buildRejectionReason(report.rejectionReason!),
                 
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.s8),
                 
                 // Tombol Lihat Detail
                 TextButton(
@@ -282,10 +282,10 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.s16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight ?? Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(AppRadius.r12),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -342,10 +342,10 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
   // Widget untuk menampilkan alasan penolakan
   Widget _buildRejectionReason(String reason) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.s16),
       decoration: BoxDecoration(
         color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.r12),
         border: Border.all(color: Colors.red.shade200),
       ),
       child: Column(
@@ -354,7 +354,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
           Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 16),
-              const SizedBox(width: AppSpacing.xs),
+              const SizedBox(width: AppSpacing.s4),
               Text(
                 'Alasan ditolak oleh petugas :',
                 style: AppTypography.caption.copyWith(
@@ -364,7 +364,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.s8),
           Text(
             reason,
             style: AppTypography.body.copyWith(
@@ -401,10 +401,10 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: 4),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.r12),
       ),
       child: Text(
         text,
@@ -454,9 +454,9 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.r16)),
         child: Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.s24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,14 +464,14 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    padding: const EdgeInsets.all(AppSpacing.s8),
                     decoration: BoxDecoration(
                       color: _getWasteTypeColor(report.wasteType),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderRadius: BorderRadius.circular(AppRadius.r12),
                     ),
                     child: const Icon(Icons.delete, color: Colors.white, size: 20),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.s8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,28 +493,28 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                   ),
                 ],
               ),
-              const Divider(height: AppSpacing.md),
+              const Divider(height: AppSpacing.s16),
               _buildDetailRow(Icons.location_on, 'Alamat', report.street),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.s8),
               _buildDetailRow(Icons.location_city, 'Desa/Kelurahan', report.village),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.s8),
               _buildDetailRow(Icons.map, 'Kecamatan', report.district),
-              const SizedBox(height: AppSpacing.sm),
-              _buildDetailRow(Icons.pin_code, 'Kode Pos', report.postalCode),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.s8),
+              _buildDetailRow(Icons.local_post_office_outlined, 'Kode Pos', report.postalCode),
+              const SizedBox(height: AppSpacing.s8),
               _buildDetailRow(Icons.description, 'Deskripsi', report.description),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.s8),
               _buildDetailRow(Icons.category, 'Jenis Sampah', report.wasteType.label),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.s8),
               _buildDetailRow(Icons.warning, 'Tingkat Keparahan', report.severityLevel.label),
               
               if (status == 'ditolak' && report.rejectionReason != null) ...[
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.s16),
                 Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: const EdgeInsets.all(AppSpacing.s16),
                   decoration: BoxDecoration(
                     color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderRadius: BorderRadius.circular(AppRadius.r12),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,7 +526,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                           color: Colors.red.shade700,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.s4),
                       Text(
                         report.rejectionReason!,
                         style: AppTypography.body.copyWith(
@@ -539,7 +539,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                 ),
               ],
               
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.s24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -547,9 +547,9 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderRadius: BorderRadius.circular(AppRadius.r12),
                     ),
                   ),
                   child: Text(
@@ -572,7 +572,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: AppColors.textSecondary),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.s8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

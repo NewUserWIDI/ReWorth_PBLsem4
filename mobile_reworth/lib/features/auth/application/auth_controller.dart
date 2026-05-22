@@ -1,12 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/auth_repository.dart';
-import '../data/mock_auth_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/supabase_auth_repository.dart';
 import '../domain/app_user.dart';
 import '../domain/auth_action_result.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return MockAuthRepository();
+  return SupabaseAuthRepository(Supabase.instance.client);
 });
 
 final authControllerProvider = ChangeNotifierProvider<AuthController>((ref) {
@@ -81,3 +82,4 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 }
+

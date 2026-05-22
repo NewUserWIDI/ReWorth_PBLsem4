@@ -16,8 +16,25 @@ class ProfilePage extends ConsumerWidget {
     final state = ref.watch(profileControllerProvider);
     final user = state.user;
 
-    if (state.isLoading || user == null) {
+    if (state.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Data profile belum tersedia'),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () => ref.read(profileControllerProvider.notifier).loadProfile(),
+                child: const Text('Coba lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return AuthHeaderSheetLayout(

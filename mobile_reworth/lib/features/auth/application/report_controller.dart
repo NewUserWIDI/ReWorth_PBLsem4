@@ -27,9 +27,9 @@ class ReportState {
     this.isLoading = false,
     this.isSubmitting = false,
     this.imagePath = '',
-    this.imageFile = null,
-    this.selectedWasteType = null,
-    this.selectedSeverity = null,
+    this.imageFile,
+    this.selectedWasteType,
+    this.selectedSeverity,
     this.allReports = const [],
     this.errors = const {},
   });

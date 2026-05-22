@@ -7,7 +7,6 @@ import 'package:mobile_reworth/features/auth/presentation/pages/home_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
-import 'package:mobile_reworth/features/auth/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/report_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/report_history_page.dart';
 import 'package:mobile_reworth/features/cart/presentation/pages/cart_page.dart';

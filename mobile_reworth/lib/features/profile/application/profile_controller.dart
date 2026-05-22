@@ -1,25 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/mock_profile_repository.dart';
+import '../data/profile_repository.dart';
+import '../data/supabase_profile_repository.dart';
 import 'profile_state.dart';
+
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  return SupabaseProfileRepository(Supabase.instance.client);
+});
 
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, ProfileState>((ref) {
-      return ProfileController();
+      return ProfileController(ref.watch(profileRepositoryProvider));
     });
 
 class ProfileController extends StateNotifier<ProfileState> {
-  ProfileController() : super(const ProfileState()) {
+  ProfileController(this._repository) : super(const ProfileState()) {
     loadProfile();
   }
 
-  final _repository = MockProfileRepository();
+  final ProfileRepository _repository;
 
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true);
 
-    final user = await _repository.getProfile();
-
-    state = state.copyWith(isLoading: false, user: user);
+    try {
+      final user = await _repository.getProfile();
+      state = state.copyWith(isLoading: false, user: user);
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../application/report_controller.dart';
+import '../../application/report_controller.dart';
 import '../../domain/waste_type.dart';
 import '../../domain/severity_level.dart';
 
