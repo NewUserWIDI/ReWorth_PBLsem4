@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../core/helpers.php';
 require_once __DIR__ . '/../core/auth.php';
+require_once __DIR__ . '/../core/supabase.php';
 require_once __DIR__ . '/sidebar.php';
 require_once __DIR__ . '/topbar.php';
 require_once __DIR__ . '/footer.php';
@@ -15,11 +17,11 @@ function render_layout(string $title, callable $content): void
     <!doctype html>
     <html lang="id">
     <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title><?= e($title) ?> - <?= e(APP_NAME) ?></title>
-        <link rel="stylesheet" href="<?= e(url('public/assets/css/app.css')) ?>">
-        <link rel="stylesheet" href="<?= e(url('public/assets/css/dashboard.css')) ?>">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= e($title) ?> - <?= e(APP_NAME) ?></title>
+    <link rel="stylesheet" href="<?= url('public/assets/asset/css/app.css') ?>">
+    <link rel="stylesheet" href="<?= url('public/assets/asset/css/dashboard.css') ?>">
     </head>
     <body>
         <div class="dashboard-shell">

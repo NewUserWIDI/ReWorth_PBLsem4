@@ -8,6 +8,8 @@ import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/auth/presentation/pages/register_page.dart';
 import '../features/auth/presentation/pages/welcome_page.dart';
+import '../features/auth/presentation/pages/report_page.dart';           // ✅ TAMBAHKAN IMPORT INI
+import '../features/auth/presentation/pages/report_history_page.dart';   // ✅ TAMBAHKAN IMPORT INI
 import '../shared/widgets/app_card.dart';
 import '../shared/widgets/top_curved_header_layout.dart';
 
@@ -35,16 +37,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/welcome', builder: (context, state) => const WelcomePage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+      
+      // ==================== SHELL ROUTE (BOTTOM NAVIGATION) ====================
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-          GoRoute(path: '/report', builder: (context, state) => const _PlaceholderPage(title: 'Laporkan Sampah Liar', useGradientHeader: true)),
+          
+          //  GANTI: /report - dari PlaceholderPage ke ReportPage
+          GoRoute(path: '/report', builder: (context, state) => const ReportPage()),
+          
           GoRoute(path: '/market', builder: (context, state) => const _PlaceholderPage(title: 'Mini Market')),
           GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
         ],
       ),
-      GoRoute(path: '/report-history', builder: (context, state) => const _PlaceholderPage(title: 'Riwayat Laporan', useGradientHeader: true)),
+      
+      // ==================== ROUTES DI LUAR BOTTOM NAVIGATION ====================
+      
+      // GANTI: /report-history - dari PlaceholderPage ke ReportHistoryPage
+      GoRoute(path: '/report-history', builder: (context, state) => const ReportHistoryPage()),
+      
+      // Routes lainnya (tetap sebagai placeholder untuk sementara)
       GoRoute(path: '/history', builder: (context, state) => const _PlaceholderPage(title: 'Riwayat Laporan', useGradientHeader: true)),
       GoRoute(path: '/rewards', builder: (context, state) => const _PlaceholderPage(title: 'Tukar Poin Reward', useGradientHeader: true)),
       GoRoute(path: '/reward', builder: (context, state) => const _PlaceholderPage(title: 'Tukar Poin Reward', useGradientHeader: true)),
