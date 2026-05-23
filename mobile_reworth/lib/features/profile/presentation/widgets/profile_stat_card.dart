@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 
 class ProfileStatCard extends StatelessWidget {
+<<<<<<< HEAD
   const ProfileStatCard({super.key, required this.value, required this.label});
 
   final String value;
   final String label;
 
+=======
+  final String value;
+  final String label;
+
+  const ProfileStatCard({super.key, required this.value, required this.label});
+
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
   @override
   Widget build(BuildContext context) {
     return Expanded(

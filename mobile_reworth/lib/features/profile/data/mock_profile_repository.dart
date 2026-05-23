@@ -6,7 +6,11 @@ class MockProfileRepository implements ProfileRepository {
   Future<ProfileUser> getProfile() async {
     await Future.delayed(const Duration(milliseconds: 500));
 
+<<<<<<< HEAD
     return const ProfileUser(
+=======
+    return ProfileUser(
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
       nama: 'Fatma Azzahhra',
       email: 'fatma@gmail.com',
       fotoProfil: 'https://i.pravatar.cc/300',

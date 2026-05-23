@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ProfileMenuTile extends StatelessWidget {
+<<<<<<< HEAD
+=======
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final Widget? trailing;
+
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
   const ProfileMenuTile({
     super.key,
     required this.icon,
@@ -10,12 +19,15 @@ class ProfileMenuTile extends StatelessWidget {
     this.trailing,
   });
 
+<<<<<<< HEAD
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
   final Widget? trailing;
 
+=======
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -30,7 +42,11 @@ class ProfileMenuTile extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               blurRadius: 10,
+<<<<<<< HEAD
               color: Colors.black.withValues(alpha: 0.05),
+=======
+              color: Colors.black.withOpacity(0.05),
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
               offset: const Offset(0, 4),
             ),
           ],
@@ -41,10 +57,17 @@ class ProfileMenuTile extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
+<<<<<<< HEAD
                 color: const Color(0xFFEEF7E8),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, color: const Color(0xFF2E7D32)),
+=======
+                color: const Color(0xffEEF7E8),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: const Color(0xff2E7D32)),
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -69,7 +92,11 @@ class ProfileMenuTile extends StatelessWidget {
             trailing ??
                 const Icon(
                   Icons.chevron_right_rounded,
+<<<<<<< HEAD
                   color: Color(0xFF2E7D32),
+=======
+                  color: Color(0xff2E7D32),
+>>>>>>> e6c0d4058b20247b1e099610751b5cafa9f02321
                   size: 28,
                 ),
           ],
