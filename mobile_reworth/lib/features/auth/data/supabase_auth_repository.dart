@@ -39,7 +39,32 @@ class SupabaseAuthRepository implements AuthRepository {
     final user = response.user;
     if (user == null) return null;
 
-    await _upsertProfileRow(
+    // Supabase may return a user without an active session when email
+    // confirmation is enabled. For this app flow, registration still enters
+    // the app immediately using the signup user data.
+    final fallbackUser = _mapToAppUser(
+      user,
+      {
+        'nama': request.nama,
+        'nomor_hp': request.nomorHp,
+        'email': request.email,
+        'total_poin': 0,
+        'laporan_valid': 0,
+      },
+    );
+
+    if (_client.auth.currentSession == null) {
+      try {
+        await _client.auth.signInWithPassword(
+          email: request.email,
+          password: request.password,
+        );
+      } on AuthException {
+        return fallbackUser;
+      }
+    }
+
+    await _tryUpsertProfileRow(
       userId: user.id,
       nama: request.nama,
       email: request.email,
@@ -47,7 +72,7 @@ class SupabaseAuthRepository implements AuthRepository {
     );
 
     final profile = await _readProfileRow(user.id);
-    return _mapToAppUser(user, profile);
+    return profile == null ? fallbackUser : _mapToAppUser(user, profile);
   }
 
   @override
@@ -77,30 +102,38 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   Future<Map<String, dynamic>?> _readProfileRow(String userId) async {
-    final row = await _client
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
-    return row;
+    try {
+      final row = await _client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+      return row;
+    } catch (_) {
+      return null;
+    }
   }
 
-  Future<void> _upsertProfileRow({
+  Future<void> _tryUpsertProfileRow({
     required String userId,
     required String nama,
     required String email,
     required String nomorHp,
   }) async {
-    await _client.from('profiles').upsert({
-      'id': userId,
-      'nama': nama,
-      'email': email,
-      'nomor_hp': nomorHp,
-      'foto_profil': '',
-      'total_poin': 0,
-      'laporan_valid': 0,
-      'setor_sampah_kg': 0,
-    });
+    try {
+      await _client.from('profiles').upsert({
+        'id': userId,
+        'nama': nama,
+        'email': email,
+        'nomor_hp': nomorHp,
+        'foto_profil': '',
+        'total_poin': 0,
+        'laporan_valid': 0,
+        'setor_sampah_kg': 0,
+      });
+    } catch (_) {
+      // Auth is the source of truth here; profile can be completed later.
+    }
   }
 
   AppUser _mapToAppUser(User user, Map<String, dynamic>? profile) {

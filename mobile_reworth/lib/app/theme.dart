@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_radius.dart';
 import '../core/constants/app_typography.dart';
 
 ThemeData buildAppTheme() {
   final base = ThemeData(useMaterial3: true, fontFamily: 'Poppins');
+  final poppinsTextTheme = GoogleFonts.poppinsTextTheme(base.textTheme);
 
   return base.copyWith(
     scaffoldBackgroundColor: AppColors.background,
@@ -21,7 +23,7 @@ ThemeData buildAppTheme() {
       bodyMedium: AppTypography.body,
       bodySmall: AppTypography.caption,
       labelLarge: AppTypography.button,
-    ).apply(fontFamily: 'Poppins'),
+    ).merge(poppinsTextTheme).apply(fontFamily: 'Poppins'),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.textPrimary,
@@ -87,3 +89,4 @@ ThemeData buildAppTheme() {
     ),
   );
 }
+

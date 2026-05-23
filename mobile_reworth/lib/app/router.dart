@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_reworth/core/constants/app_spacing.dart';
@@ -61,7 +63,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/home',
             builder: (context, state) => const HomePage(),
           ),
-          // ✅ MENGGUNAKAN ReportPage (bukan placeholder)
+          // ? MENGGUNAKAN ReportPage (bukan placeholder)
           GoRoute(
             path: '/report',
             builder: (context, state) => const ReportPage(),
@@ -79,7 +81,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       
       // ==================== ROUTES DI LUAR BOTTOM NAVIGATION ====================
       
-      // ✅ MENGGUNAKAN ReportHistoryPage (bukan placeholder)
+      // ? MENGGUNAKAN ReportHistoryPage (bukan placeholder)
       GoRoute(
         path: '/report-history',
         builder: (context, state) => const ReportHistoryPage(),
@@ -187,31 +189,69 @@ class _MainShell extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: index,
-        onTap: (value) => context.go(_tabs[value]),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
+      bottomNavigationBar: Container(
+        height: 78 + MediaQuery.paddingOf(context).bottom,
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report_gmailerrorred_outlined),
-            activeIcon: Icon(Icons.report_gmailerrorred),
-            label: 'Lapor',
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.storefront_outlined),
-            activeIcon: Icon(Icons.storefront),
-            label: 'Market',
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: BottomNavigationBar(
+              currentIndex: index,
+              onTap: (value) => context.go(_tabs[value]),
+              backgroundColor: Colors.white.withValues(alpha: 0.92),
+              selectedItemColor: const Color(0xFF2E7D32),
+              unselectedItemColor: const Color(0x99111111),
+              iconSize: 24,
+              selectedLabelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  activeIcon: Icon(Icons.home),
+                  label: 'Beranda',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.report_gmailerrorred_outlined),
+                  activeIcon: Icon(Icons.report_gmailerrorred),
+                  label: 'Lapor',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.storefront_outlined),
+                  activeIcon: Icon(Icons.storefront),
+                  label: 'Market',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person),
+                  label: 'Profile',
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -247,3 +287,4 @@ class _PlaceholderPage extends StatelessWidget {
     );
   }
 }
+

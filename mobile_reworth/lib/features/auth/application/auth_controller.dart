@@ -30,16 +30,34 @@ class AuthController extends ChangeNotifier {
 
   Future<AuthActionResult> login({required String email, required String password}) async {
     _setLoading(true);
-    final user = await _repository.login(email: email.trim(), password: password);
-    _setLoading(false);
+    try {
+      final user = await _repository
+          .login(email: email.trim(), password: password)
+          .timeout(const Duration(seconds: 20));
 
-    if (user == null) {
-      return const AuthActionResult(success: false, message: 'Email atau kata sandi salah');
+      if (user == null) {
+        return const AuthActionResult(
+          success: false,
+          message: 'Email atau kata sandi salah',
+        );
+      }
+
+      _currentUser = user;
+      notifyListeners();
+      return const AuthActionResult(success: true, message: 'Login berhasil');
+    } on AuthException catch (error) {
+      return AuthActionResult(
+        success: false,
+        message: _authErrorMessage(error.message),
+      );
+    } catch (_) {
+      return const AuthActionResult(
+        success: false,
+        message: 'Login gagal. Periksa koneksi dan data akun Anda.',
+      );
+    } finally {
+      _setLoading(false);
     }
-
-    _currentUser = user;
-    notifyListeners();
-    return const AuthActionResult(success: true, message: 'Login berhasil');
   }
 
   Future<AuthActionResult> register({
@@ -49,37 +67,84 @@ class AuthController extends ChangeNotifier {
     required String password,
   }) async {
     _setLoading(true);
-    final user = await _repository.register(
-      RegisterRequest(
-        nama: nama.trim(),
-        nomorHp: nomorHp.trim(),
-        email: email.trim(),
-        password: password,
-      ),
-    );
-    _setLoading(false);
+    try {
+      final user = await _repository
+          .register(
+            RegisterRequest(
+              nama: nama.trim(),
+              nomorHp: nomorHp.trim(),
+              email: email.trim(),
+              password: password,
+            ),
+          )
+          .timeout(const Duration(seconds: 20));
 
-    if (user == null) {
-      return const AuthActionResult(success: false, message: 'Email sudah terdaftar');
+      if (user == null) {
+        return const AuthActionResult(
+          success: false,
+          message: 'Email sudah terdaftar',
+        );
+      }
+
+      _currentUser = user;
+      notifyListeners();
+      return const AuthActionResult(
+        success: true,
+        message: 'Registrasi berhasil',
+      );
+    } on AuthException catch (error) {
+      return AuthActionResult(
+        success: false,
+        message: _authErrorMessage(error.message),
+      );
+    } catch (_) {
+      return const AuthActionResult(
+        success: false,
+        message: 'Registrasi gagal. Periksa koneksi dan coba lagi.',
+      );
+    } finally {
+      _setLoading(false);
     }
-
-    _currentUser = user;
-    notifyListeners();
-    return const AuthActionResult(success: true, message: 'Registrasi berhasil');
   }
 
   Future<AuthActionResult> logout() async {
     _setLoading(true);
-    await _repository.logout();
-    _currentUser = null;
-    _setLoading(false);
-    notifyListeners();
-    return const AuthActionResult(success: true, message: 'Anda berhasil keluar');
+    try {
+      await _repository.logout();
+      _currentUser = null;
+      notifyListeners();
+      return const AuthActionResult(
+        success: true,
+        message: 'Anda berhasil keluar',
+      );
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
+  }
+
+  String _authErrorMessage(String message) {
+    final lower = message.toLowerCase();
+
+    if (lower.contains('invalid login credentials')) {
+      return 'Email atau kata sandi salah';
+    }
+    if (lower.contains('email rate limit')) {
+      return 'Terlalu banyak percobaan. Coba lagi sebentar.';
+    }
+    if (lower.contains('already registered') ||
+        lower.contains('user already registered')) {
+      return 'Email sudah terdaftar';
+    }
+    if (lower.contains('email not confirmed')) {
+      return 'Email belum dikonfirmasi. Cek inbox Anda terlebih dahulu.';
+    }
+
+    return message.isEmpty ? 'Terjadi kesalahan autentikasi' : message;
   }
 }
 

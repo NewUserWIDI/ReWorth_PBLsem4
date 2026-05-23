@@ -273,6 +273,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                       );
 
                                   if (!context.mounted) return;
+
+                                  if (result.success) {
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                      if (context.mounted) {
+                                        context.go('/home');
+                                      }
+                                    });
+                                    return;
+                                  }
+
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       backgroundColor: const Color(0xFF122617),
@@ -285,10 +296,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                       ),
                                     ),
                                   );
-
-                                  if (result.success) {
-                                    context.go('/home');
-                                  }
                                 },
                               ),
                               const SizedBox(height: 22),
