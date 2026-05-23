@@ -6,7 +6,7 @@ function render_footer(): void
 {
     ?>
     <footer class="footer">
-        <span>ReWorth Dashboard V1 - PHP Native mock-first.</span>
+        <span>&copy; 2026 ReWorth. All rights reserved.</span>
     </footer>
     <?php
 }
