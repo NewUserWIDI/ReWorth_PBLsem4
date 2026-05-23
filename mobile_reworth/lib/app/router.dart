@@ -5,7 +5,6 @@ import 'package:mobile_reworth/core/constants/app_spacing.dart';
 import 'package:mobile_reworth/features/auth/application/auth_controller.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/home_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart';
-import 'package:mobile_reworth/features/auth/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/report_page.dart';
