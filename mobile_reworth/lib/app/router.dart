@@ -188,71 +188,106 @@ class _MainShell extends StatelessWidget {
     final index = _indexFromLocation(location);
 
     return Scaffold(
+      extendBody: true,
       body: child,
-      bottomNavigationBar: Container(
-        height: 78 + MediaQuery.paddingOf(context).bottom,
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(28),
-            topRight: Radius.circular(28),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
-            ),
-          ],
-        ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(28),
-            topRight: Radius.circular(28),
-          ),
+          borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: BottomNavigationBar(
-              currentIndex: index,
-              onTap: (value) => context.go(_tabs[value]),
-              backgroundColor: Colors.white.withValues(alpha: 0.92),
-              selectedItemColor: const Color(0xFF2E7D32),
-              unselectedItemColor: const Color(0x99111111),
-              iconSize: 24,
-              selectedLabelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1F12).withValues(alpha: 0.94),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.28),
+                    blurRadius: 28,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
               ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+              child: BottomNavigationBar(
+                currentIndex: index,
+                onTap: (value) => context.go(_tabs[value]),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: const Color(0xFF8EEA5B),
+                unselectedItemColor: Colors.white.withValues(alpha: 0.55),
+                iconSize: 24,
+                selectedLabelStyle: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                type: BottomNavigationBarType.fixed,
+                items: [
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.home_outlined),
+                    activeIcon: _ActiveNavIcon(
+                      child: const Icon(Icons.home),
+                    ),
+                    label: 'Beranda',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.report_gmailerrorred_outlined),
+                    activeIcon: _ActiveNavIcon(
+                      child: const Icon(Icons.report_gmailerrorred),
+                    ),
+                    label: 'Lapor',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.storefront_outlined),
+                    activeIcon: _ActiveNavIcon(
+                      child: const Icon(Icons.storefront),
+                    ),
+                    label: 'Market',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.person_outline),
+                    activeIcon: _ActiveNavIcon(
+                      child: const Icon(Icons.person),
+                    ),
+                    label: 'Profile',
+                  ),
+                ],
               ),
-              type: BottomNavigationBarType.fixed,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined),
-                  activeIcon: Icon(Icons.home),
-                  label: 'Beranda',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.report_gmailerrorred_outlined),
-                  activeIcon: Icon(Icons.report_gmailerrorred),
-                  label: 'Lapor',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.storefront_outlined),
-                  activeIcon: Icon(Icons.storefront),
-                  label: 'Market',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_outline),
-                  activeIcon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ActiveNavIcon extends StatelessWidget {
+  const _ActiveNavIcon({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8EEA5B).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8EEA5B).withValues(alpha: 0.18),
+            blurRadius: 18,
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

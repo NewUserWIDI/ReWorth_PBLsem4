@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ReWorth membutuhkan kamera untuk mengambil foto sampah.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>ReWorth membutuhkan lokasi untuk menandai titik laporan sampah.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ReWorth membutuhkan akses galeri untuk mengunggah foto sampah.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

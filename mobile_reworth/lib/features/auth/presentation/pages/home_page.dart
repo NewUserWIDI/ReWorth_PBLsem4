@@ -6,52 +6,45 @@ import 'package:go_router/go_router.dart';
 
 import '../../application/auth_controller.dart';
 
-const _pagePadding = 20.0;
+const _pagePadding = 16.0;
 
 const _headerGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  stops: [0.0, 0.45, 1.0],
+  begin: Alignment.bottomLeft,
+  end: Alignment.topRight,
+  stops: [0.0, 0.52, 0.72, 1.0],
   colors: [
-    Color(0xFF111411),
-    Color(0xFF1A2A16),
+    Color(0xFF081F12),
+    Color(0xFF13321B),
+    Color(0xFF15391D),
     Color(0xFF2E7D32),
   ],
 );
 
 const _premiumCardGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  stops: [0.0, 0.5, 1.0],
+  begin: Alignment.bottomLeft,
+  end: Alignment.topRight,
+  stops: [0.0, 0.63, 0.81, 0.97],
   colors: [
-    Color(0xFF163018),
-    Color(0xFF1F5E23),
+    Color(0xFF1B4A22),
+    Color(0xFF2E7D32),
     Color(0xFF4FAF3D),
+    Color(0xFF8EEA5B),
   ],
 );
 
 const _featureCardGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  stops: [0.0, 0.45, 1.0],
+  begin: Alignment.bottomLeft,
+  end: Alignment.topRight,
+  stops: [0.0, 0.58, 0.82, 1.0],
   colors: [
-    Color(0xFF163018),
-    Color(0xFF1F5E23),
-    Color(0xFF3A8B34),
+    Color(0xFF1B4A22),
+    Color(0xFF2E7D32),
+    Color(0xFF4FAF3D),
+    Color(0xFF8EEA5B),
   ],
 );
 
-const _streakGradient = LinearGradient(
-  begin: Alignment.centerLeft,
-  end: Alignment.centerRight,
-  stops: [0.0, 0.17, 0.50, 1.0],
-  colors: [
-    Color(0xFF163B1D),
-    Color(0xFF245C2B),
-    Color(0xFF3F9B3A),
-    Color(0xFF79D84C),
-  ],
-);
+const _streakGradient = _featureCardGradient;
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -89,9 +82,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF10130F),
+      backgroundColor: const Color(0xFF081F12),
       body: Container(
-        color: const Color(0xFF10130F),
+        color: const Color(0xFF081F12),
         child: Stack(
           children: [
             const _BottomAmbientGlow(),
@@ -103,13 +96,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _HeaderSection(name: _firstName(userName)),
-                      _SearchBar(
-                        controller: _searchController,
-                        onChanged: (_) => setState(() {}),
+                      _TopHeroSection(
+                        name: _firstName(userName),
+                        searchController: _searchController,
+                        onSearchChanged: (_) => setState(() {}),
                       ),
-                      const SizedBox(height: 16),
-                      const _HomeBanner(),
                       const SizedBox(height: 20),
                       _TotalPointCard(points: points),
                       const SizedBox(height: 16),
@@ -223,71 +214,91 @@ class _BottomAmbientGlow extends StatelessWidget {
   }
 }
 
-class _HeaderSection extends StatelessWidget {
-  const _HeaderSection({required this.name});
+class _TopHeroSection extends StatelessWidget {
+  const _TopHeroSection({
+    required this.name,
+    required this.searchController,
+    required this.onSearchChanged,
+  });
 
   final String name;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 160,
-      margin: const EdgeInsets.fromLTRB(0, 0, 0, 16),
-      decoration: const BoxDecoration(gradient: _headerGradient),
+      padding: const EdgeInsets.fromLTRB(0, 24, 0, 18),
+      clipBehavior: Clip.antiAlias,
+      decoration: const BoxDecoration(
+        color: Color(0xFF081F12),
+        gradient: _headerGradient,
+      ),
       child: Stack(
         children: [
           const _HeaderGlow(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(_pagePadding, 24, _pagePadding, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'selamat datang',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.70),
-                        ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'selamat datang',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.72),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              height: 1.25,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 30,
-                          height: 1.05,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.04),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      width: 1.5,
                     ),
-                  ),
-                  child: Icon(
-                    Icons.notifications_none_rounded,
-                    size: 22,
-                    color: Colors.white.withValues(alpha: 0.92),
-                  ),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.notifications_none_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              _SearchBar(
+                controller: searchController,
+                onChanged: onSearchChanged,
+              ),
+              const SizedBox(height: 14),
+              const _HomeBanner(),
+            ],
           ),
         ],
       ),
@@ -301,20 +312,23 @@ class _HeaderGlow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: -42,
-      right: -54,
-      child: Opacity(
-        opacity: 0.10,
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 38, sigmaY: 38),
-          child: Container(
-            width: 160,
-            height: 160,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [Color(0xFFB7F164), Colors.transparent],
-              ),
+      top: -130,
+      right: -120,
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 150, sigmaY: 150),
+        child: Container(
+          width: 360,
+          height: 360,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                const Color(0xFFB5FF77).withValues(alpha: 0.95),
+                const Color(0xFF6BD544).withValues(alpha: 0.55),
+                const Color(0xFF2E7D32).withValues(alpha: 0.25),
+                const Color(0xFF2E7D32).withValues(alpha: 0),
+              ],
+              stops: const [0.0, 0.32, 0.58, 1.0],
             ),
           ),
         ),
@@ -332,20 +346,20 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: 52,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(18),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.search_rounded,
-              size: 20,
-              color: Color(0x807A7A7A),
+              size: 18,
+              color: const Color(0xFF111111).withValues(alpha: 0.45),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -353,7 +367,7 @@ class _SearchBar extends StatelessWidget {
                 controller: controller,
                 onChanged: onChanged,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFF111111),
                 ),
@@ -365,9 +379,9 @@ class _SearchBar extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   hintText: 'Search',
                   hintStyle: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                    color: Color(0x6B111111),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0x73111111),
                   ),
                 ),
               ),
@@ -385,18 +399,13 @@ class _HomeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _pagePadding),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-        child: SizedBox(
+        borderRadius: BorderRadius.circular(15),
+        child: Image.asset(
+          'assets/images/banner_home.png',
           width: double.infinity,
-          child: AspectRatio(
-            aspectRatio: 16 / 8,
-            child: Image.asset(
-              'assets/images/banner_home.png',
-              fit: BoxFit.cover,
-            ),
-          ),
+          fit: BoxFit.fitWidth,
         ),
       ),
     );
@@ -417,7 +426,7 @@ class _TotalPointCard extends StatelessWidget {
         height: 112,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           gradient: _premiumCardGradient,
           boxShadow: [
             BoxShadow(
@@ -449,18 +458,18 @@ class _TotalPointCard extends StatelessWidget {
                   const Text(
                     'TOTAL POIN',
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 1.1,
-                      color: Color(0xD1FFFFFF),
+                      color: Colors.white,
                     ),
                   ),
                   Text(
                     '$points',
                     style: const TextStyle(
-                      fontSize: 44,
+                      fontSize: 40,
                       height: 1,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
                   ),
@@ -491,16 +500,16 @@ class _FeatureCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       onTap: onTap,
       child: Container(
-        height: 118,
+        height: 105,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18),
           gradient: _featureCardGradient,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 14,
-              offset: const Offset(0, 7),
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -508,32 +517,43 @@ class _FeatureCard extends StatelessWidget {
           clipBehavior: Clip.hardEdge,
           children: [
             Positioned(
-              right: -7,
-              bottom: -8,
-              child: _DecorativeEllipse(size: 96),
+              right: -34,
+              bottom: -44,
+              child: _DecorativeEllipse(size: 124),
             ),
             Positioned(
-              right: 12,
-              bottom: -8,
-              child: Opacity(opacity: 0.88, child: _InnerEllipse(size: 72)),
+              right: -18,
+              bottom: -30,
+              child: _InnerEllipse(size: 92),
             ),
             Positioned(
-              right: 6,
-              bottom: 0,
-              child: Image.asset(
-                imageAsset,
-                width: 54,
-                height: 54,
-                fit: BoxFit.contain,
+              right: 8,
+              bottom: 8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.22),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  imageAsset,
+                  width: 76,
+                  height: 76,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18,
-                  height: 1.05,
+                  fontSize: 19,
+                  height: 1.1,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
@@ -559,7 +579,7 @@ class _DecorativeEllipse extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.14),
+          color: Colors.white.withValues(alpha: 0.20),
           width: 1.5,
         ),
         boxShadow: [
@@ -651,12 +671,12 @@ class _ActivityCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: const Color(0xFFFCFCFC),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -705,7 +725,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: activity.statusColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
@@ -714,7 +734,7 @@ class _StatusBadge extends StatelessWidget {
         activity.status,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: activity.statusColor,
         ),
       ),
@@ -739,40 +759,51 @@ class _StreakRewardCard extends StatelessWidget {
         height: 145,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           gradient: _streakGradient,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Stack(
           children: [
             Positioned(
-              right: -8,
-              bottom: -18,
-              child: _DecorativeEllipse(size: 120),
+              right: -42,
+              bottom: -52,
+              child: _DecorativeEllipse(size: 150),
             ),
             Positioned(
-              right: 8,
-              bottom: -8,
-              child: Opacity(opacity: 0.88, child: _InnerEllipse(size: 96)),
+              right: -22,
+              bottom: -34,
+              child: _InnerEllipse(size: 112),
             ),
             Positioned(
-              right: 30,
-              bottom: 26,
-              child: Image.asset(
-                'assets/images/gift.png',
-                width: 54,
-                height: 54,
-                fit: BoxFit.contain,
+              right: 18,
+              bottom: 20,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.22),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/gift.png',
+                  width: 62,
+                  height: 62,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

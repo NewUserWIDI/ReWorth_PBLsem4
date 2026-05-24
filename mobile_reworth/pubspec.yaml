@@ -15,13 +15,13 @@ dependencies:
   google_fonts: ^6.2.1
   supabase_flutter: ^2.8.0
   image_picker: ^1.1.2
-
-   # Tambahkan package equatable
   equatable: ^2.0.5
-  
-  # Package lain yang mungkin diperlukan
   get: ^4.6.6
   intl: ^0.18.1
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
