@@ -56,11 +56,7 @@ class _ReportPageState extends State<ReportPage> {
     'lainnya',
   ];
 
-  static const List<String> _severityLevels = [
-    'rendah',
-    'sedang',
-    'tinggi',
-  ];
+  static const List<String> _severityLevels = ['rendah', 'sedang', 'parah'];
 
   @override
   void initState() {
@@ -89,7 +85,8 @@ class _ReportPageState extends State<ReportPage> {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
-          _locationError = 'Layanan lokasi tidak aktif. Aktifkan GPS terlebih dahulu.';
+          _locationError =
+              'Layanan lokasi tidak aktif. Aktifkan GPS terlebih dahulu.';
           _useManualLocation = true;
           _isLocationLoading = false;
         });
@@ -104,7 +101,8 @@ class _ReportPageState extends State<ReportPage> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         setState(() {
-          _locationError = 'Izin lokasi ditolak. Isi lokasi manual untuk melanjutkan.';
+          _locationError =
+              'Izin lokasi ditolak. Isi lokasi manual untuk melanjutkan.';
           _useManualLocation = true;
           _isLocationLoading = false;
         });
@@ -165,7 +163,10 @@ class _ReportPageState extends State<ReportPage> {
     final kecamatan = _kecamatanController.text.trim();
     final patokan = _patokanController.text.trim();
 
-    if (jalan.isEmpty || kelurahan.isEmpty || kecamatan.isEmpty || patokan.isEmpty) {
+    if (jalan.isEmpty ||
+        kelurahan.isEmpty ||
+        kecamatan.isEmpty ||
+        patokan.isEmpty) {
       setState(() {
         _locationError = 'Lengkapi jalan, kelurahan, kecamatan, dan patokan.';
       });
@@ -240,9 +241,12 @@ class _ReportPageState extends State<ReportPage> {
     }
 
     final bytes = await File(image.path).readAsBytes();
-    final storagePath = 'laporan/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final storagePath =
+        'laporan/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-    await _client.storage.from('laporan-sampah').uploadBinary(
+    await _client.storage
+        .from('laporan-sampah')
+        .uploadBinary(
           storagePath,
           bytes,
           fileOptions: const FileOptions(
@@ -268,25 +272,47 @@ class _ReportPageState extends State<ReportPage> {
 
     try {
       final photoUrl = await _uploadReportImage(user.id);
+      final wasteCandidates = _wasteTypeDbCandidates(_selectedWasteType!);
+      final severityCandidates = _severityDbCandidates(_selectedSeverity!);
+      Object? lastInsertError;
+      var inserted = false;
 
-      await _client.from('laporan_sampah').insert({
-        'id_masyarakat': user.id,
-        'foto_sampah': photoUrl,
-        'latitude': _latitude,
-        'longitude': _longitude,
-        'jalan': _jalanController.text.trim(),
-        'kelurahan': _kelurahanController.text.trim(),
-        'kecamatan': _kecamatanController.text.trim(),
-        'patokan': _patokanController.text.trim(),
-        'deskripsi': _deskripsiController.text.trim(),
-        'jenis_sampah': _selectedWasteType,
-        'tingkat_keparahan': _selectedSeverity,
-        'status_laporan': 'pending',
-        'poin_diberikan': 0,
-        'alasan_ditolak': null,
-        'waktu_lapor': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      });
+      for (final waste in wasteCandidates) {
+        for (final severity in severityCandidates) {
+          try {
+            await _client.from('laporan_sampah').insert({
+              'id_masyarakat': user.id,
+              'foto_sampah': photoUrl,
+              'latitude': _latitude,
+              'longitude': _longitude,
+              'jalan': _jalanController.text.trim(),
+              'kelurahan': _kelurahanController.text.trim(),
+              'kecamatan': _kecamatanController.text.trim(),
+              'patokan': _patokanController.text.trim(),
+              'deskripsi': _deskripsiController.text.trim(),
+              'jenis_sampah': waste,
+              'tingkat_keparahan': severity,
+              'status_laporan': 'pending',
+              'poin_diberikan': 0,
+              'alasan_ditolak': null,
+              'waktu_lapor': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+            inserted = true;
+            break;
+          } catch (e) {
+            lastInsertError = e;
+          }
+        }
+        if (inserted) {
+          break;
+        }
+      }
+
+      if (!inserted) {
+        throw lastInsertError ??
+            Exception('Gagal menyimpan laporan ke database.');
+      }
 
       if (!mounted) return;
       await _showSuccessDialog();
@@ -312,9 +338,7 @@ class _ReportPageState extends State<ReportPage> {
             decoration: BoxDecoration(
               color: const Color(0xFF0C221A),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.10),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.3),
@@ -428,6 +452,7 @@ class _ReportPageState extends State<ReportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final extraBottom = MediaQuery.of(context).padding.bottom + 88;
     return Scaffold(
       backgroundColor: const Color(0xFF001F1A),
       body: Stack(
@@ -477,7 +502,7 @@ class _ReportPageState extends State<ReportPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 22),
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, extraBottom),
                     child: Column(
                       children: [
                         _buildStepper(),
@@ -676,7 +701,8 @@ class _ReportPageState extends State<ReportPage> {
         _infoRuleCard(
           icon: Icons.check_rounded,
           iconColor: const Color(0xFF94FF38),
-          text: 'Sampah mengotori lingkungan secara signifikan atau memicu polusi.',
+          text:
+              'Sampah mengotori lingkungan secara signifikan atau memicu polusi.',
         ),
         _infoRuleCard(
           icon: Icons.check_rounded,
@@ -686,7 +712,8 @@ class _ReportPageState extends State<ReportPage> {
         _infoRuleCard(
           icon: Icons.close_rounded,
           iconColor: const Color(0xFFFFA14A),
-          text: 'Hindari melaporkan sampah kecil yang tidak berdampak signifikan.',
+          text:
+              'Hindari melaporkan sampah kecil yang tidak berdampak signifikan.',
         ),
         const SizedBox(height: 8),
         Container(
@@ -864,7 +891,10 @@ class _ReportPageState extends State<ReportPage> {
   Widget _buildLocationCard() {
     final addressLine =
         '${_jalanController.text}, ${_kelurahanController.text}, ${_kecamatanController.text}';
-    final cityLine = [_kota, _provinsi].whereType<String>().where((e) => e.isNotEmpty).join(', ');
+    final cityLine = [
+      _kota,
+      _provinsi,
+    ].whereType<String>().where((e) => e.isNotEmpty).join(', ');
 
     return Container(
       width: double.infinity,
@@ -909,7 +939,8 @@ class _ReportPageState extends State<ReportPage> {
                     const SizedBox(height: 6),
                     Text(
                       [
-                        if (addressLine.trim().replaceAll(',', '').isNotEmpty) addressLine,
+                        if (addressLine.trim().replaceAll(',', '').isNotEmpty)
+                          addressLine,
                         if (cityLine.isNotEmpty) cityLine,
                       ].join(', '),
                       style: TextStyle(
@@ -939,27 +970,17 @@ class _ReportPageState extends State<ReportPage> {
             ],
           ),
           const SizedBox(height: 12),
-          if (_useManualLocation || _latitude == null || _longitude == null) ...[
-            _glassField(
-              controller: _jalanController,
-              hint: 'Jalan',
-            ),
+          if (_useManualLocation ||
+              _latitude == null ||
+              _longitude == null) ...[
+            _glassField(controller: _jalanController, hint: 'Jalan'),
             const SizedBox(height: 10),
-            _glassField(
-              controller: _kelurahanController,
-              hint: 'Kelurahan',
-            ),
+            _glassField(controller: _kelurahanController, hint: 'Kelurahan'),
             const SizedBox(height: 10),
-            _glassField(
-              controller: _kecamatanController,
-              hint: 'Kecamatan',
-            ),
+            _glassField(controller: _kecamatanController, hint: 'Kecamatan'),
             const SizedBox(height: 10),
           ],
-          _glassField(
-            controller: _patokanController,
-            hint: 'Patokan lokasi',
-          ),
+          _glassField(controller: _patokanController, hint: 'Patokan lokasi'),
         ],
       ),
     );
@@ -1028,13 +1049,29 @@ class _ReportPageState extends State<ReportPage> {
           ),
         ),
         const SizedBox(height: 22),
-        const Text(
-          'Jenis Sampah *',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
+        Row(
+          children: [
+            const Text(
+              'Jenis Sampah *',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: _showWasteTypeInfoSheet,
+              child: const Text(
+                'Info Jenis',
+                style: TextStyle(
+                  color: Color(0xFFB5FF77),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -1046,6 +1083,7 @@ class _ReportPageState extends State<ReportPage> {
                   label: _capitalize(type),
                   selected: _selectedWasteType == type,
                   onTap: () => setState(() => _selectedWasteType = type),
+                  onLongPress: () => _showWasteTypeHint(type),
                 ),
               )
               .toList(),
@@ -1113,12 +1151,19 @@ class _ReportPageState extends State<ReportPage> {
             maxLength: 200,
             style: const TextStyle(color: Colors.white, fontSize: 16),
             decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.transparent,
               hintText: 'Tuliskan deskripsi kondisi sampah...',
               hintStyle: TextStyle(
                 color: Colors.white.withValues(alpha: 0.45),
                 fontSize: 15,
               ),
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
               counterStyle: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 13,
@@ -1220,10 +1265,7 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Widget _photoPreviewCard(
-    XFile image, {
-    required VoidCallback onRemove,
-  }) {
+  Widget _photoPreviewCard(XFile image, {required VoidCallback onRemove}) {
     return Container(
       width: 94,
       height: 94,
@@ -1237,10 +1279,7 @@ class _ReportPageState extends State<ReportPage> {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.file(
-                File(image.path),
-                fit: BoxFit.cover,
-              ),
+              child: Image.file(File(image.path), fit: BoxFit.cover),
             ),
           ),
           Positioned(
@@ -1384,7 +1423,10 @@ class _ReportPageState extends State<ReportPage> {
             fontSize: 14,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
         ),
       ),
     );
@@ -1404,7 +1446,7 @@ class _ReportPageState extends State<ReportPage> {
           end: Alignment.centerRight,
           colors: [Color(0xFFC27A00), Color(0xFFFFB800)],
         );
-      case 'tinggi':
+      case 'parah':
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -1441,13 +1483,16 @@ class _ReportPageState extends State<ReportPage> {
 
     await showModalBottomSheet<void>(
       context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF0A1E19),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (context) {
+        final bottomSafe = MediaQuery.of(context).padding.bottom;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 18 + bottomSafe),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: items
@@ -1551,6 +1596,184 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
+  Future<void> _showWasteTypeInfoSheet() async {
+    final items = [
+      (
+        level: 'Organik',
+        text:
+            'Sampah sisa makhluk hidup yang mudah terurai, seperti sisa makanan atau daun.',
+        color: const Color(0xFF2E7D32),
+      ),
+      (
+        level: 'Anorganik',
+        text:
+            'Sampah non-hayati yang sulit terurai, seperti plastik, kaleng, atau kaca.',
+        color: const Color(0xFF3FBF6A),
+      ),
+      (
+        level: 'B3',
+        text:
+            'Sampah berbahaya/beracun, seperti baterai, lampu, obat, atau cairan kimia.',
+        color: const Color(0xFFFF8A65),
+      ),
+      (
+        level: 'Lainnya',
+        text:
+            'Sampah campuran atau kategori yang belum sesuai tiga jenis utama.',
+        color: const Color(0xFFB7F164),
+      ),
+    ];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0A1E19),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (context) {
+        final bottomSafe = MediaQuery.of(context).padding.bottom;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 18 + bottomSafe),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: items
+                .map(
+                  (item) => Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: item.color),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.level,
+                          style: TextStyle(
+                            color: item.color,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.text,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontSize: 13.5,
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showWasteTypeHint(String type) async {
+    final config = switch (type) {
+      'organik' => (
+        title: 'Jenis Organik',
+        body: 'Sisa makanan, daun, atau sampah hayati yang mudah terurai.',
+        color: const Color(0xFF2E7D32),
+      ),
+      'anorganik' => (
+        title: 'Jenis Anorganik',
+        body:
+            'Plastik, kaleng, kaca, dan material non-hayati yang sulit terurai.',
+        color: const Color(0xFF3FBF6A),
+      ),
+      'b3' => (
+        title: 'Jenis B3',
+        body:
+            'Sampah berbahaya seperti baterai, lampu, obat, atau cairan kimia.',
+        color: const Color(0xFFFF8A65),
+      ),
+      _ => (
+        title: 'Jenis Lainnya',
+        body:
+            'Digunakan untuk jenis sampah campuran atau di luar kategori utama.',
+        color: const Color(0xFFB7F164),
+      ),
+    };
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF10251A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          config.title,
+          style: TextStyle(
+            color: config.color,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          config.body,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Mengerti',
+              style: TextStyle(
+                color: config.color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _wasteTypeDbCandidates(String type) {
+    final normalized = type.trim().toLowerCase();
+    final mapped = switch (normalized) {
+      'organik' => 'Organik',
+      'anorganik' => 'Anorganik',
+      'b3' => 'B3',
+      'lainnya' => 'Lainnya',
+      _ => _capitalize(normalized),
+    };
+    return {mapped, normalized}.toList();
+  }
+
+  List<String> _severityDbCandidates(String severity) {
+    final normalized = severity.trim().toLowerCase();
+    final mapped = switch (normalized) {
+      'rendah' => 'Rendah',
+      'sedang' => 'Sedang',
+      'parah' => 'Parah',
+      'tinggi' => 'Tinggi',
+      _ => _capitalize(normalized),
+    };
+    final aliases = switch (normalized) {
+      'parah' => ['tinggi', 'Tinggi'],
+      'tinggi' => ['parah', 'Parah'],
+      _ => <String>[],
+    };
+    return {mapped, normalized, ...aliases}.toList();
+  }
+
   Widget _buildPrimaryButton() {
     final label = switch (_currentStep) {
       0 => 'Lanjutkan',
@@ -1566,7 +1789,9 @@ class _ReportPageState extends State<ReportPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF94FF38),
           foregroundColor: const Color(0xFF0A1A12),
-          disabledBackgroundColor: const Color(0xFF94FF38).withValues(alpha: 0.6),
+          disabledBackgroundColor: const Color(
+            0xFF94FF38,
+          ).withValues(alpha: 0.6),
           minimumSize: const Size.fromHeight(60),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
@@ -1576,10 +1801,7 @@ class _ReportPageState extends State<ReportPage> {
         ),
         child: Text(
           label,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
       ),
     );

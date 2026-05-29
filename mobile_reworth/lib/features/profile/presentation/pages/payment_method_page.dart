@@ -97,7 +97,30 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     if (result == null) {
       return;
     }
-    await _insertCard(result);
+    try {
+      await _insertCard(result);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF173A2C),
+          content: Text(
+            'Akun bank berhasil ditambahkan.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF732727),
+          content: Text(
+            'Gagal menambah akun bank: $e',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _insertCard(_BankCardFormResult data) async {
@@ -121,10 +144,41 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
       'created_at': DateTime.now().toIso8601String(),
     };
 
-    try {
-      await _client.from('kartu_pembayaran').insert(fullPayload);
-    } catch (_) {
-      await _client.from('kartu_pembayaran').insert(fallbackPayload);
+    final variants = <Map<String, dynamic>>[
+      fullPayload,
+      Map<String, dynamic>.from(fullPayload)..remove('label'),
+      Map<String, dynamic>.from(fullPayload)..remove('created_at'),
+      Map<String, dynamic>.from(fullPayload)
+        ..remove('label')
+        ..remove('created_at'),
+      fallbackPayload,
+      Map<String, dynamic>.from(fallbackPayload)..remove('created_at'),
+      {
+        'id_masyarakat': userId,
+        'nama_bank': data.bankName,
+        'nama_pemilik': data.ownerName,
+        'nomor_rekening': data.accountNumber,
+      },
+      {
+        'user_id': userId,
+        'bank': data.bankName,
+        'rekening': data.accountNumber,
+      },
+    ];
+
+    Object? lastError;
+    for (final payload in variants) {
+      try {
+        await _client.from('kartu_pembayaran').insert(payload);
+        lastError = null;
+        break;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (lastError != null) {
+      throw lastError;
     }
 
     await _loadCards();
@@ -140,10 +194,7 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
           SafeArea(
             child: Column(
               children: [
-                _Header(
-                  title: 'Akun Bank',
-                  onBack: () => context.pop(),
-                ),
+                _Header(title: 'Akun Bank', onBack: () => context.pop()),
                 Expanded(
                   child: Container(
                     margin: const EdgeInsets.only(top: 8),
@@ -413,7 +464,9 @@ class _Header extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
                 ),
                 child: const Icon(
                   Icons.arrow_back_rounded,
@@ -600,7 +653,10 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
         labelStyle: GoogleFonts.poppins(fontSize: 13),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -638,4 +694,3 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
     );
   }
 }
-

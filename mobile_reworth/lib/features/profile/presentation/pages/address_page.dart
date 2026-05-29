@@ -101,7 +101,30 @@ class _AddressPageState extends State<AddressPage> {
     if (result == null) {
       return;
     }
-    await _insertAddress(result);
+    try {
+      await _insertAddress(result);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF173A2C),
+          content: Text(
+            'Alamat berhasil ditambahkan.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF732727),
+          content: Text(
+            'Gagal menambah alamat: $e',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _insertAddress(_AddressFormResult data) async {
@@ -133,10 +156,40 @@ class _AddressPageState extends State<AddressPage> {
       'created_at': DateTime.now().toIso8601String(),
     };
 
-    try {
-      await _client.from('alamat').insert(fullPayload);
-    } catch (_) {
-      await _client.from('alamat').insert(fallbackPayload);
+    final variants = <Map<String, dynamic>>[
+      fullPayload,
+      Map<String, dynamic>.from(fullPayload)..remove('created_at'),
+      fallbackPayload,
+      Map<String, dynamic>.from(fallbackPayload)..remove('created_at'),
+      {
+        'user_id': userId,
+        'jalan': data.street,
+        'kelurahan': data.kelurahan,
+        'kecamatan': data.kecamatan,
+        'patokan': data.landmark,
+      },
+      {
+        'id_masyarakat': userId,
+        'jalan': data.street,
+        'kelurahan': data.kelurahan,
+        'kecamatan': data.kecamatan,
+        'pstokan': data.landmark,
+      },
+    ];
+
+    Object? lastError;
+    for (final payload in variants) {
+      try {
+        await _client.from('alamat').insert(payload);
+        lastError = null;
+        break;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (lastError != null) {
+      throw lastError;
     }
 
     await _loadAddresses();
@@ -152,10 +205,7 @@ class _AddressPageState extends State<AddressPage> {
           SafeArea(
             child: Column(
               children: [
-                _Header(
-                  title: 'Alamat Saya',
-                  onBack: () => context.pop(),
-                ),
+                _Header(title: 'Alamat Saya', onBack: () => context.pop()),
                 Expanded(
                   child: Container(
                     margin: const EdgeInsets.only(top: 8),
@@ -181,7 +231,10 @@ class _AddressPageState extends State<AddressPage> {
           : FloatingActionButton.extended(
               onPressed: _showAddDialog,
               backgroundColor: const Color(0xFF2E7D32),
-              icon: const Icon(Icons.add_location_alt_outlined, color: Colors.white),
+              icon: const Icon(
+                Icons.add_location_alt_outlined,
+                color: Colors.white,
+              ),
               label: Text(
                 'Tambah Alamat',
                 style: GoogleFonts.poppins(
@@ -296,7 +349,9 @@ class _AddressPageState extends State<AddressPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        item.receiver.isEmpty ? 'Alamat Pengiriman' : item.receiver,
+                        item.receiver.isEmpty
+                            ? 'Alamat Pengiriman'
+                            : item.receiver,
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -416,7 +471,9 @@ class _Header extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
                 ),
                 child: const Icon(
                   Icons.arrow_back_rounded,
@@ -466,9 +523,14 @@ class _AddressItem {
   final bool isDefault;
 
   String get fullAddress {
-    final parts = [street, kelurahan, kecamatan, city, province, postalCode]
-        .where((e) => e.trim().isNotEmpty)
-        .toList();
+    final parts = [
+      street,
+      kelurahan,
+      kecamatan,
+      city,
+      province,
+      postalCode,
+    ].where((e) => e.trim().isNotEmpty).toList();
     final basic = parts.join(', ');
     if (landmark.trim().isEmpty) {
       return basic;
@@ -611,11 +673,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                   Expanded(child: _field(_kelurahan, 'Kelurahan')),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _field(
-                      _kecamatan,
-                      'Kecamatan',
-                      requiredField: true,
-                    ),
+                    child: _field(_kecamatan, 'Kecamatan', requiredField: true),
                   ),
                 ],
               ),
@@ -630,12 +688,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
               const SizedBox(height: 10),
               _field(_postal, 'Kode Pos'),
               const SizedBox(height: 10),
-              _field(
-                _landmark,
-                'Patokan',
-                requiredField: true,
-                maxLines: 2,
-              ),
+              _field(_landmark, 'Patokan', requiredField: true, maxLines: 2),
               const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
@@ -680,7 +733,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
         labelStyle: GoogleFonts.poppins(fontSize: 13),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),

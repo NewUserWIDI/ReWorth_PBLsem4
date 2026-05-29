@@ -129,13 +129,15 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                                 crossAxisCount: 2,
                                 mainAxisSpacing: 14,
                                 crossAxisSpacing: 14,
-                                childAspectRatio: 0.77,
+                                childAspectRatio: 0.84,
                               ),
                           itemBuilder: (context, index) {
                             final product = filteredProducts[index];
                             return _ProductCard(
                               product: product,
-                              isFavorite: wishlistIds.contains(product.idProduk),
+                              isFavorite: wishlistIds.contains(
+                                product.idProduk,
+                              ),
                               onTapFavorite: () => ref
                                   .read(wishlistControllerProvider.notifier)
                                   .toggleFavorite(product.idProduk),
@@ -245,11 +247,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.search_rounded,
-            size: 20,
-            color: Color(0xFF8A8A8A),
-          ),
+          const Icon(Icons.search_rounded, size: 20, color: Color(0xFF8A8A8A)),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -298,7 +296,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           ),
         ),
         Container(
-          height: 178,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
@@ -317,8 +314,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
             child: Image.asset(
               'assets/images/banner_market.png',
               width: double.infinity,
-              height: 178,
-              fit: BoxFit.cover,
+              fit: BoxFit.fitWidth,
             ),
           ),
         ),
@@ -700,7 +696,8 @@ class _ProductCardState extends State<_ProductCard> {
                       children: [
                         GestureDetector(
                           onTapDown: (_) => setState(() => _pressedAdd = true),
-                          onTapCancel: () => setState(() => _pressedAdd = false),
+                          onTapCancel: () =>
+                              setState(() => _pressedAdd = false),
                           onTapUp: (_) => setState(() => _pressedAdd = false),
                           onTap: widget.onTapAdd,
                           child: AnimatedScale(
@@ -715,13 +712,16 @@ class _ProductCardState extends State<_ProductCard> {
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [Color(0xFF5BBF3D), Color(0xFF2E7D32)],
+                                  colors: [
+                                    Color(0xFF5BBF3D),
+                                    Color(0xFF2E7D32),
+                                  ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(
-                                      0xFF2E7D32,
-                                    ).withValues(alpha: _pressedAdd ? 0.18 : 0.32),
+                                    color: const Color(0xFF2E7D32).withValues(
+                                      alpha: _pressedAdd ? 0.18 : 0.32,
+                                    ),
                                     blurRadius: _pressedAdd ? 12 : 18,
                                     offset: const Offset(0, 8),
                                   ),

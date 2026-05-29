@@ -35,7 +35,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final userId = client.auth.currentUser?.id;
     if (userId == null) return;
 
-    final columns = ['foto_profil', 'fotoProfil', 'avatar_url', 'profile_photo'];
+    final columns = [
+      'foto_profil',
+      'fotoProfil',
+      'avatar_url',
+      'profile_photo',
+    ];
     for (final col in columns) {
       try {
         final row = await client
@@ -96,13 +101,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final bytes = await picked.readAsBytes();
-      final path = 'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path =
+          'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final buckets = ['profile-photo', 'avatars', 'avatar', 'laporan-sampah'];
       String? publicUrl;
 
       for (final bucket in buckets) {
         try {
-          await client.storage.from(bucket).uploadBinary(
+          await client.storage
+              .from(bucket)
+              .uploadBinary(
                 path,
                 bytes,
                 fileOptions: const FileOptions(
@@ -119,27 +127,64 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         throw Exception('Bucket avatar tidak tersedia.');
       }
 
-      final avatarColumns = ['foto_profil', 'fotoProfil', 'avatar_url', 'profile_photo'];
+      final avatarColumns = [
+        'foto_profil',
+        'fotoProfil',
+        'avatar_url',
+        'profile_photo',
+      ];
       var updated = false;
 
       for (final column in avatarColumns) {
         try {
-          await client
+          final result = await client
               .from('profiles')
               .update({column: publicUrl})
-              .eq('id_masyarakat', userId);
-          updated = true;
-          break;
+              .eq('id_masyarakat', userId)
+              .select()
+              .maybeSingle();
+          if (result != null) {
+            updated = true;
+            break;
+          }
         } catch (_) {}
         try {
-          await client.from('profiles').update({column: publicUrl}).eq('id', userId);
-          updated = true;
-          break;
+          final result = await client
+              .from('profiles')
+              .update({column: publicUrl})
+              .eq('id', userId)
+              .select()
+              .maybeSingle();
+          if (result != null) {
+            updated = true;
+            break;
+          }
         } catch (_) {}
       }
 
       if (!updated) {
-        throw Exception('Kolom foto profil belum sesuai schema profiles.');
+        for (final column in avatarColumns) {
+          try {
+            await client.from('profiles').upsert({
+              'id': userId,
+              column: publicUrl,
+            });
+            updated = true;
+            break;
+          } catch (_) {}
+          try {
+            await client.from('profiles').upsert({
+              'id_masyarakat': userId,
+              column: publicUrl,
+            });
+            updated = true;
+            break;
+          } catch (_) {}
+        }
+      }
+
+      if (!updated) {
+        throw Exception('Data foto profil belum cocok dengan schema profiles.');
       }
 
       if (mounted) {
@@ -149,14 +194,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto profil diperbarui')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Foto profil diperbarui')));
       }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto gagal diunggah, hanya tersimpan lokal')),
+          const SnackBar(
+            content: Text('Foto gagal diunggah, hanya tersimpan lokal'),
+          ),
         );
       }
     } finally {
@@ -329,7 +376,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                       : (avatarUrl.isEmpty
                                             ? null
                                             : NetworkImage(avatarUrl)),
-                                  child: avatarUrl.isEmpty && _localAvatar == null
+                                  child:
+                                      avatarUrl.isEmpty && _localAvatar == null
                                       ? const Icon(
                                           Icons.person_rounded,
                                           color: Color(0xFF94FF38),

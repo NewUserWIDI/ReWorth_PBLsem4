@@ -46,19 +46,53 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     final client = Supabase.instance.client;
     final userId = client.auth.currentUser?.id;
     try {
-      if (userId != null) {
-        try {
-          await client.from('profiles').update({
-            'nama': _nameController.text.trim(),
-            'nomor_hp': _phoneController.text.trim(),
-          }).eq('id_masyarakat', userId);
-        } catch (_) {
-          await client.from('profiles').update({
-            'nama': _nameController.text.trim(),
-            'nomor_hp': _phoneController.text.trim(),
-          }).eq('id', userId);
-        }
+      if (userId == null) {
+        throw Exception('Sesi login tidak ditemukan');
       }
+      final payload = {
+        'nama': _nameController.text.trim(),
+        'nomor_hp': _phoneController.text.trim(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      var saved = false;
+
+      try {
+        final updated = await client
+            .from('profiles')
+            .update(payload)
+            .eq('id', userId)
+            .select()
+            .maybeSingle();
+        saved = updated != null;
+      } catch (_) {}
+
+      if (!saved) {
+        try {
+          final updated = await client
+              .from('profiles')
+              .update(payload)
+              .eq('id_masyarakat', userId)
+              .select()
+              .maybeSingle();
+          saved = updated != null;
+        } catch (_) {}
+      }
+
+      if (!saved) {
+        try {
+          await client.from('profiles').upsert({'id': userId, ...payload});
+          saved = true;
+        } catch (_) {}
+      }
+
+      if (!saved) {
+        await client.from('profiles').upsert({
+          'id_masyarakat': userId,
+          ...payload,
+        });
+      }
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profil berhasil diperbarui')),
@@ -66,9 +100,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       context.pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan profil: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan profil: $e')));
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -175,7 +209,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         labelStyle: GoogleFonts.poppins(fontSize: 13),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
@@ -251,7 +288,9 @@ class _Header extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
                 ),
                 child: const Icon(
                   Icons.arrow_back_rounded,
