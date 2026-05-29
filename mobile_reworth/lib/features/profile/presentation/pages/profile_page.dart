@@ -1,17 +1,174 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../features/auth/application/auth_controller.dart';
 import '../../application/profile_controller.dart';
 import '../widgets/profile_menu_tile.dart';
 import '../widgets/profile_stat_card.dart';
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  final ImagePicker _picker = ImagePicker();
+  XFile? _localAvatar;
+  String? _remoteAvatarUrl;
+  bool _isUploadingAvatar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRemoteAvatar();
+  }
+
+  Future<void> _loadRemoteAvatar() async {
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final columns = ['foto_profil', 'fotoProfil', 'avatar_url', 'profile_photo'];
+    for (final col in columns) {
+      try {
+        final row = await client
+            .from('profiles')
+            .select(col)
+            .eq('id_masyarakat', userId)
+            .maybeSingle();
+        if (row is Map<String, dynamic>) {
+          final value = row[col]?.toString().trim() ?? '';
+          if (value.isNotEmpty && mounted) {
+            setState(() => _remoteAvatarUrl = value);
+            return;
+          }
+        }
+      } catch (_) {}
+
+      try {
+        final row = await client
+            .from('profiles')
+            .select(col)
+            .eq('id', userId)
+            .maybeSingle();
+        if (row is Map<String, dynamic>) {
+          final value = row[col]?.toString().trim() ?? '';
+          if (value.isNotEmpty && mounted) {
+            setState(() => _remoteAvatarUrl = value);
+            return;
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _pickAvatar() async {
+    if (_isUploadingAvatar) return;
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 1600,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _localAvatar = picked;
+      _isUploadingAvatar = true;
+    });
+
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+      }
+      return;
+    }
+
+    try {
+      final bytes = await picked.readAsBytes();
+      final path = 'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final buckets = ['profile-photo', 'avatars', 'avatar', 'laporan-sampah'];
+      String? publicUrl;
+
+      for (final bucket in buckets) {
+        try {
+          await client.storage.from(bucket).uploadBinary(
+                path,
+                bytes,
+                fileOptions: const FileOptions(
+                  contentType: 'image/jpeg',
+                  upsert: true,
+                ),
+              );
+          publicUrl = client.storage.from(bucket).getPublicUrl(path);
+          break;
+        } catch (_) {}
+      }
+
+      if (publicUrl == null) {
+        throw Exception('Bucket avatar tidak tersedia.');
+      }
+
+      final avatarColumns = ['foto_profil', 'fotoProfil', 'avatar_url', 'profile_photo'];
+      var updated = false;
+
+      for (final column in avatarColumns) {
+        try {
+          await client
+              .from('profiles')
+              .update({column: publicUrl})
+              .eq('id_masyarakat', userId);
+          updated = true;
+          break;
+        } catch (_) {}
+        try {
+          await client.from('profiles').update({column: publicUrl}).eq('id', userId);
+          updated = true;
+          break;
+        } catch (_) {}
+      }
+
+      if (!updated) {
+        throw Exception('Kolom foto profil belum sesuai schema profiles.');
+      }
+
+      if (mounted) {
+        setState(() {
+          _remoteAvatarUrl = publicUrl;
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Foto profil diperbarui')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Foto gagal diunggah, hanya tersimpan lokal')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final state = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
     final profileUser = state.user;
@@ -24,7 +181,7 @@ class ProfilePage extends ConsumerWidget {
     final totalPoin = profileUser?.totalPoin ?? authUser?.poin ?? 0;
     final totalLaporan =
         profileUser?.laporanValid ?? authUser?.jumlahLaporanValid ?? 0;
-    final totalSetorKg = profileUser?.setorSampahKg ?? 0;
+    final avatarUrl = _remoteAvatarUrl ?? fotoProfil;
 
     if (state.isLoading) {
       return const Scaffold(
@@ -147,32 +304,70 @@ class ProfilePage extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        Container(
-                          width: 104,
-                          height: 104,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(
-                                0xFF94FF38,
-                              ).withValues(alpha: 0.8),
-                              width: 2.4,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.12,
-                            ),
-                            backgroundImage: fotoProfil.isEmpty
-                                ? null
-                                : NetworkImage(fotoProfil),
-                            child: fotoProfil.isEmpty
-                                ? const Icon(
-                                    Icons.person_rounded,
-                                    color: Color(0xFF94FF38),
-                                    size: 52,
-                                  )
-                                : null,
+                        GestureDetector(
+                          onTap: _pickAvatar,
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 104,
+                                height: 104,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF94FF38,
+                                    ).withValues(alpha: 0.8),
+                                    width: 2.4,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  backgroundImage: _localAvatar != null
+                                      ? FileImage(File(_localAvatar!.path))
+                                      : (avatarUrl.isEmpty
+                                            ? null
+                                            : NetworkImage(avatarUrl)),
+                                  child: avatarUrl.isEmpty && _localAvatar == null
+                                      ? const Icon(
+                                          Icons.person_rounded,
+                                          color: Color(0xFF94FF38),
+                                          size: 52,
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                right: 2,
+                                bottom: 2,
+                                child: Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFF94FF38),
+                                    border: Border.all(
+                                      color: const Color(0xFF0A1A12),
+                                      width: 1.2,
+                                    ),
+                                  ),
+                                  child: _isUploadingAvatar
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(6),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Color(0xFF0A1A12),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.camera_alt_rounded,
+                                          size: 16,
+                                          color: Color(0xFF0A1A12),
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -220,11 +415,6 @@ class ProfilePage extends ConsumerWidget {
                               value: totalLaporan.toString(),
                               label: 'Laporan',
                             ),
-                            const SizedBox(width: 10),
-                            ProfileStatCard(
-                              value: '${totalSetorKg}Kg',
-                              label: 'Sampah',
-                            ),
                           ],
                         ),
                       ],
@@ -247,7 +437,13 @@ class ProfilePage extends ConsumerWidget {
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Akun Bank',
                     subtitle: 'Tambahkan akun bank Anda',
-                    onTap: () {},
+                    onTap: () => context.push('/payment-method'),
+                  ),
+                  ProfileMenuTile(
+                    icon: Icons.location_on_outlined,
+                    title: 'Alamat Saya',
+                    subtitle: 'Kelola alamat pengiriman',
+                    onTap: () => context.push('/address'),
                   ),
                   ProfileMenuTile(
                     icon: Icons.edit_rounded,

@@ -38,7 +38,7 @@ class _ReportPageState extends State<ReportPage> {
   String? _kota;
   String? _provinsi;
   String? _locationError;
-  XFile? _selectedImage;
+  final List<XFile> _selectedImages = [];
   String? _selectedWasteType;
   String? _selectedSeverity;
 
@@ -144,6 +144,10 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_selectedImages.length >= 4) {
+      _showSnack('Maksimal 4 foto sampah.');
+      return;
+    }
     final image = await _picker.pickImage(
       source: source,
       imageQuality: 78,
@@ -151,7 +155,7 @@ class _ReportPageState extends State<ReportPage> {
     );
     if (image == null) return;
     setState(() {
-      _selectedImage = image;
+      _selectedImages.add(image);
     });
   }
 
@@ -183,8 +187,8 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   bool _validateDetailStep() {
-    if (_selectedImage == null) {
-      _showSnack('Foto sampah wajib diunggah.');
+    if (_selectedImages.isEmpty) {
+      _showSnack('Foto sampah minimal 1.');
       return false;
     }
     if (_selectedWasteType == null) {
@@ -230,7 +234,7 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Future<String> _uploadReportImage(String userId) async {
-    final image = _selectedImage;
+    final image = _selectedImages.isEmpty ? null : _selectedImages.first;
     if (image == null) {
       throw Exception('Foto belum dipilih.');
     }
@@ -265,7 +269,7 @@ class _ReportPageState extends State<ReportPage> {
     try {
       final photoUrl = await _uploadReportImage(user.id);
 
-      await _client.from('laporan').insert({
+      await _client.from('laporan_sampah').insert({
         'id_masyarakat': user.id,
         'foto_sampah': photoUrl,
         'latitude': _latitude,
@@ -982,22 +986,46 @@ class _ReportPageState extends State<ReportPage> {
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            _photoPreviewCard(_selectedImage),
-            const SizedBox(width: 10),
-            _pickPhotoCard(
-              icon: Icons.add_a_photo_outlined,
-              label: 'Kamera',
-              onTap: () => _pickImage(ImageSource.camera),
-            ),
-            const SizedBox(width: 10),
-            _pickPhotoCard(
-              icon: Icons.photo_library_outlined,
-              label: 'Galeri',
-              onTap: () => _pickImage(ImageSource.gallery),
-            ),
-          ],
+        Text(
+          'Minimal 1 foto, maksimal 4 foto.',
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.64),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 94,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _selectedImages.length + 2,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              if (index < _selectedImages.length) {
+                return _photoPreviewCard(
+                  _selectedImages[index],
+                  onRemove: () {
+                    setState(() {
+                      _selectedImages.removeAt(index);
+                    });
+                  },
+                );
+              }
+              if (index == _selectedImages.length) {
+                return _pickPhotoCard(
+                  icon: Icons.add_a_photo_outlined,
+                  label: 'Kamera',
+                  onTap: () => _pickImage(ImageSource.camera),
+                );
+              }
+              return _pickPhotoCard(
+                icon: Icons.photo_library_outlined,
+                label: 'Galeri',
+                onTap: () => _pickImage(ImageSource.gallery),
+              );
+            },
+          ),
         ),
         const SizedBox(height: 22),
         const Text(
@@ -1023,13 +1051,29 @@ class _ReportPageState extends State<ReportPage> {
               .toList(),
         ),
         const SizedBox(height: 20),
-        const Text(
-          'Tingkat Keparahan *',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
+        Row(
+          children: [
+            const Text(
+              'Tingkat Keparahan *',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: _showSeverityInfoSheet,
+              child: const Text(
+                'Info Level',
+                style: TextStyle(
+                  color: Color(0xFFB5FF77),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -1041,6 +1085,8 @@ class _ReportPageState extends State<ReportPage> {
                   label: _capitalize(level),
                   selected: _selectedSeverity == level,
                   onTap: () => setState(() => _selectedSeverity = level),
+                  onLongPress: () => _showSeverityHint(level),
+                  gradient: _severityGradient(level),
                 ),
               )
               .toList(),
@@ -1174,7 +1220,10 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Widget _photoPreviewCard(XFile? image) {
+  Widget _photoPreviewCard(
+    XFile image, {
+    required VoidCallback onRemove,
+  }) {
     return Container(
       width: 94,
       height: 94,
@@ -1183,18 +1232,39 @@ class _ReportPageState extends State<ReportPage> {
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         color: Colors.white.withValues(alpha: 0.05),
       ),
-      child: image == null
-          ? Icon(
-              Icons.image_outlined,
-              color: Colors.white.withValues(alpha: 0.5),
-            )
-          : ClipRRect(
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.file(
                 File(image.path),
                 fit: BoxFit.cover,
               ),
             ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.58),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1239,20 +1309,22 @@ class _ReportPageState extends State<ReportPage> {
     required String label,
     required bool selected,
     required VoidCallback onTap,
+    VoidCallback? onLongPress,
+    Gradient? gradient,
   }) {
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: selected
-              ? const Color(0xFF5BE22F).withValues(alpha: 0.2)
-              : Colors.white.withValues(alpha: 0.06),
+          gradient: selected ? gradient : null,
+          color: selected ? null : Colors.white.withValues(alpha: 0.06),
           border: Border.all(
             color: selected
-                ? const Color(0xFF5BE22F)
+                ? Colors.white.withValues(alpha: 0.30)
                 : Colors.white.withValues(alpha: 0.12),
           ),
         ),
@@ -1262,7 +1334,7 @@ class _ReportPageState extends State<ReportPage> {
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: selected
-                ? const Color(0xFF72F247)
+                ? Colors.white
                 : Colors.white.withValues(alpha: 0.82),
           ),
         ),
@@ -1276,14 +1348,36 @@ class _ReportPageState extends State<ReportPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.12),
+            Colors.white.withValues(alpha: 0.04),
+          ],
+        ),
+        border: Border.all(
+          color: const Color(0xFF94FF38).withValues(alpha: 0.40),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF94FF38).withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.transparent,
           hintText: hint,
           hintStyle: TextStyle(
             color: Colors.white.withValues(alpha: 0.5),
@@ -1292,6 +1386,167 @@ class _ReportPageState extends State<ReportPage> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         ),
+      ),
+    );
+  }
+
+  Gradient _severityGradient(String level) {
+    switch (level) {
+      case 'rendah':
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF1F5E23), Color(0xFF5BBF3D)],
+        );
+      case 'sedang':
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFC27A00), Color(0xFFFFB800)],
+        );
+      case 'tinggi':
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFB91C1C), Color(0xFFEF4444)],
+        );
+      default:
+        return const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF5BBF3D)],
+        );
+    }
+  }
+
+  Future<void> _showSeverityInfoSheet() async {
+    final items = [
+      (
+        level: 'Rendah',
+        text:
+            'Volume sedikit (beberapa kantong kecil), tidak berbau menyengat, dan tidak menghalangi jalan.',
+        color: const Color(0xFF2E7D32),
+      ),
+      (
+        level: 'Sedang',
+        text:
+            'Volume sampah menumpuk cukup banyak dan mulai mengganggu kenyamanan sekitar.',
+        color: const Color(0xFFFACC15),
+      ),
+      (
+        level: 'Parah',
+        text:
+            'Sampah menumpuk sangat banyak (>1 meter), berbau tajam, atau menyumbat aliran air/saluran drainase.',
+        color: const Color(0xFFEF4444),
+      ),
+    ];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF0A1E19),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: items
+                .map(
+                  (item) => Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: item.color),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.level,
+                          style: TextStyle(
+                            color: item.color,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.text,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontSize: 13.5,
+                            height: 1.4,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showSeverityHint(String level) async {
+    final config = switch (level) {
+      'rendah' => (
+        title: 'Keparahan Rendah',
+        body:
+            'Volume sedikit, tidak berbau menyengat, dan tidak menghalangi jalan.',
+        color: const Color(0xFF2E7D32),
+      ),
+      'sedang' => (
+        title: 'Keparahan Sedang',
+        body: 'Volume menumpuk cukup banyak dan mulai mengganggu sekitar.',
+        color: const Color(0xFFF59E0B),
+      ),
+      _ => (
+        title: 'Keparahan Parah',
+        body:
+            'Sampah menumpuk sangat banyak, berbau tajam, atau menyumbat drainase.',
+        color: const Color(0xFFEF4444),
+      ),
+    };
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF10251A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          config.title,
+          style: TextStyle(
+            color: config.color,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          config.body,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Mengerti',
+              style: TextStyle(
+                color: config.color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -8,6 +8,8 @@ class CartState {
 
   final List<CartItem> items;
 
+  List<CartItem> get selectedItems => items.where((i) => i.selected).toList();
+
   int get selectedProductCount => items.where((i) => i.selected).length;
 
   int get selectedItemQuantity => items
@@ -96,6 +98,12 @@ class CartController extends StateNotifier<CartState> {
       items: state.items
           .where((item) => item.product.idProduk != productId)
           .toList(),
+    );
+  }
+
+  void clearSelected() {
+    state = CartState(
+      items: state.items.where((item) => !item.selected).toList(),
     );
   }
 }

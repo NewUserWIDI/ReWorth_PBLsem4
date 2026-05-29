@@ -12,11 +12,15 @@ import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dar
 import 'package:mobile_reworth/features/auth/presentation/pages/report_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/report_history_page.dart';
 import 'package:mobile_reworth/features/cart/presentation/pages/cart_page.dart';
+import 'package:mobile_reworth/features/cart/presentation/pages/checkout_page.dart';
 import 'package:mobile_reworth/features/market/domain/market_product.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/product_detail_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/wishlist_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/address_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/payment_method_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/profile_edit_page.dart';
 import 'package:mobile_reworth/features/seller_registration/presentation/pages/seller_registration_page.dart';
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
@@ -129,10 +133,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/checkout',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Checkout',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const CheckoutPage(),
       ),
       GoRoute(
         path: '/order-history',
@@ -147,24 +148,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/address',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Alamat Tersimpan',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const AddressPage(),
       ),
       GoRoute(
         path: '/payment-method',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Metode Pembayaran',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const PaymentMethodPage(),
       ),
       GoRoute(
         path: '/profile-edit',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Edit Profile',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const ProfileEditPage(),
       ),
     ],
   );

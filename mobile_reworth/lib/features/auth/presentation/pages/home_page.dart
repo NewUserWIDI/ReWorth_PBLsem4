@@ -11,12 +11,11 @@ const _pagePadding = 16.0;
 const _headerGradient = LinearGradient(
   begin: Alignment.bottomLeft,
   end: Alignment.topRight,
-  stops: [0.0, 0.52, 0.72, 1.0],
+  stops: [0.0, 0.52, 1.0],
   colors: [
-    Color(0xFF081F12),
-    Color(0xFF13321B),
-    Color(0xFF15391D),
-    Color(0xFF2E7D32),
+    Color(0xFF003B2F),
+    Color(0xFF002D24),
+    Color(0xFF001F1A),
   ],
 );
 
@@ -82,9 +81,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF081F12),
+      backgroundColor: const Color(0xFF001F1A),
       body: Container(
-        color: const Color(0xFF081F12),
+        color: const Color(0xFF001F1A),
         child: Stack(
           children: [
             const _BottomAmbientGlow(),
@@ -231,7 +230,7 @@ class _TopHeroSection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(0, 24, 0, 18),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
-        color: Color(0xFF081F12),
+        color: Color(0xFF001F1A),
         gradient: _headerGradient,
       ),
       child: Stack(
@@ -444,7 +443,7 @@ class _TotalPointCard extends StatelessWidget {
               child: Opacity(
                 opacity: 0.12,
                 child: Image.asset(
-                  'assets/images/logo_reworth.png',
+                  'assets/images/logo_reworth.jpeg',
                   width: 72,
                   height: 72,
                 ),
@@ -796,8 +795,8 @@ class _StreakRewardCard extends StatelessWidget {
                 ),
                 child: Image.asset(
                   'assets/images/gift.png',
-                  width: 62,
-                  height: 62,
+                  width: 74,
+                  height: 74,
                   fit: BoxFit.contain,
                 ),
               ),
