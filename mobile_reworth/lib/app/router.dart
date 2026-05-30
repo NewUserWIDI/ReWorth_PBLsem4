@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +21,7 @@ import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.
 import 'package:mobile_reworth/features/profile/presentation/pages/address_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/payment_method_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_edit_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/rewards_page.dart';
 import 'package:mobile_reworth/features/seller_registration/presentation/pages/seller_registration_page.dart';
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
@@ -50,23 +51,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/welcome',
         builder: (context, state) => const WelcomePage(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
-      
+
       // ==================== SHELL ROUTE (BOTTOM NAVIGATION) ====================
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
-          GoRoute(
-            path: '/home',
-            builder: (context, state) => const HomePage(),
-          ),
+          GoRoute(path: '/home', builder: (context, state) => const HomePage()),
           // ? MENGGUNAKAN ReportPage (bukan placeholder)
           GoRoute(
             path: '/report',
@@ -82,9 +77,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      
+
       // ==================== ROUTES DI LUAR BOTTOM NAVIGATION ====================
-      
+
       // ? MENGGUNAKAN ReportHistoryPage (bukan placeholder)
       GoRoute(
         path: '/report-history',
@@ -99,10 +94,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/rewards',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Tukar Poin Reward',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const RewardsPage(),
       ),
       GoRoute(
         path: '/reward',
@@ -115,10 +107,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/seller-registration',
         builder: (context, state) => const SellerRegistrationPage(),
       ),
-      GoRoute(
-        path: '/cart',
-        builder: (context, state) => const CartPage(),
-      ),
+      GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
       GoRoute(
         path: '/market/product/:id',
         builder: (context, state) {
@@ -193,9 +182,7 @@ class _MainShell extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFF0B1F12).withValues(alpha: 0.94),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.28),
@@ -224,9 +211,7 @@ class _MainShell extends StatelessWidget {
                 items: [
                   BottomNavigationBarItem(
                     icon: const Icon(Icons.home_outlined),
-                    activeIcon: _ActiveNavIcon(
-                      child: const Icon(Icons.home),
-                    ),
+                    activeIcon: _ActiveNavIcon(child: const Icon(Icons.home)),
                     label: 'Beranda',
                   ),
                   BottomNavigationBarItem(
@@ -245,9 +230,7 @@ class _MainShell extends StatelessWidget {
                   ),
                   BottomNavigationBarItem(
                     icon: const Icon(Icons.person_outline),
-                    activeIcon: _ActiveNavIcon(
-                      child: const Icon(Icons.person),
-                    ),
+                    activeIcon: _ActiveNavIcon(child: const Icon(Icons.person)),
                     label: 'Profile',
                   ),
                 ],
@@ -314,4 +297,3 @@ class _PlaceholderPage extends StatelessWidget {
     );
   }
 }
-

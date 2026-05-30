@@ -17,6 +17,7 @@ final profileControllerProvider =
 class ProfileController extends StateNotifier<ProfileState> {
   ProfileController(this._repository) : super(const ProfileState()) {
     loadProfile();
+    loadAvailableRewards();
   }
 
   final ProfileRepository _repository;
@@ -26,8 +27,38 @@ class ProfileController extends StateNotifier<ProfileState> {
     try {
       final user = await _repository.getProfile();
       state = state.copyWith(isLoading: false, user: user);
-    } catch (_) {
+    } catch (e) {
+      print('Error loadProfile: $e');
       state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> loadAvailableRewards() async {
+    try {
+      final rewards = await _repository.getAvailableRewards();
+      state = state.copyWith(availableRewards: rewards);
+    } catch (e) {
+      print('Error loading rewards: $e');
+      state = state.copyWith(availableRewards: []);
+    }
+  }
+
+  Future<bool> redeemReward(int rewardId) async {
+    state = state.copyWith(isRedeeming: true);
+
+    try {
+      final success = await _repository.redeemReward(rewardId);
+      if (success) {
+        await loadProfile(); // Refresh points after successful redemption
+        await loadAvailableRewards(); // Refresh rewards list
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error redeemReward: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isRedeeming: false);
     }
   }
 }
