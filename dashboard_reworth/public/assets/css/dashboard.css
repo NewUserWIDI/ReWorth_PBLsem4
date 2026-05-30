@@ -235,6 +235,7 @@ body {
 }
 
 .topbar-icon {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,6 +258,17 @@ body {
   width: 18px;
   height: 18px;
   stroke-width: 1.9;
+}
+
+.topbar-alert-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  border: 1px solid #ffffff;
 }
 
 .topbar-user {
@@ -384,6 +396,16 @@ body {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+}
+
+.stat-grid-five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 1400px) {
+  .stat-grid-five {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .stat-card,

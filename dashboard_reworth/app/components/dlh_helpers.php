@@ -101,12 +101,36 @@ function dlh_unique_kecamatan(): array
 
 function dlh_illustration_path(): string
 {
-    $candidates = glob(__DIR__ . '/../../assets/ilust_dlh/*.{png,jpg,jpeg,webp,svg}', GLOB_BRACE) ?: [];
-    if ($candidates !== []) {
-        $first = basename($candidates[0]);
+    $singleCandidates = ['assets/ilust_dlh.png', 'assets/ilust_dlh.jpg', 'assets/ilust_dlh.jpeg', 'assets/ilust_dlh.webp'];
+    foreach ($singleCandidates as $path) {
+        if (is_file(__DIR__ . '/../../' . $path)) {
+            return $path;
+        }
+    }
+
+    $folderCandidates = glob(__DIR__ . '/../../assets/ilust_dlh/*.{png,jpg,jpeg,webp,svg}', GLOB_BRACE) ?: [];
+    if ($folderCandidates !== []) {
+        $first = basename($folderCandidates[0]);
         return 'assets/ilust_dlh/' . $first;
     }
 
-    return 'assets/ilustrasi.png';
+    return 'assets/ilust_dlh.png';
 }
 
+function admin_illustration_path(): string
+{
+    $singleCandidates = ['assets/ilust_admin.png', 'assets/ilust_admin.jpg', 'assets/ilust_admin.jpeg', 'assets/ilust_admin.webp'];
+    foreach ($singleCandidates as $path) {
+        if (is_file(__DIR__ . '/../../' . $path)) {
+            return $path;
+        }
+    }
+
+    $folderCandidates = glob(__DIR__ . '/../../assets/ilust_admin/*.{png,jpg,jpeg,webp,svg}', GLOB_BRACE) ?: [];
+    if ($folderCandidates !== []) {
+        $first = basename($folderCandidates[0]);
+        return 'assets/ilust_admin/' . $first;
+    }
+
+    return 'assets/ilust_admin.png';
+}

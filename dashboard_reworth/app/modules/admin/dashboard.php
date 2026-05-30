@@ -2,75 +2,96 @@
 
 declare(strict_types=1);
 
-// KITA UBAH NAMA TABELNYA PAKAI HURUF KAPITAL SESUAI DI SUPABASE
-$total_pengguna  = supabase_count('Users');        // 'users' diganti 'Users'
-$total_penukaran = supabase_count('Penukaran');    // 'penukaran' diganti 'Penukaran'
-$total_hadiah    = supabase_count('Hadiah');       // 'hadiah' diganti 'Hadiah'
-$total_pengaduan = supabase_count('Pengaduan');    // 'pengaduan' diganti 'Pengaduan'
+require_once __DIR__ . '/../../core/middleware.php';
+require_once __DIR__ . '/../../layout/main_layout.php';
+require_once __DIR__ . '/../../components/stat_card.php';
+require_once __DIR__ . '/../../components/badge_status.php';
+require_once __DIR__ . '/../../components/admin_helpers.php';
 
-// Bagian ini juga kita ubah nama tabelnya jadi 'Penukaran'
-$penukaran_terbaru = supabase_fetch('Penukaran', '*', '&order=created_at.desc&limit=5');
+require_role('admin');
 
-// 2. MASUKKAN VARIABEL DI ATAS KE DALAM RENDER LAYOUT
-render_layout('Dashboard Admin', function () use ($total_pengguna, $total_penukaran, $total_hadiah, $total_pengaduan, $penukaran_terbaru) {
+$overview = mock_admin_overview();
+$activities = admin_activities();
+$pendingSellers = array_values(array_filter(admin_sellers(), fn (array $item): bool => ($item['status_verifikasi'] ?? '') === 'menunggu'));
+$illustration = admin_illustration_path();
+
+render_layout('Dashboard Admin', function () use ($overview, $activities, $pendingSellers, $illustration): void {
     ?>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-title">Total Pengguna</div>
-            <div class="stat-value"><?= number_format($total_pengguna) ?></div>
+    <section class="seller-hero">
+        <div class="seller-hero-content">
+            <h2>Platform ReWorth Aktif</h2>
+            <p>Kelola pengguna, seller, laporan sampah, transaksi, dan aktivitas platform dalam satu dashboard terpusat.</p>
+            <div class="hero-cta-row">
+                <a class="btn btn-secondary" href="<?= e(url('app/modules/admin/aktivitas.php')) ?>">Lihat Aktivitas Sistem</a>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-title">Total Penukaran</div>
-            <div class="stat-value"><?= number_format($total_penukaran) ?></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-title">Total Hadiah</div>
-            <div class="stat-value"><?= number_format($total_hadiah) ?></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-title">Total Pengaduan</div>
-            <div class="stat-value"><?= number_format($total_pengaduan) ?></div>
-        </div>
+        <div class="seller-hero-ellipse seller-hero-ellipse-fill" aria-hidden="true"></div>
+        <div class="seller-hero-ellipse seller-hero-ellipse-ring" aria-hidden="true"></div>
+        <img class="seller-hero-illustration" src="<?= e(url($illustration)) ?>" alt="Ilustrasi Admin ReWorth">
+    </section>
+
+    <div class="stat-grid stat-grid-five">
+        <?php stat_card('Total User', number_format((int) $overview['total_user'], 0, ',', '.'), '+18 hari ini'); ?>
+        <?php stat_card('Total Seller', number_format((int) $overview['total_seller'], 0, ',', '.'), '+6 minggu ini'); ?>
+        <?php stat_card('Total Laporan Sampah', number_format((int) $overview['total_laporan_sampah'], 0, ',', '.'), '+12 hari ini'); ?>
+        <?php stat_card('Total Transaksi', number_format((int) $overview['total_transaksi'], 0, ',', '.'), '+7% minggu ini'); ?>
+        <?php stat_card('Total Pendapatan', 'Rp ' . number_format((int) $overview['total_pendapatan'], 0, ',', '.'), 'Nilai transaksi platform'); ?>
     </div>
 
-    <div class="dashboard-content">
-        <div class="table-container">
-            <div class="table-header">
-                <h3>Aktivitas Penukaran Terbaru</h3>
-                <a href="<?= url('admin/penukaran.php') ?>" class="btn btn-sm btn-outline">Lihat Semua</a>
+    <div class="two-col-grid">
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Aktivitas Sistem Terbaru</h2>
+                    <p>Audit trail aktivitas penting platform.</p>
+                </div>
+                <a class="btn btn-secondary" href="<?= e(url('app/modules/admin/aktivitas.php')) ?>">Lihat Semua</a>
             </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID Penukaran</th>
-                        <th>User ID</th>
-                        <th>Tanggal</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($penukaran_terbaru)): ?>
-                        <tr>
-                            <td colspan="4" style="text-align: center;">Belum ada data transaksi di Supabase</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($penukaran_terbaru as $row): ?>
-                            <tr>
-                                <td>#<?= e((string)$row['id']) ?></td>
-                                <td><?= e($row['user_id']) ?></td>
-                                <td><?= e(date('d M Y', strtotime($row['created_at']))) ?></td>
-                                <td>
-                                    <span class="status-badge <?= e(status_badge_class($row['status'] ?? '')) ?>">
-                                        <?= e(status_label($row['status'] ?? '')) ?>
-                                    </span>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+            <div class="report-list">
+                <?php foreach (array_slice($activities, 0, 6) as $activity): ?>
+                    <article class="report-item" style="grid-template-columns:minmax(0,1fr);">
+                        <div>
+                            <h3><?= e((string) $activity['aktivitas']) ?> - <?= e((string) $activity['aktor']) ?></h3>
+                            <p><?= e((string) $activity['detail']) ?></p>
+                            <div class="report-meta">
+                                <span class="status-badge badge-info"><?= e((string) $activity['role']) ?></span>
+                                <span class="status-badge badge-neutral"><?= e((string) $activity['modul']) ?></span>
+                                <span class="status-badge badge-neutral"><?= e((string) $activity['waktu']) ?></span>
+                            </div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Seller Menunggu Verifikasi</h2>
+                    <p>Validasi pengajuan seller baru.</p>
+                </div>
+            </div>
+            <div class="report-list">
+                <?php if ($pendingSellers === []): ?>
+                    <div class="empty-state">Tidak ada seller menunggu verifikasi.</div>
+                <?php else: ?>
+                    <?php foreach ($pendingSellers as $seller): ?>
+                        <article class="report-item">
+                            <img class="report-thumb" src="<?= e(url('assets/logo_reworth.jpeg')) ?>" alt="Logo seller">
+                            <div>
+                                <h3><?= e((string) $seller['nama_toko']) ?></h3>
+                                <p><?= e((string) $seller['email']) ?> | Daftar: <?= e((string) $seller['tanggal_bergabung']) ?></p>
+                                <div class="report-meta">
+                                    <span class="status-badge badge-warning">Menunggu</span>
+                                    <a class="btn btn-primary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Verifikasi</a>
+                                    <a class="btn btn-danger" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Tolak</a>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </section>
     </div>
     <?php
-
 });
