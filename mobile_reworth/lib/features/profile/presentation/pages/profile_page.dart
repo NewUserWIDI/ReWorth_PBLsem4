@@ -35,42 +35,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final userId = client.auth.currentUser?.id;
     if (userId == null) return;
 
-    final columns = [
-      'foto_profil',
-      'fotoProfil',
-      'avatar_url',
-      'profile_photo',
-    ];
-    for (final col in columns) {
-      try {
-        final row = await client
-            .from('profiles')
-            .select(col)
-            .eq('id_masyarakat', userId)
-            .maybeSingle();
-        if (row is Map<String, dynamic>) {
-          final value = row[col]?.toString().trim() ?? '';
-          if (value.isNotEmpty && mounted) {
-            setState(() => _remoteAvatarUrl = value);
-            return;
-          }
-        }
-      } catch (_) {}
+    try {
+      final row = await client
+          .from('profiles')
+          .select('foto_profil')
+          .eq('id', userId)
+          .maybeSingle();
 
-      try {
-        final row = await client
-            .from('profiles')
-            .select(col)
-            .eq('id', userId)
-            .maybeSingle();
-        if (row is Map<String, dynamic>) {
-          final value = row[col]?.toString().trim() ?? '';
-          if (value.isNotEmpty && mounted) {
-            setState(() => _remoteAvatarUrl = value);
-            return;
-          }
+      if (row != null && mounted) {
+        final fotoProfil = row['foto_profil'] as String?;
+        if (fotoProfil != null && fotoProfil.isNotEmpty) {
+          setState(() => _remoteAvatarUrl = fotoProfil);
         }
-      } catch (_) {}
+      }
+    } catch (e) {
+      print('Error loading avatar: $e');
     }
   }
 
@@ -103,102 +82,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       final bytes = await picked.readAsBytes();
       final path =
           'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final buckets = ['profile-photo', 'avatars', 'avatar', 'laporan-sampah'];
-      String? publicUrl;
+      final bucket = 'avatars';
 
-      for (final bucket in buckets) {
-        try {
-          await client.storage
-              .from(bucket)
-              .uploadBinary(
-                path,
-                bytes,
-                fileOptions: const FileOptions(
-                  contentType: 'image/jpeg',
-                  upsert: true,
-                ),
-              );
-          publicUrl = client.storage.from(bucket).getPublicUrl(path);
-          break;
-        } catch (_) {}
-      }
+      await client.storage
+          .from(bucket)
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
 
-      if (publicUrl == null) {
-        throw Exception('Bucket avatar tidak tersedia.');
-      }
+      final publicUrl = client.storage.from(bucket).getPublicUrl(path);
 
-      final avatarColumns = [
-        'foto_profil',
-        'fotoProfil',
-        'avatar_url',
-        'profile_photo',
-      ];
-      var updated = false;
-
-      for (final column in avatarColumns) {
-        try {
-          final result = await client
-              .from('profiles')
-              .update({column: publicUrl})
-              .eq('id_masyarakat', userId)
-              .select()
-              .maybeSingle();
-          if (result != null) {
-            updated = true;
-            break;
-          }
-        } catch (_) {}
-        try {
-          final result = await client
-              .from('profiles')
-              .update({column: publicUrl})
-              .eq('id', userId)
-              .select()
-              .maybeSingle();
-          if (result != null) {
-            updated = true;
-            break;
-          }
-        } catch (_) {}
-      }
-
-      if (!updated) {
-        for (final column in avatarColumns) {
-          try {
-            await client.from('profiles').upsert({
-              'id': userId,
-              column: publicUrl,
-            });
-            updated = true;
-            break;
-          } catch (_) {}
-          try {
-            await client.from('profiles').upsert({
-              'id_masyarakat': userId,
-              column: publicUrl,
-            });
-            updated = true;
-            break;
-          } catch (_) {}
-        }
-      }
-
-      if (!updated) {
-        throw Exception('Data foto profil belum cocok dengan schema profiles.');
-      }
+      await client
+          .from('profiles')
+          .update({'foto_profil': publicUrl})
+          .eq('id', userId);
 
       if (mounted) {
         setState(() {
           _remoteAvatarUrl = publicUrl;
         });
-      }
-
-      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Foto profil diperbarui')));
       }
-    } catch (_) {
+    } catch (e) {
+      print('Error uploading avatar: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -215,7 +128,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final ref = this.ref;
     final state = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
     final profileUser = state.user;
@@ -227,7 +139,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final fotoProfil = profileUser?.fotoProfil ?? '';
     final totalPoin = profileUser?.totalPoin ?? authUser?.poin ?? 0;
     final totalLaporan =
-        profileUser?.laporanValid ?? authUser?.jumlahLaporanValid ?? 0;
+        profileUser?.totalLaporanValid ?? authUser?.jumlahLaporanValid ?? 0;
     final avatarUrl = _remoteAvatarUrl ?? fotoProfil;
 
     if (state.isLoading) {
@@ -469,6 +381,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  // Menu Tukar Poin Reward - bersih, hanya tombol navigasi
                   ProfileMenuTile(
                     icon: Icons.card_giftcard_rounded,
                     title: 'Tukar Poin Reward',
