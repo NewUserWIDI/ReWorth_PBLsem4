@@ -7,23 +7,38 @@ require_once __DIR__ . '/../../core/middleware.php';
 require_role('dlh');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect('app/modules/dlh/reports.php');
+    redirect('app/modules/dlh/laporan.php');
 }
 
-$id = $_POST['id'] ?? '';
-$action = $_POST['action'] ?? '';
-$reason = trim($_POST['reason'] ?? '');
+$id = trim((string) ($_POST['id_laporan'] ?? ''));
+$action = trim((string) ($_POST['action'] ?? ''));
+$reason = trim((string) ($_POST['alasan_ditolak'] ?? ''));
 
-if ($action === 'reject' && $reason === '') {
-    set_flash('danger', 'Alasan penolakan wajib diisi.');
-    redirect('app/modules/dlh/report_detail.php?id=' . urlencode($id));
+if ($id === '' || $action === '') {
+    set_flash('danger', 'Aksi laporan tidak valid.');
+    redirect('app/modules/dlh/laporan.php');
 }
 
-if ($action === 'valid') {
-    set_flash('success', 'Laporan ' . $id . ' divalidasi. User mendapat 10 poin dan streak +1 (mock).');
-} else {
-    set_flash('success', 'Laporan ' . $id . ' ditolak dengan alasan: ' . $reason . ' (mock).');
+if ($action === 'reject') {
+    if (mb_strlen(preg_replace('/\s+/', ' ', $reason)) < 10) {
+        set_flash('danger', 'Alasan penolakan minimal 10 karakter.');
+        redirect('app/modules/dlh/laporan_detail.php?id=' . urlencode($id));
+    }
+
+    set_flash('success', 'Laporan #' . $id . ' ditolak. Alasan: ' . $reason . ' (mock).');
+    redirect('app/modules/dlh/riwayat.php');
 }
 
-redirect('app/modules/dlh/reports.php');
+if ($action === 'accept') {
+    set_flash('success', 'Laporan #' . $id . ' berhasil diverifikasi dan diubah ke status diproses (mock).');
+    redirect('app/modules/dlh/monitoring.php');
+}
+
+if ($action === 'finish') {
+    set_flash('success', 'Laporan #' . $id . ' ditandai selesai (mock).');
+    redirect('app/modules/dlh/riwayat.php');
+}
+
+set_flash('warning', 'Aksi belum didukung.');
+redirect('app/modules/dlh/laporan.php');
 

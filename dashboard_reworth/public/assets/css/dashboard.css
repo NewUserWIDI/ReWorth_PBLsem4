@@ -134,6 +134,33 @@ body {
   font-size: 11px;
 }
 
+.sidebar-profile + .sidebar-copyright {
+  margin-top: 10px;
+  padding-top: 0;
+}
+
+.sidebar-profile {
+  margin-top: auto;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(181, 255, 119, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-profile strong {
+  display: block;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sidebar-profile span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(214, 229, 215, 0.72);
+  font-size: 11px;
+}
+
 .main-area {
   flex: 1;
   min-width: 0;
@@ -170,6 +197,14 @@ body {
   font-size: 32px;
   line-height: 1.2;
   font-weight: 700;
+}
+
+.topbar-subtitle {
+  display: block;
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .topbar-actions {
@@ -338,6 +373,13 @@ body {
   filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.15));
 }
 
+.hero-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -412,6 +454,170 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
   gap: 18px;
+}
+
+.two-col-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 18px;
+}
+
+.split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+}
+
+.map-card {
+  min-height: 360px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.map-toolbar {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.map-canvas {
+  width: 100%;
+  height: 420px;
+}
+
+.map-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.dot-light { background: #2e7d32; }
+.dot-medium { background: #f59e0b; }
+.dot-high { background: #ef4444; }
+
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.severity-light {
+  color: #1f6b30;
+  background: #e8f5e9;
+}
+
+.severity-medium {
+  color: #a16207;
+  background: #fef3c7;
+}
+
+.severity-high {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.report-list {
+  display: grid;
+  gap: 12px;
+}
+
+.report-item {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.report-thumb {
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #eef2f0;
+}
+
+.report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.report-item h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.report-item p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.quick-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-card {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.quick-card strong {
+  display: block;
+  color: #111827;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.quick-card span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.reject-form {
+  display: grid;
+  gap: 12px;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 .panel {
@@ -797,7 +1003,9 @@ body {
 
   .seller-hero,
   .content-grid,
-  .settings-layout {
+  .settings-layout,
+  .two-col-grid,
+  .split-grid {
     grid-template-columns: 1fr;
   }
 
@@ -813,6 +1021,7 @@ body {
   }
 
   .stat-grid,
+  .quick-cards,
   .product-grid,
   .form-grid {
     grid-template-columns: 1fr;

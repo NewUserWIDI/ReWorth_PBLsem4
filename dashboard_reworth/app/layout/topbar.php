@@ -6,11 +6,15 @@ function render_topbar(string $title, array $user): void
 {
     $firstName = trim(explode(' ', $user['nama'] ?? 'Seller')[0] ?? 'Seller');
     $initials = strtoupper(substr($firstName, 0, 1));
+    $roleSubtitle = ($user['role'] ?? '') === 'dlh' ? 'Dinas Lingkungan Hidup' : '';
     ?>
     <header class="topbar">
         <div>
             <p>Welcome back, <?= e($firstName) ?></p>
             <h1><?= e($title) ?></h1>
+            <?php if ($roleSubtitle !== ''): ?>
+                <span class="topbar-subtitle"><?= e($roleSubtitle) ?></span>
+            <?php endif; ?>
         </div>
         <div class="topbar-actions">
             <input class="dashboard-search" type="search" placeholder="Cari produk, pesanan, pelanggan..." aria-label="Cari dashboard">
