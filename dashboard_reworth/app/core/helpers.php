@@ -49,6 +49,10 @@ function status_label(string $status): string
         'dibatalkan' => 'Dibatalkan',
         'menunggu' => 'Menunggu',
         'gagal' => 'Gagal',
+        'terverifikasi' => 'Terverifikasi',
+        'disembunyikan' => 'Disembunyikan',
+        'suspend' => 'Suspend',
+        'refund' => 'Refund',
         default => ucwords(str_replace('_', ' ', $status)),
     };
 }
@@ -56,9 +60,10 @@ function status_label(string $status): string
 function status_badge_class(string $status): string
 {
     return match ($status) {
-        'valid', 'aktif', 'selesai' => 'badge-success',
+        'valid', 'aktif', 'selesai', 'terverifikasi' => 'badge-success',
         'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas' => 'badge-warning',
-        'ditolak', 'gagal', 'dibatalkan', 'nonaktif' => 'badge-danger',
+        'ditolak', 'gagal', 'dibatalkan', 'nonaktif', 'suspend' => 'badge-danger',
+        'disembunyikan', 'refund' => 'badge-neutral',
         'diproses', 'dikirim' => 'badge-info',
         default => 'badge-neutral',
     };
