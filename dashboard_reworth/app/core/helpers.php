@@ -39,6 +39,7 @@ function status_label(string $status): string
         'valid' => 'Valid',
         'ditolak' => 'Ditolak',
         'diproses' => 'Diproses',
+        'dikemas' => 'Dikemas',
         'selesai' => 'Selesai',
         'pending' => 'Pending',
         'aktif' => 'Aktif',
@@ -56,7 +57,7 @@ function status_badge_class(string $status): string
 {
     return match ($status) {
         'valid', 'aktif', 'selesai' => 'badge-success',
-        'menunggu_verifikasi', 'pending', 'menunggu', 'baru' => 'badge-warning',
+        'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas' => 'badge-warning',
         'ditolak', 'gagal', 'dibatalkan', 'nonaktif' => 'badge-danger',
         'diproses', 'dikirim' => 'badge-info',
         default => 'badge-neutral',

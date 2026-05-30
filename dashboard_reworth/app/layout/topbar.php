@@ -4,18 +4,29 @@ declare(strict_types=1);
 
 function render_topbar(string $title, array $user): void
 {
+    $firstName = trim(explode(' ', $user['nama'] ?? 'Seller')[0] ?? 'Seller');
+    $initials = strtoupper(substr($firstName, 0, 1));
     ?>
     <header class="topbar">
         <div>
-            <p><?= e(status_label($user['role'] ?? '')) ?></p>
+            <p>Welcome back, <?= e($firstName) ?></p>
             <h1><?= e($title) ?></h1>
         </div>
-        <div class="topbar-user">
-            <div>
-                <strong><?= e($user['nama'] ?? '-') ?></strong>
-                <span><?= e($user['email'] ?? '-') ?></span>
+        <div class="topbar-actions">
+            <input class="dashboard-search" type="search" placeholder="Cari produk, pesanan, pelanggan..." aria-label="Cari dashboard">
+            <button class="topbar-icon" type="button" aria-label="Notifikasi">
+                <svg class="topbar-bell-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M14.5 18H5.5a1 1 0 0 1-.8-1.6l1.1-1.5V10a6.2 6.2 0 0 1 5.2-6.1 6 6 0 0 1 6.8 6v5l1.1 1.5a1 1 0 0 1-.8 1.6h-3.6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <div class="topbar-user">
+                <div class="topbar-avatar"><?= e($initials) ?></div>
+                <div>
+                    <strong><?= e($user['nama'] ?? '-') ?></strong>
+                    <span><?= e($user['email'] ?? '-') ?></span>
+                </div>
             </div>
-            <a class="btn btn-secondary" href="<?= e(url('public/logout.php')) ?>">Logout</a>
         </div>
     </header>
     <?php

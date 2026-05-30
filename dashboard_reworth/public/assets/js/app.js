@@ -7,3 +7,12 @@ document.addEventListener('submit', (event) => {
   }
 });
 
+document.addEventListener('click', (event) => {
+  const target = event.target.closest('[data-confirm]');
+  if (!target) return;
+
+  const message = target.dataset.confirm;
+  if (message && !window.confirm(message)) {
+    event.preventDefault();
+  }
+});
