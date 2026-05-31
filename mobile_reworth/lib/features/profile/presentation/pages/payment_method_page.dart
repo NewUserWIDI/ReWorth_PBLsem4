@@ -1,85 +1,35 @@
+// lib/features/profile/presentation/pages/payment_method_page.dart
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../application/profile_controller.dart';
+import '../../domain/bank_account.dart';
 
-class PaymentMethodPage extends StatefulWidget {
+class PaymentMethodPage extends ConsumerStatefulWidget {
   const PaymentMethodPage({super.key});
 
   @override
-  State<PaymentMethodPage> createState() => _PaymentMethodPageState();
+  ConsumerState<PaymentMethodPage> createState() => _PaymentMethodPageState();
 }
 
-class _PaymentMethodPageState extends State<PaymentMethodPage> {
-  final SupabaseClient _client = Supabase.instance.client;
-  bool _isLoading = true;
-  String? _error;
-  List<_BankCardItem> _items = const [];
-
+class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
   @override
   void initState() {
     super.initState();
-    _loadCards();
-  }
-
-  Future<void> _loadCards() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileControllerProvider.notifier).loadBankAccounts();
     });
-
-    try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
-        setState(() => _items = const []);
-        return;
-      }
-
-      List<Map<String, dynamic>> rows = const [];
-      try {
-        final raw = await _client
-            .from('kartu_pembayaran')
-            .select()
-            .eq('user_id', userId)
-            .limit(3);
-        rows = List<Map<String, dynamic>>.from(raw as List);
-      } catch (_) {
-        try {
-          final raw = await _client
-              .from('kartu_pembayaran')
-              .select()
-              .eq('id_masyarakat', userId)
-              .limit(3);
-          rows = List<Map<String, dynamic>>.from(raw as List);
-        } catch (_) {
-          final raw = await _client.from('kartu_pembayaran').select().limit(3);
-          rows = List<Map<String, dynamic>>.from(raw as List);
-        }
-      }
-
-      setState(() {
-        _items = rows.map(_BankCardItem.fromMap).toList();
-      });
-    } catch (e) {
-      setState(() => _error = 'Gagal memuat akun bank: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   Future<void> _showAddDialog() async {
-    if (_items.length >= 3) {
+    final currentState = ref.read(profileControllerProvider);
+
+    if (currentState.bankAccounts.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Maksimal 3 akun bank per akun.',
-            style: GoogleFonts.poppins(fontSize: 13),
-          ),
-        ),
+        const SnackBar(content: Text('Maksimal 3 akun bank per akun.')),
       );
       return;
     }
@@ -87,215 +37,329 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     final result = await showModalBottomSheet<_BankCardFormResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFFCFCFC),
+      backgroundColor: const Color(0xFF1A2A25),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) => const _BankCardFormSheet(),
     );
 
-    if (result == null) {
-      return;
-    }
-    try {
-      await _insertCard(result);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF173A2C),
-          content: Text(
-            'Akun bank berhasil ditambahkan.',
-            style: GoogleFonts.poppins(fontSize: 13),
-          ),
+    if (result == null) return;
+
+    final success = await ref
+        .read(profileControllerProvider.notifier)
+        .addBankAccount(
+          bankName: result.bankName,
+          cardType: result.cardType,
+          ownerName: result.ownerName,
+          accountNumber: result.accountNumber,
+          expiryDate: result.expiryDate,
+        );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: success
+            ? const Color(0xFF173A2C)
+            : const Color(0xFF732727),
+        content: Text(
+          success
+              ? 'Akun bank berhasil ditambahkan.'
+              : 'Gagal menambah akun bank.',
+          style: GoogleFonts.poppins(fontSize: 13),
         ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF732727),
-          content: Text(
-            'Gagal menambah akun bank: $e',
-            style: GoogleFonts.poppins(fontSize: 13),
-          ),
-        ),
-      );
-    }
+      ),
+    );
   }
 
-  Future<void> _insertCard(_BankCardFormResult data) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      return;
+  Future<void> _showEditDialog(BankAccount account) async {
+    final result = await showModalBottomSheet<_BankCardFormResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A2A25),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => _BankCardFormSheet(
+        initialBankName: account.bankName,
+        initialCardType: account.cardType,
+        initialOwnerName: account.ownerName,
+        initialAccountNumber: account.last4Digit,
+        initialExpiryDate: account.expiryDate,
+        isEditMode: true,
+      ),
+    );
+
+    if (result == null) return;
+
+    final success = await ref
+        .read(profileControllerProvider.notifier)
+        .updateBankAccount(
+          cardId: account.id,
+          bankName: result.bankName,
+          cardType: result.cardType,
+          ownerName: result.ownerName,
+          accountNumber: result.accountNumber,
+          expiryDate: result.expiryDate,
+        );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: success
+            ? const Color(0xFF173A2C)
+            : const Color(0xFF732727),
+        content: Text(
+          success
+              ? 'Akun bank berhasil diperbarui.'
+              : 'Gagal memperbarui akun bank.',
+          style: GoogleFonts.poppins(fontSize: 13),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BankAccount account) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2A25),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: const Color(0xFFD32F2F).withValues(alpha: 0.3),
+          ),
+        ),
+        title: Text(
+          'Hapus Akun Bank',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        content: Text(
+          'Yakin ingin menghapus akun bank ${account.bankName}?\n\nAkun yang dihapus tidak dapat dikembalikan.',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Hapus',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFD32F2F),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await ref
+          .read(profileControllerProvider.notifier)
+          .deleteBankAccount(account.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: success
+              ? const Color(0xFF173A2C)
+              : const Color(0xFF732727),
+          content: Text(
+            success
+                ? 'Akun bank berhasil dihapus.'
+                : 'Gagal menghapus akun bank.',
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+        ),
+      );
     }
-
-    final fullPayload = {
-      'user_id': userId,
-      'nama_bank': data.bankName,
-      'nama_pemilik': data.ownerName,
-      'nomor_rekening': data.accountNumber,
-      'label': data.label,
-      'created_at': DateTime.now().toIso8601String(),
-    };
-    final fallbackPayload = {
-      'id_masyarakat': userId,
-      'nama_bank': data.bankName,
-      'nomor_rekening': data.accountNumber,
-      'created_at': DateTime.now().toIso8601String(),
-    };
-
-    final variants = <Map<String, dynamic>>[
-      fullPayload,
-      Map<String, dynamic>.from(fullPayload)..remove('label'),
-      Map<String, dynamic>.from(fullPayload)..remove('created_at'),
-      Map<String, dynamic>.from(fullPayload)
-        ..remove('label')
-        ..remove('created_at'),
-      fallbackPayload,
-      Map<String, dynamic>.from(fallbackPayload)..remove('created_at'),
-      {
-        'id_masyarakat': userId,
-        'nama_bank': data.bankName,
-        'nama_pemilik': data.ownerName,
-        'nomor_rekening': data.accountNumber,
-      },
-      {
-        'user_id': userId,
-        'bank': data.bankName,
-        'rekening': data.accountNumber,
-      },
-    ];
-
-    Object? lastError;
-    for (final payload in variants) {
-      try {
-        await _client.from('kartu_pembayaran').insert(payload);
-        lastError = null;
-        break;
-      } catch (e) {
-        lastError = e;
-      }
-    }
-
-    if (lastError != null) {
-      throw lastError;
-    }
-
-    await _loadCards();
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(profileControllerProvider);
+    final accounts = state.bankAccounts;
+    final isLoading =
+        state.isLoadingBankAccounts ||
+        state.isAddingBankAccount ||
+        state.isDeletingBankAccount ||
+        state.isSettingPrimaryBank;
+
     return Scaffold(
       backgroundColor: const Color(0xFF001F1A),
       body: Stack(
         children: [
-          const _PremiumBackdrop(),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF003B2F),
+                  Color(0xFF002D24),
+                  Color(0xFF001F1A),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -160,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: 360,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFB5FF77).withValues(alpha: 0.30),
+                      const Color(0xFF5BE22F).withValues(alpha: 0.14),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.48, 1.0],
+                  ),
+                ),
+              ),
+            ),
+          ),
           SafeArea(
             child: Column(
               children: [
                 _Header(title: 'Akun Bank', onBack: () => context.pop()),
+                const SizedBox(height: 8),
                 Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFCFCFC),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _buildBody(),
-                  ),
+                  child: isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF94FF38),
+                          ),
+                        )
+                      : _buildBody(accounts),
                 ),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: _items.length >= 3
+      floatingActionButton: accounts.length >= 3
           ? null
-          : FloatingActionButton.extended(
-              onPressed: _showAddDialog,
-              backgroundColor: const Color(0xFF2E7D32),
-              icon: const Icon(Icons.add_card_rounded, color: Colors.white),
-              label: Text(
-                'Tambah Bank',
-                style: GoogleFonts.poppins(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+          : Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF94FF38), Color(0xFF5BE22F)],
+                ),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF94FF38).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: _showAddDialog,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                icon: const Icon(Icons.add_rounded, color: Color(0xFF0A1A12)),
+                label: Text(
+                  'Tambah Bank',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0A1A12),
+                  ),
                 ),
               ),
             ),
     );
   }
 
-  Widget _buildBody() {
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          child: Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFFD32F2F),
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_items.isEmpty) {
+  Widget _buildBody(List<BankAccount> accounts) {
+    if (accounts.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 52,
-                color: Color(0xFF7CA06A),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF94FF38).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 40,
+                  color: Color(0xFF94FF38),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
               Text(
                 'Belum ada akun bank',
                 style: GoogleFonts.poppins(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111111),
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Tambahkan akun bank untuk checkout Mini Market.',
+                'Tambahkan akun bank untuk\nmemudahkan transaksi Anda',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                  fontSize: 13.5,
-                  color: const Color.fromRGBO(17, 17, 17, 0.6),
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _showAddDialog,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  minimumSize: const Size(174, 48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
+              const SizedBox(height: 24),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF94FF38), Color(0xFF5BE22F)],
                   ),
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                child: Text(
-                  'Tambah Bank',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                child: ElevatedButton(
+                  onPressed: _showAddDialog,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    minimumSize: const Size(160, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: Text(
+                    '+ Tambah Bank',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0A1A12),
+                    ),
                   ),
                 ),
               ),
@@ -306,141 +370,251 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadCards,
+      onRefresh: () =>
+          ref.read(profileControllerProvider.notifier).loadBankAccounts(),
+      color: const Color(0xFF94FF38),
+      backgroundColor: const Color(0xFF0A1E19),
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-        itemCount: _items.length,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount: accounts.length,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final item = _items[index];
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.05)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+          final account = accounts[index];
+          return Dismissible(
+            key: Key(account.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFD32F2F).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              child: const Icon(
+                Icons.delete_outline,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFEAF5E1),
-                  ),
-                  child: const Icon(
-                    Icons.account_balance_rounded,
-                    color: Color(0xFF2E7D32),
-                  ),
+            confirmDismiss: (direction) async {
+              await _confirmDelete(account);
+              return false;
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A1E19).withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF94FF38).withValues(alpha: 0.22),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.bankName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111111),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.22),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: account.isPrimary
+                          ? const Color(0xFF94FF38).withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.05),
+                    ),
+                    child: Icon(
+                      _getBankIcon(account.bankName),
+                      color: account.isPrimary
+                          ? const Color(0xFF94FF38)
+                          : Colors.white.withValues(alpha: 0.6),
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              account.bankName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (account.cardType != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  account.cardType!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
+                            if (account.isPrimary) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF94FF38,
+                                  ).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF94FF38,
+                                    ).withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Utama',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF94FF38),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        item.maskedNumber,
-                        style: GoogleFonts.poppins(
-                          fontSize: 13.5,
-                          color: const Color.fromRGBO(17, 17, 17, 0.7),
-                        ),
-                      ),
-                      if (item.ownerName.isNotEmpty)
+                        const SizedBox(height: 4),
                         Text(
-                          item.ownerName,
+                          account.maskedNumber,
                           style: GoogleFonts.poppins(
-                            fontSize: 12.5,
-                            color: const Color.fromRGBO(17, 17, 17, 0.52),
+                            fontSize: 13.5,
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
-                    ],
+                        if (account.ownerName.isNotEmpty)
+                          Text(
+                            account.ownerName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        if (account.expiryDate != null)
+                          Text(
+                            'Kadaluarsa: ${account.expiryDate}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                if (item.isDefault)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE9F7DD),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'Utama',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF2E7D32),
+
+                  PopupMenuButton<String>(
+                    color: const Color(0xFF1E2A25),
+                    elevation: 6,
+                    shadowColor: Colors.black87,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: const Color(0xFF94FF38).withValues(alpha: 0.4),
+                        width: 0.8,
                       ),
                     ),
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        await _showEditDialog(account);
+                      } else if (value == 'set_primary' && !account.isPrimary) {
+                        await ref
+                            .read(profileControllerProvider.notifier)
+                            .setPrimaryBankAccount(account.id);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      if (!account.isPrimary)
+                        const PopupMenuItem(
+                          value: 'set_primary',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.star_outline,
+                                size: 18,
+                                color: Color(0xFF94FF38),
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Jadikan Utama',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ), // ← PUTIH
+                              ),
+                            ],
+                          ),
+                        ),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: Color(0xFF94FF38),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Edit',
+                              style: TextStyle(color: Colors.white), // ← PUTIH
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-              ],
+                ],
+              ),
             ),
           );
         },
       ),
     );
   }
-}
 
-class _PremiumBackdrop extends StatelessWidget {
-  const _PremiumBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
-              stops: [0, 0.52, 1],
-            ),
-          ),
-        ),
-        Positioned(
-          top: -40,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
-              child: Container(
-                width: 320,
-                height: 320,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFB7F164).withValues(alpha: 0.16),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+  IconData _getBankIcon(String bankName) {
+    final name = bankName.toLowerCase();
+    if (name.contains('bca')) return Icons.account_balance_rounded;
+    if (name.contains('mandiri')) return Icons.account_balance_rounded;
+    if (name.contains('bri')) return Icons.account_balance_rounded;
+    if (name.contains('bni')) return Icons.account_balance_rounded;
+    if (name.contains('cimb')) return Icons.account_balance_rounded;
+    if (name.contains('danamon')) return Icons.account_balance_rounded;
+    if (name.contains('permata')) return Icons.account_balance_rounded;
+    return Icons.account_balance_wallet_rounded;
   }
 }
 
+// ========== HEADER COMPONENT ==========
 class _Header extends StatelessWidget {
   const _Header({required this.title, required this.onBack});
 
@@ -451,37 +625,35 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: onBack,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.08),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: IconButton(
+              onPressed: onBack,
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
               ),
             ),
           ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -490,78 +662,41 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _BankCardItem {
-  const _BankCardItem({
-    required this.bankName,
-    required this.ownerName,
-    required this.accountNumber,
-    required this.isDefault,
-  });
-
-  final String bankName;
-  final String ownerName;
-  final String accountNumber;
-  final bool isDefault;
-
-  String get maskedNumber {
-    final clean = accountNumber.replaceAll(RegExp(r'\s+'), '');
-    if (clean.length <= 4) {
-      return clean;
-    }
-    final suffix = clean.substring(clean.length - 4);
-    return '**** **** $suffix';
-  }
-
-  factory _BankCardItem.fromMap(Map<String, dynamic> map) {
-    String read(List<String> keys) {
-      for (final key in keys) {
-        final value = map[key];
-        if (value == null) continue;
-        final text = value.toString().trim();
-        if (text.isNotEmpty) return text;
-      }
-      return '';
-    }
-
-    bool readBool(List<String> keys) {
-      for (final key in keys) {
-        final value = map[key];
-        if (value == null) continue;
-        if (value is bool) return value;
-        if (value is num) return value > 0;
-        final text = value.toString().toLowerCase();
-        if (text == 'true' || text == '1') return true;
-      }
-      return false;
-    }
-
-    return _BankCardItem(
-      bankName: read(['nama_bank', 'bank_name', 'bank']).isEmpty
-          ? 'Bank'
-          : read(['nama_bank', 'bank_name', 'bank']),
-      ownerName: read(['nama_pemilik', 'owner_name', 'nama']),
-      accountNumber: read(['nomor_rekening', 'account_number', 'rekening']),
-      isDefault: readBool(['is_default', 'utama']),
-    );
-  }
-}
-
+// ========== FORM SHEET ==========
 class _BankCardFormResult {
   const _BankCardFormResult({
     required this.bankName,
+    required this.cardType,
     required this.ownerName,
     required this.accountNumber,
-    required this.label,
+    this.expiryDate,
+    this.label,
   });
 
   final String bankName;
+  final String cardType;
   final String ownerName;
   final String accountNumber;
-  final String label;
+  final String? expiryDate;
+  final String? label;
 }
 
 class _BankCardFormSheet extends StatefulWidget {
-  const _BankCardFormSheet();
+  const _BankCardFormSheet({
+    this.initialBankName,
+    this.initialCardType,
+    this.initialOwnerName,
+    this.initialAccountNumber,
+    this.initialExpiryDate,
+    this.isEditMode = false,
+  });
+
+  final String? initialBankName;
+  final String? initialCardType;
+  final String? initialOwnerName;
+  final String? initialAccountNumber;
+  final String? initialExpiryDate;
+  final bool isEditMode;
 
   @override
   State<_BankCardFormSheet> createState() => _BankCardFormSheetState();
@@ -570,111 +705,477 @@ class _BankCardFormSheet extends StatefulWidget {
 class _BankCardFormSheetState extends State<_BankCardFormSheet> {
   final _formKey = GlobalKey<FormState>();
   final _bank = TextEditingController();
+  String? _selectedCardType;
   final _owner = TextEditingController();
   final _number = TextEditingController();
-  final _label = TextEditingController();
+  final _expiryMonth = TextEditingController();
+  final _expiryYear = TextEditingController();
+
+  bool _isObscured = true;
+
+  final List<String> _cardTypes = ['Debit', 'Kredit'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialBankName != null) _bank.text = widget.initialBankName!;
+    if (widget.initialCardType != null)
+      _selectedCardType = widget.initialCardType;
+    if (widget.initialOwnerName != null) _owner.text = widget.initialOwnerName!;
+    if (widget.initialAccountNumber != null) {
+      if (widget.isEditMode) {
+        _number.text = '•••• •••• ${widget.initialAccountNumber}';
+      } else {
+        _number.text = widget.initialAccountNumber!;
+      }
+    }
+    if (widget.initialExpiryDate != null &&
+        widget.initialExpiryDate!.contains('/')) {
+      final parts = widget.initialExpiryDate!.split('/');
+      if (parts.length == 2) {
+        _expiryMonth.text = parts[0];
+        _expiryYear.text = parts[1];
+      }
+    }
+  }
 
   @override
   void dispose() {
     _bank.dispose();
     _owner.dispose();
     _number.dispose();
-    _label.dispose();
+    _expiryMonth.dispose();
+    _expiryYear.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomInset),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tambah Akun Bank',
-                style: GoogleFonts.poppins(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111111),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _field(_bank, 'Nama Bank', requiredField: true),
-              const SizedBox(height: 10),
-              _field(_owner, 'Nama Pemilik Rekening', requiredField: true),
-              const SizedBox(height: 10),
-              _field(_number, 'Nomor Rekening', requiredField: true),
-              const SizedBox(height: 10),
-              _field(_label, 'Label (opsional, contoh: Utama)'),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    'Simpan Akun Bank',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+    final isEdit = widget.initialBankName != null;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1E19),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 50,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                Text(
+                  isEdit ? 'Edit Akun Bank' : 'Tambah Akun Bank',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildField(_bank, 'Nama Bank', requiredField: true),
+                const SizedBox(height: 16),
+                _buildDropdownField(
+                  label: 'Jenis Kartu',
+                  value: _selectedCardType,
+                  items: _cardTypes,
+                  onChanged: (value) =>
+                      setState(() => _selectedCardType = value),
+                  requiredField: true,
+                ),
+                const SizedBox(height: 16),
+                _buildField(
+                  _owner,
+                  'Nama Pemilik Rekening',
+                  requiredField: true,
+                ),
+                const SizedBox(height: 16),
+                _buildNumberField(),
+                const SizedBox(height: 16),
+                _buildExpiryDateField(),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF94FF38), Color(0xFF5BE22F)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      isEdit ? 'Simpan Perubahan' : 'Simpan Akun Bank',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0A1A12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _field(
+  Widget _buildNumberField() {
+    final isEditMode = widget.isEditMode;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Nomor Rekening',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _number,
+          obscureText: !isEditMode && _isObscured,
+          readOnly: isEditMode,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF1A2A25),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            suffixIcon: !isEditMode
+                ? IconButton(
+                    icon: Icon(
+                      _isObscured ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _isObscured = !_isObscured),
+                  )
+                : const Icon(
+                    Icons.lock_outline,
+                    color: Colors.white54,
+                    size: 20,
+                  ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFF94FF38),
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD32F2F)),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Wajib diisi';
+            }
+            if (!isEditMode) {
+              final cleanNumber = value.replaceAll(RegExp(r'\s+'), '');
+              if (cleanNumber.length < 6) {
+                return 'Minimal 6 digit nomor rekening';
+              }
+            }
+            return null;
+          },
+        ),
+        if (isEditMode)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Nomor rekening tidak dapat diubah saat edit',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExpiryDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tanggal Kadaluarsa (Opsional)',
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _expiryMonth,
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+                keyboardType: TextInputType.number,
+                maxLength: 2,
+                decoration: InputDecoration(
+                  labelText: 'MM',
+                  labelStyle: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF1A2A25),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  counterText: '',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF94FF38),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return null;
+                  final month = int.tryParse(value);
+                  if (month != null && (month < 1 || month > 12)) {
+                    return 'Bulan 1-12';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextFormField(
+                controller: _expiryYear,
+                style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+                keyboardType: TextInputType.number,
+                maxLength: 2,
+                decoration: InputDecoration(
+                  labelText: 'YY',
+                  labelStyle: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF1A2A25),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  counterText: '',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF94FF38),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return null;
+                  final year = int.tryParse(value);
+                  if (year != null && year < 24) {
+                    return 'Tahun tidak valid';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildField(
     TextEditingController controller,
     String label, {
     bool requiredField = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      style: GoogleFonts.poppins(fontSize: 14),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(fontSize: 13),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF1A2A25),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFF94FF38),
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD32F2F)),
+            ),
+          ),
+          validator: (value) {
+            if (requiredField && (value == null || value.trim().isEmpty)) {
+              return 'Wajib diisi';
+            }
+            return null;
+          },
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required Function(String?) onChanged,
+    bool requiredField = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
         ),
-      ),
-      validator: (value) {
-        if (!requiredField) {
-          return null;
-        }
-        if (value == null || value.trim().isEmpty) {
-          return 'Wajib diisi';
-        }
-        return null;
-      },
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A2A25),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+            ),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: const Color(0xFF1A2A25),
+              hint: Text(
+                'Pilih Jenis Kartu',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+              items: items
+                  .map(
+                    (item) => DropdownMenuItem(value: item, child: Text(item)),
+                  )
+                  .toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -683,13 +1184,29 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
       return;
     }
 
+    String accountNumber = _number.text.trim();
+
+    if (widget.isEditMode) {
+      final match = RegExp(r'(\d{4})$').firstMatch(accountNumber);
+      if (match != null && widget.initialAccountNumber != null) {
+        accountNumber = widget.initialAccountNumber!;
+      }
+    }
+
+    String? expiryDate;
+    if (_expiryMonth.text.isNotEmpty && _expiryYear.text.isNotEmpty) {
+      expiryDate = '${_expiryMonth.text}/${_expiryYear.text}';
+    }
+
     Navigator.pop(
       context,
       _BankCardFormResult(
         bankName: _bank.text.trim(),
+        cardType: _selectedCardType ?? 'Debit',
         ownerName: _owner.text.trim(),
-        accountNumber: _number.text.trim(),
-        label: _label.text.trim(),
+        accountNumber: accountNumber,
+        expiryDate: expiryDate,
+        label: null,
       ),
     );
   }

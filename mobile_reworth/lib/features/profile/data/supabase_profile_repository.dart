@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
 import 'profile_repository.dart';
@@ -24,7 +25,6 @@ class SupabaseProfileRepository implements ProfileRepository {
           .maybeSingle();
 
       if (row == null) {
-        // Buat profile baru jika belum ada
         final newProfile = ProfileUser(
           id: authUser.id,
           nama:
@@ -37,8 +37,8 @@ class SupabaseProfileRepository implements ProfileRepository {
           totalPoin: 0,
           totalLaporanValid: 0,
           setorSampahKg: 0,
-          role: 'Masyarakat',
-          statusPengajuanSeller: 'Belum Daftar',
+          role: 'user',
+          statusPengajuanSeller: 'pending',
         );
 
         try {
@@ -49,8 +49,8 @@ class SupabaseProfileRepository implements ProfileRepository {
             'no_telp': newProfile.noTelp,
             'total_poin': 0,
             'total_laporan_valid': 0,
-            'role': 'Masyarakat',
-            'status_pengajuan_seller': 'Belum Daftar',
+            'role': 'user',
+            'status_pengajuan_seller': 'pending',
           });
         } catch (e) {
           print('Error creating profile: $e');
@@ -74,9 +74,9 @@ class SupabaseProfileRepository implements ProfileRepository {
             (row['laporan_valid'] as num?)?.toInt() ??
             0,
         setorSampahKg: (row['setor_sampah_kg'] as num?)?.toInt() ?? 0,
-        role: row['role'] as String? ?? 'Masyarakat',
+        role: row['role'] as String? ?? 'user',
         statusPengajuanSeller:
-            row['status_pengajuan_seller'] as String? ?? 'Belum Daftar',
+            row['status_pengajuan_seller'] as String? ?? 'pending',
       );
     } catch (e) {
       print('Error getProfile: $e');
@@ -111,9 +111,9 @@ class SupabaseProfileRepository implements ProfileRepository {
             (row['laporan_valid'] as num?)?.toInt() ??
             0,
         setorSampahKg: (row['setor_sampah_kg'] as num?)?.toInt() ?? 0,
-        role: row['role'] as String? ?? 'Masyarakat',
+        role: row['role'] as String? ?? 'user',
         statusPengajuanSeller:
-            row['status_pengajuan_seller'] as String? ?? 'Belum Daftar',
+            row['status_pengajuan_seller'] as String? ?? 'pending',
       );
     } catch (e) {
       print('Error getProfileById: $e');
@@ -135,7 +135,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           .toList();
     } catch (e) {
       print('Error getAvailableRewards: $e');
-      return []; // Return empty list instead of mock data
+      return [];
     }
   }
 
@@ -145,7 +145,6 @@ class SupabaseProfileRepository implements ProfileRepository {
     if (authUser == null) return false;
 
     try {
-      // 1. Get reward details
       final rewardResponse = await _client
           .from('reward')
           .select('*')
@@ -155,7 +154,6 @@ class SupabaseProfileRepository implements ProfileRepository {
       final reward = RewardItem.fromJson(rewardResponse);
       final pointsRequired = reward.poinDibutuhkan;
 
-      // 2. Get current user points
       final profileResponse = await _client
           .from('profiles')
           .select('total_poin, no_telp, nama_lengkap')
@@ -169,7 +167,6 @@ class SupabaseProfileRepository implements ProfileRepository {
         return false;
       }
 
-      // 3. Get user phone number (required for penukaran_poin)
       final userPhone = (profileResponse['no_telp'] as String?) ?? '';
 
       if (userPhone.isEmpty) {
@@ -177,7 +174,6 @@ class SupabaseProfileRepository implements ProfileRepository {
         return false;
       }
 
-      // 4. Create redemption record in penukaran_poin table
       final now = DateTime.now();
       final kodeReferensi = _generateReferenceCode();
 
@@ -191,7 +187,6 @@ class SupabaseProfileRepository implements ProfileRepository {
         'tanggal_penukaran': now.toIso8601String(),
       });
 
-      // 5. Update user points in profiles table
       final newPoints = currentPoints - pointsRequired;
       await _client
           .from('profiles')
@@ -201,7 +196,6 @@ class SupabaseProfileRepository implements ProfileRepository {
           })
           .eq('id', authUser.id);
 
-      // 6. Create points history record in riwayat_poin table
       await _client.from('riwayat_poin').insert({
         'id_masyarakat': authUser.id,
         'jenis_transaksi': 'Keluar',
@@ -221,5 +215,174 @@ class SupabaseProfileRepository implements ProfileRepository {
 
   String _generateReferenceCode() {
     return 'RWD-${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  // ========== BANK ACCOUNT METHODS ==========
+
+  @override
+  Future<List<BankAccount>> getBankAccounts() async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return [];
+
+    try {
+      final response = await _client
+          .from('kartu_pembayaran')
+          .select()
+          .eq('id_masyarakat', authUser.id)
+          .eq('status_aktif', true)
+          .order('kartu_utama', ascending: false)
+          .order('created_at', ascending: false);
+
+      final rows = List<Map<String, dynamic>>.from(response);
+      return rows.map((row) => BankAccount.fromJson(row)).toList();
+    } catch (e) {
+      print('Error getBankAccounts: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<void> addBankAccount({
+    required String bankName,
+    String? cardType,
+    required String ownerName,
+    required String accountNumber,
+    String? expiryDate,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) throw Exception('User tidak ditemukan');
+
+    // Pastikan profile ada
+    await _ensureProfileExists(authUser.id, authUser.email ?? '');
+
+    // Cek apakah ini kartu pertama, jika ya maka set sebagai primary
+    final existingAccounts = await getBankAccounts();
+    final isPrimary = existingAccounts.isEmpty;
+
+    // Ambil last 4 digit dari nomor rekening
+    final cleanNumber = accountNumber.replaceAll(RegExp(r'\s+'), '');
+    final last4 = cleanNumber.length >= 4
+        ? cleanNumber.substring(cleanNumber.length - 4)
+        : cleanNumber.padLeft(4, '0');
+
+    final payload = {
+      'id_masyarakat': authUser.id,
+      'nama_bank': bankName,
+      'jenis_kartu': cardType ?? 'Debit',
+      'nama_pemilik': ownerName,
+      'last4_digit': last4,
+      'expiry_date': expiryDate,
+      'kartu_utama': isPrimary,
+      'status_aktif': true,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    await _client.from('kartu_pembayaran').insert(payload);
+  }
+
+  @override
+  Future<void> updateBankAccount({
+    required String cardId,
+    required String bankName,
+    String? cardType,
+    required String ownerName,
+    required String accountNumber,
+    String? expiryDate,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) throw Exception('User tidak ditemukan');
+
+    final cleanNumber = accountNumber.replaceAll(RegExp(r'\s+'), '');
+    final last4 = cleanNumber.length >= 4
+        ? cleanNumber.substring(cleanNumber.length - 4)
+        : cleanNumber.padLeft(4, '0');
+
+    final payload = {
+      'nama_bank': bankName,
+      'jenis_kartu': cardType ?? 'Debit',
+      'nama_pemilik': ownerName,
+      'last4_digit': last4,
+      'expiry_date': expiryDate,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    await _client
+        .from('kartu_pembayaran')
+        .update(payload)
+        .eq('id_kartu', int.parse(cardId))
+        .eq('id_masyarakat', authUser.id);
+  }
+
+  @override
+  Future<void> deleteBankAccount(String cardId) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) throw Exception('User tidak ditemukan');
+
+    await _client
+        .from('kartu_pembayaran')
+        .update({
+          'status_aktif': false,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id_kartu', int.parse(cardId))
+        .eq('id_masyarakat', authUser.id);
+  }
+
+  @override
+  Future<void> setPrimaryBankAccount(String cardId) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) throw Exception('User tidak ditemukan');
+
+    await _client
+        .from('kartu_pembayaran')
+        .update({
+          'kartu_utama': false,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id_masyarakat', authUser.id);
+
+    // Set kartu yang dipilih sebagai utama
+    await _client
+        .from('kartu_pembayaran')
+        .update({
+          'kartu_utama': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id_kartu', int.parse(cardId))
+        .eq('id_masyarakat', authUser.id);
+  }
+
+  // ========== HELPER METHODS ==========
+
+  Future<void> _ensureProfileExists(String userId, String email) async {
+    try {
+      final existing = await _client
+          .from('profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (existing == null) {
+        print('🔵 Profile not found for user: $userId, creating now...');
+
+        await _client.from('profiles').insert({
+          'id': userId,
+          'nama_lengkap': 'Pengguna ReWorth',
+          'email': email,
+          'no_telp': '',
+          'total_poin': 0,
+          'total_laporan_valid': 0,
+          'role': 'user',
+          'status_pengajuan_seller': 'pending',
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+
+        print('✅ Profile created successfully for user: $userId');
+      }
+    } catch (e) {
+      print('⚠️ Error in _ensureProfileExists: $e');
+    }
   }
 }

@@ -18,9 +18,12 @@ class ProfileController extends StateNotifier<ProfileState> {
   ProfileController(this._repository) : super(const ProfileState()) {
     loadProfile();
     loadAvailableRewards();
+    loadBankAccounts();
   }
 
   final ProfileRepository _repository;
+
+  // ========== EXISTING METHODS ==========
 
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true);
@@ -49,8 +52,8 @@ class ProfileController extends StateNotifier<ProfileState> {
     try {
       final success = await _repository.redeemReward(rewardId);
       if (success) {
-        await loadProfile(); // Refresh points after successful redemption
-        await loadAvailableRewards(); // Refresh rewards list
+        await loadProfile();
+        await loadAvailableRewards();
         return true;
       }
       return false;
@@ -59,6 +62,104 @@ class ProfileController extends StateNotifier<ProfileState> {
       return false;
     } finally {
       state = state.copyWith(isRedeeming: false);
+    }
+  }
+
+  // ========== BANK ACCOUNT METHODS ==========
+
+  Future<void> loadBankAccounts() async {
+    state = state.copyWith(isLoadingBankAccounts: true);
+    try {
+      final accounts = await _repository.getBankAccounts();
+      state = state.copyWith(
+        isLoadingBankAccounts: false,
+        bankAccounts: accounts,
+      );
+    } catch (e) {
+      print('Error loadBankAccounts: $e');
+      state = state.copyWith(isLoadingBankAccounts: false, bankAccounts: []);
+    }
+  }
+
+  Future<bool> addBankAccount({
+    required String bankName,
+    String? cardType,
+    required String ownerName,
+    required String accountNumber,
+    String? expiryDate,
+  }) async {
+    state = state.copyWith(isAddingBankAccount: true);
+    try {
+      await _repository.addBankAccount(
+        bankName: bankName,
+        cardType: cardType,
+        ownerName: ownerName,
+        accountNumber: accountNumber,
+        expiryDate: expiryDate,
+      );
+      await loadBankAccounts();
+      return true;
+    } catch (e) {
+      print('Error addBankAccount: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isAddingBankAccount: false);
+    }
+  }
+
+  Future<bool> updateBankAccount({
+    required String cardId,
+    required String bankName,
+    String? cardType,
+    required String ownerName,
+    required String accountNumber,
+    String? expiryDate,
+  }) async {
+    state = state.copyWith(isUpdatingBankAccount: true);
+    try {
+      await _repository.updateBankAccount(
+        cardId: cardId,
+        bankName: bankName,
+        cardType: cardType,
+        ownerName: ownerName,
+        accountNumber: accountNumber,
+        expiryDate: expiryDate,
+      );
+      await loadBankAccounts();
+      return true;
+    } catch (e) {
+      print('Error updateBankAccount: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isUpdatingBankAccount: false);
+    }
+  }
+
+  Future<bool> deleteBankAccount(String cardId) async {
+    state = state.copyWith(isDeletingBankAccount: true);
+    try {
+      await _repository.deleteBankAccount(cardId);
+      await loadBankAccounts();
+      return true;
+    } catch (e) {
+      print('Error deleteBankAccount: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isDeletingBankAccount: false);
+    }
+  }
+
+  Future<bool> setPrimaryBankAccount(String cardId) async {
+    state = state.copyWith(isSettingPrimaryBank: true);
+    try {
+      await _repository.setPrimaryBankAccount(cardId);
+      await loadBankAccounts();
+      return true;
+    } catch (e) {
+      print('Error setPrimaryBankAccount: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isSettingPrimaryBank: false);
     }
   }
 }

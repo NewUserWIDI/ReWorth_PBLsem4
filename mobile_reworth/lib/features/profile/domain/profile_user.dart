@@ -23,7 +23,6 @@ class ProfileUser {
     required this.statusPengajuanSeller,
   });
 
-  // Copy with method
   ProfileUser copyWith({
     String? id,
     String? nama,
