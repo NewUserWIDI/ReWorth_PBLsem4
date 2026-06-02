@@ -8,6 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/../data/mock_data.php';
+require_once __DIR__ . '/../components/seller_helpers.php';
 
 function login_dashboard_user(string $identifier, string $password): array
 {
@@ -30,7 +31,15 @@ function login_dashboard_user(string $identifier, string $password): array
         return ['success' => true, 'message' => 'Login berhasil', 'user' => $user];
     }
 
-    return ['success' => false, 'message' => 'Email/username atau password salah.'];
+    $sellerResult = seller_authenticate_dashboard_user($identifier, $password);
+    if (($sellerResult['success'] ?? false) === true) {
+        $_SESSION['dashboard_user'] = $sellerResult['user'];
+        return $sellerResult;
+    }
+
+    return $sellerResult['message'] ?? '' !== ''
+        ? $sellerResult
+        : ['success' => false, 'message' => 'Email/username atau password salah.'];
 }
 
 function logout_dashboard_user(): void

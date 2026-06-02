@@ -6,11 +6,12 @@ require_once __DIR__ . '/../../core/middleware.php';
 require_once __DIR__ . '/../../layout/main_layout.php';
 require_once __DIR__ . '/../../components/badge_status.php';
 require_once __DIR__ . '/../../components/admin_helpers.php';
+require_once __DIR__ . '/../../components/market_helpers.php';
 
 require_role('admin');
 
 $id = (string) ($_GET['id'] ?? '');
-$product = admin_product_by_id($id);
+$product = admin_market_product_by_id($id);
 if ($product === null) {
     set_flash('warning', 'Produk tidak ditemukan.');
     redirect('app/modules/admin/mini_market.php');
@@ -34,7 +35,12 @@ render_layout('Detail Produk', function () use ($product): void {
         </div>
         <div class="split-grid">
             <article class="form-card">
-                <img src="<?= e(url((string) $product['foto'])) ?>" alt="foto produk" style="width:100%;border-radius:14px;max-height:280px;object-fit:cover;">
+                <?php $photo = (string) ($product['foto'] ?? ''); ?>
+                <img
+                    src="<?= e(filter_var($photo, FILTER_VALIDATE_URL) ? $photo : url($photo !== '' ? $photo : 'assets/logo_reworth.jpeg')) ?>"
+                    alt="foto produk"
+                    style="width:100%;border-radius:14px;max-height:280px;object-fit:cover;"
+                >
             </article>
             <article class="form-card">
                 <p><strong>Nama Produk:</strong> <?= e((string) $product['nama_produk']) ?></p>
@@ -43,7 +49,7 @@ render_layout('Detail Produk', function () use ($product): void {
                 <p><strong>Harga:</strong> Rp <?= e(number_format((int) $product['harga'], 0, ',', '.')) ?></p>
                 <p><strong>Stok:</strong> <?= e((string) $product['stok']) ?></p>
                 <p><strong>Tanggal Dibuat:</strong> <?= e((string) $product['tanggal_dibuat']) ?></p>
-                <p><strong>Deskripsi:</strong> Deskripsi produk lengkap akan ditampilkan dari DB (mock).</p>
+                <p><strong>Deskripsi:</strong> <?= e((string) ($product['deskripsi'] ?? '-')) ?></p>
                 <div class="card-actions">
                     <form method="post"><input type="hidden" name="action" value="hide"><button class="btn btn-danger" type="submit">Sembunyikan</button></form>
                     <form method="post"><input type="hidden" name="action" value="activate"><button class="btn btn-primary" type="submit">Aktifkan</button></form>
@@ -54,4 +60,3 @@ render_layout('Detail Produk', function () use ($product): void {
     </section>
     <?php
 });
-

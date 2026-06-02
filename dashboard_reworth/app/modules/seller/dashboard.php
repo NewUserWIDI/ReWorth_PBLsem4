@@ -6,21 +6,27 @@ require_once __DIR__ . '/../../core/middleware.php';
 require_once __DIR__ . '/../../layout/main_layout.php';
 require_once __DIR__ . '/../../components/stat_card.php';
 require_once __DIR__ . '/../../components/badge_status.php';
-require_once __DIR__ . '/../../data/mock_data.php';
+require_once __DIR__ . '/../../components/seller_helpers.php';
 
 require_active_seller();
 
-render_layout('Dashboard Seller', function (): void {
-    $orders = mock_orders();
-    $products = mock_products();
-    $newOrders = array_values(array_filter($orders, fn ($item) => $item['status'] === 'baru'));
-    $sales = array_sum(array_map(fn ($item) => (int) $item['total'], array_filter($orders, fn ($item) => $item['status'] === 'selesai')));
-    $lowStock = array_values(array_filter($products, fn ($item) => (int) $item['stok'] <= 5));
+$user = current_user() ?? [];
+$sellerUserId = (string) ($user['seller_user_id'] ?? $user['user_id'] ?? '');
+$sellerProfile = seller_fetch_profile($sellerUserId);
+$dashboard = seller_fetch_dashboard_data($sellerUserId);
+$orders = $dashboard['orders'];
+$products = $dashboard['products'];
+$newOrders = $dashboard['new_orders'];
+$sales = $dashboard['sales'];
+$lowStock = $dashboard['low_stock'];
+$storeName = (string) ($sellerProfile['nama_toko'] ?? 'Toko ReWorth');
+
+render_layout('Dashboard Seller', function () use ($orders, $products, $newOrders, $sales, $lowStock, $storeName): void {
     ?>
     <section class="seller-hero">
         <div class="seller-hero-content">
-            <h2>Toko Anda Aktif</h2>
-            <p>Teruslah menginspirasi perubahan positif bagi lingkungan lewat produk daur ulang yang rapi, relevan, dan mudah ditemukan pembeli.</p>
+            <h2><?= e($storeName) ?> Aktif</h2>
+            <p>Kelola toko, produk, dan pesanan Anda langsung dari data Supabase yang sama dengan aplikasi mobile.</p>
             <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/store_profile.php')) ?>">Lihat Profil Toko</a>
         </div>
         <div class="seller-hero-ellipse seller-hero-ellipse-fill" aria-hidden="true"></div>
@@ -29,10 +35,10 @@ render_layout('Dashboard Seller', function (): void {
     </section>
 
     <div class="stat-grid">
-        <?php stat_card('Total Penjualan', 'Rp ' . number_format($sales, 0, ',', '.'), 'Pesanan selesai'); ?>
+        <?php stat_card('Total Penjualan', 'Rp ' . number_format((int) $sales, 0, ',', '.'), 'Dari pesanan selesai'); ?>
         <?php stat_card('Pesanan Baru', count($newOrders), 'Perlu diproses'); ?>
-        <?php stat_card('Produk Aktif', count(array_filter($products, fn ($item) => $item['status'] === 'aktif')), 'Tayang di market'); ?>
-        <?php stat_card('Saldo Tersedia', 'Rp ' . number_format(max($sales - 12500, 0), 0, ',', '.'), 'Siap ditarik'); ?>
+        <?php stat_card('Produk Aktif', count(array_filter($products, fn ($item) => ($item['status_produk'] ?? '') === 'aktif')), 'Tayang di market'); ?>
+        <?php stat_card('Saldo Tersedia', 'Rp ' . number_format((int) max($sales, 0), 0, ',', '.'), 'Siap direkap'); ?>
     </div>
 
     <div class="content-grid">
@@ -40,13 +46,13 @@ render_layout('Dashboard Seller', function (): void {
             <div class="panel-header">
                 <div>
                     <h2>Grafik Penjualan 30 Hari Terakhir</h2>
-                    <p>Ringkasan akan terisi otomatis ketika transaksi masuk.</p>
+                    <p>Ringkasan akan bertambah seiring transaksi toko.</p>
                 </div>
             </div>
             <div class="chart-placeholder">
                 <div>
-                    <strong>Belum cukup data penjualan</strong>
-                    <p class="panel-subtitle">Data chart akan muncul setelah toko memiliki transaksi rutin.</p>
+                    <strong><?= count($orders) > 0 ? 'Data transaksi seller sudah tersinkron' : 'Belum cukup data penjualan' ?></strong>
+                    <p class="panel-subtitle">Grafik detail bisa ditambahkan setelah seller dashboard stabil dengan data real.</p>
                 </div>
             </div>
         </section>
@@ -60,10 +66,10 @@ render_layout('Dashboard Seller', function (): void {
                     <?php foreach ($lowStock as $product): ?>
                         <div class="attention-item">
                             <div>
-                                <strong><?= e($product['nama']) ?></strong>
+                                <strong><?= e((string) $product['nama_produk']) ?></strong>
                                 <p class="panel-subtitle">Stok tersisa <?= e((string) $product['stok']) ?></p>
                             </div>
-                            <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/products.php')) ?>">Cek</a>
+                            <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/product_detail.php?id=' . urlencode((string) $product['id_produk']))) ?>">Cek</a>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -78,21 +84,24 @@ render_layout('Dashboard Seller', function (): void {
         </div>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>ID Pesanan</th><th>Pembeli</th><th>Status</th><th>Total</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>ID Pesanan</th><th>Pembeli</th><th>Status</th><th>Total Seller</th><th>Aksi</th></tr></thead>
                 <tbody>
-                    <?php foreach (array_slice($orders, 0, 5) as $order): ?>
-                        <tr>
-                            <td><?= e($order['id']) ?></td>
-                            <td><?= e($order['pembeli']) ?></td>
-                            <td><?php badge_status($order['status']); ?></td>
-                            <td>Rp <?= e(number_format((int) $order['total'], 0, ',', '.')) ?></td>
-                            <td><a class="btn btn-secondary" href="<?= e(url('app/modules/seller/order_detail.php?id=' . urlencode($order['id']))) ?>">Detail</a></td>
-                        </tr>
-                    <?php endforeach; ?>
+                    <?php if ($orders === []): ?>
+                        <tr><td colspan="5" style="text-align:center;color:#6b7280;">Belum ada pesanan untuk toko ini.</td></tr>
+                    <?php else: ?>
+                        <?php foreach (array_slice($orders, 0, 5) as $order): ?>
+                            <tr>
+                                <td><?= e((string) $order['kode_pesanan']) ?></td>
+                                <td><?= e((string) $order['pembeli']) ?></td>
+                                <td><?php badge_status((string) $order['status_pesanan']); ?></td>
+                                <td>Rp <?= e(number_format((int) $order['total'], 0, ',', '.')) ?></td>
+                                <td><a class="btn btn-secondary" href="<?= e(url('app/modules/seller/order_detail.php?id=' . urlencode((string) $order['id_pesanan']))) ?>">Detail</a></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </section>
     <?php
 });
-
