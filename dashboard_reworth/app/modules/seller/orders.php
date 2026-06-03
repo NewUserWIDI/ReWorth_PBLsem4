@@ -16,7 +16,7 @@ $filters = [
     'q' => $_GET['q'] ?? '',
 ];
 $orders = seller_fetch_order_summaries($sellerUserId, $filters);
-$tabs = ['semua' => 'Semua', 'pending' => 'Pending', 'diproses' => 'Diproses', 'dikemas' => 'Dikemas', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai', 'dibatalkan' => 'Dibatalkan'];
+$tabs = ['semua' => 'Semua', 'diproses' => 'Diproses', 'dikemas' => 'Dikemas', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai', 'dibatalkan' => 'Dibatalkan'];
 
 render_layout('Pesanan', function () use ($orders, $tabs, $filters): void {
     ?>

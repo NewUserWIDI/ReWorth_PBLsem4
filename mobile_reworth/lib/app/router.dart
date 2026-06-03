@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +16,7 @@ import 'package:mobile_reworth/features/market/domain/checkout_payment_session.d
 import 'package:mobile_reworth/features/market/presentation/pages/cart_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/checkout_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
+import 'package:mobile_reworth/features/market/presentation/pages/order_history_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/product_detail_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/qris_payment_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/seller_registration_page.dart';
@@ -136,10 +137,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/order-history',
-        builder: (context, state) => const _PlaceholderPage(
-          title: 'Riwayat Pesanan',
-          useGradientHeader: true,
-        ),
+        builder: (context, state) => const OrderHistoryPage(),
       ),
       GoRoute(
         path: '/wishlist',

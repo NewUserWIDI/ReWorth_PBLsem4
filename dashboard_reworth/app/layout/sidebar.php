@@ -11,6 +11,7 @@ function sidebar_items(string $role): array
             ['Manajemen Seller', 'app/modules/admin/sellers.php', 'store'],
             ['Laporan Sampah', 'app/modules/admin/laporan_sampah.php', 'file'],
             ['Mini Market', 'app/modules/admin/mini_market.php', 'shopping'],
+            ['Verifikasi Pembayaran', 'app/modules/admin/payment_verifications.php', 'credit'],
             ['Transaksi', 'app/modules/admin/transaksi.php', 'credit'],
             ['Aktivitas Sistem', 'app/modules/admin/aktivitas.php', 'activity'],
             ['Pengaturan', 'app/modules/admin/pengaturan.php', 'settings'],
@@ -75,6 +76,7 @@ function render_sidebar(array $user): void
                 'app/modules/admin/sellers.php' => ['app/modules/admin/seller_detail.php', 'app/modules/admin/seller_requests.php'],
                 'app/modules/admin/laporan_sampah.php' => ['app/modules/admin/laporan_detail.php', 'app/modules/admin/reports.php'],
                 'app/modules/admin/mini_market.php' => ['app/modules/admin/product_detail.php', 'app/modules/admin/products.php'],
+                'app/modules/admin/payment_verifications.php' => ['app/modules/admin/payment_verification_detail.php'],
                 'app/modules/admin/transaksi.php' => ['app/modules/admin/transaksi_detail.php', 'app/modules/admin/orders.php'],
                 'app/modules/admin/aktivitas.php' => ['app/modules/admin/rewards.php'],
             ];

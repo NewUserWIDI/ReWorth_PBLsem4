@@ -28,8 +28,16 @@ if ($detail === null) {
 $order = $detail['order'];
 $address = $detail['address'] ?? [];
 $payment = $detail['payment'] ?? [];
+$shippingAddress = trim(implode(', ', array_filter([
+    (string) ($address['jalan'] ?? ''),
+    (string) ($address['kelurahan'] ?? ''),
+    (string) ($address['kecamatan'] ?? ''),
+    (string) ($address['kota'] ?? ''),
+    (string) ($address['provinsi'] ?? ''),
+    (string) ($address['kode_pos'] ?? ''),
+])));
 
-render_layout('Detail Pesanan', function () use ($order, $address, $payment): void {
+render_layout('Detail Pesanan', function () use ($order, $address, $payment, $shippingAddress): void {
     ?>
     <section class="form-card">
         <div class="panel-header">
@@ -49,14 +57,7 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment): vo
         </section>
         <section class="form-card">
             <h2 class="panel-title">Alamat Pengiriman</h2>
-            <p><?= e(trim(implode(', ', array_filter([
-                (string) ($address['jalan'] ?? ''),
-                (string) ($address['kelurahan'] ?? ''),
-                (string) ($address['kecamatan'] ?? ''),
-                (string) ($address['kota'] ?? ''),
-                (string) ($address['provinsi'] ?? ''),
-                (string) ($address['kode_pos'] ?? ''),
-            ])))) ?: 'Alamat belum tersedia') ?></p>
+            <p><?= e($shippingAddress !== '' ? $shippingAddress : 'Alamat belum tersedia') ?></p>
             <p class="panel-subtitle"><?= e((string) (($address['patokan'] ?? '') !== '' ? $address['patokan'] : 'Tidak ada patokan tambahan.')) ?></p>
         </section>
     </div>
@@ -90,7 +91,7 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment): vo
             </div>
             <form method="post" class="toolbar-right" style="display:flex;gap:10px;align-items:center;">
                 <select class="select" name="status_pesanan" required>
-                    <?php foreach (['pending', 'diproses', 'dikemas', 'dikirim', 'selesai', 'dibatalkan'] as $status): ?>
+                    <?php foreach (['diproses', 'dikemas', 'dikirim', 'selesai', 'dibatalkan'] as $status): ?>
                         <option value="<?= e($status) ?>" <?= (string) ($order['status_pesanan'] ?? '') === $status ? 'selected' : '' ?>><?= e(status_label($status)) ?></option>
                     <?php endforeach; ?>
                 </select>

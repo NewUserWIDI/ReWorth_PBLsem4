@@ -1,20 +1,18 @@
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../application/cart_controller.dart';
 import '../../data/checkout_repository.dart';
 import '../../domain/checkout_payment_session.dart';
 
 class QrisPaymentPage extends ConsumerStatefulWidget {
-  const QrisPaymentPage({
-    super.key,
-    required this.session,
-  });
+  const QrisPaymentPage({super.key, required this.session});
 
   final CheckoutPaymentSession? session;
 
@@ -23,16 +21,22 @@ class QrisPaymentPage extends ConsumerStatefulWidget {
 }
 
 class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
+  final ImagePicker _picker = ImagePicker();
+
   Timer? _timer;
   Duration _remaining = Duration.zero;
-  bool _isConfirming = false;
+  XFile? _proofFile;
+  bool _isSubmitting = false;
   bool _showSuccess = false;
 
   @override
   void initState() {
     super.initState();
     _syncRemaining();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _syncRemaining());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _syncRemaining(),
+    );
   }
 
   @override
@@ -62,6 +66,7 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
     final session = widget.session;
     if (session == null) {
       return Scaffold(
+        backgroundColor: const Color(0xFF061B18),
         appBar: AppBar(title: const Text('Pembayaran QRIS')),
         body: Center(
           child: Text(
@@ -71,8 +76,6 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
         ),
       );
     }
-
-    final expired = _remaining == Duration.zero;
 
     return Scaffold(
       backgroundColor: const Color(0xFF061B18),
@@ -87,11 +90,14 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
                     children: [
                       IconButton(
                         onPressed: () => context.pop(),
-                        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                        ),
                       ),
                       Expanded(
                         child: Text(
-                          'Bayar Dengan QRIS Dummy',
+                          'Upload Bukti Pembayaran',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
                             fontSize: 20,
@@ -123,21 +129,10 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
                             kodePembayaran: session.kodePembayaran,
                             totalBayar: session.totalBayar,
                             remaining: _remaining,
-                            expired: expired,
                           ),
                           const SizedBox(height: 20),
-                          const _DummyQrisCard(),
+                          const _StoreQrisCard(),
                           const SizedBox(height: 20),
-                          Text(
-                            'Scan QR ini untuk simulasi pembayaran. Setelah itu tekan tombol konfirmasi di bawah.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              height: 1.5,
-                              color: const Color.fromRGBO(17, 17, 17, 0.62),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
@@ -149,7 +144,7 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Catatan Demo',
+                                  'Alur Pembayaran',
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
@@ -158,22 +153,31 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Ini hanya simulasi tugas akhir. Tidak ada transaksi bank atau QRIS asli yang diproses.',
+                                  '1. Scan QRIS toko/admin di atas.\n2. Selesaikan pembayaran di aplikasi bank/e-wallet Anda.\n3. Upload foto bukti pembayaran.\n4. Admin akan memverifikasi sebelum pesanan diteruskan ke seller.',
                                   style: GoogleFonts.poppins(
                                     fontSize: 12.5,
-                                    height: 1.5,
+                                    height: 1.55,
                                     color: const Color(0xFF365B2D),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 20),
+                          _ProofUploadCard(
+                            proofFile: _proofFile,
+                            onPickGallery: () =>
+                                _pickProof(ImageSource.gallery),
+                            onPickCamera: () => _pickProof(ImageSource.camera),
+                          ),
+                          const SizedBox(height: 24),
                           SizedBox(
                             width: double.infinity,
                             height: 56,
                             child: ElevatedButton(
-                              onPressed: expired || _isConfirming ? null : _confirmPayment,
+                              onPressed: _proofFile == null || _isSubmitting
+                                  ? null
+                                  : _submitProof,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1F5E23),
                                 foregroundColor: Colors.white,
@@ -182,7 +186,9 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
                                 ),
                               ),
                               child: Text(
-                                _isConfirming ? 'Memverifikasi...' : 'Saya Sudah Bayar',
+                                _isSubmitting
+                                    ? 'Mengirim bukti...'
+                                    : 'Kirim Bukti Pembayaran',
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -192,7 +198,9 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
                           ),
                           const SizedBox(height: 12),
                           TextButton(
-                            onPressed: _isConfirming ? null : () => context.pop(),
+                            onPressed: _isSubmitting
+                                ? null
+                                : () => context.pop(),
                             child: Text(
                               'Kembali ke checkout',
                               style: GoogleFonts.poppins(
@@ -219,16 +227,42 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
     );
   }
 
-  Future<void> _confirmPayment() async {
+  Future<void> _pickProof(ImageSource source) async {
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 82,
+      maxWidth: 1800,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _proofFile = picked);
+  }
+
+  Future<void> _submitProof() async {
     final session = widget.session;
-    if (session == null) {
+    final proof = _proofFile;
+    if (session == null || proof == null) {
       return;
     }
 
-    setState(() => _isConfirming = true);
+    setState(() => _isSubmitting = true);
     try {
-      await ref.read(checkoutRepositoryProvider).confirmDummyPayment(session);
+      final bytes = await proof.readAsBytes();
+      final extension = proof.path.contains('.')
+          ? proof.path.split('.').last
+          : 'jpg';
+
+      await ref
+          .read(checkoutRepositoryProvider)
+          .submitPaymentProof(
+            session: session,
+            fileBytes: bytes,
+            fileExtension: extension,
+          );
+
       ref.read(cartControllerProvider.notifier).clearSelected();
+
       if (!mounted) {
         return;
       }
@@ -240,15 +274,16 @@ class _QrisPaymentPageState extends ConsumerState<QrisPaymentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF7A1C1C),
           content: Text(
-            'Gagal mengonfirmasi pembayaran: $error',
+            'Gagal mengirim bukti pembayaran: $error',
             style: GoogleFonts.poppins(fontSize: 13),
           ),
         ),
       );
     } finally {
       if (mounted) {
-        setState(() => _isConfirming = false);
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -260,14 +295,12 @@ class _PaymentInfoCard extends StatelessWidget {
     required this.kodePembayaran,
     required this.totalBayar,
     required this.remaining,
-    required this.expired,
   });
 
   final String kodePesanan;
   final String kodePembayaran;
   final double totalBayar;
   final Duration remaining;
-  final bool expired;
 
   @override
   Widget build(BuildContext context) {
@@ -296,8 +329,8 @@ class _PaymentInfoCard extends StatelessWidget {
           const SizedBox(height: 10),
           _infoRow(
             'Berlaku Sampai',
-            expired ? 'Kadaluarsa' : _formatDuration(remaining),
-            highlight: !expired,
+            _formatDuration(remaining),
+            highlight: true,
           ),
         ],
       ),
@@ -321,7 +354,9 @@ class _PaymentInfoCard extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 13.5,
             fontWeight: FontWeight.w700,
-            color: highlight ? const Color(0xFF1F5E23) : const Color(0xFF111111),
+            color: highlight
+                ? const Color(0xFF1F5E23)
+                : const Color(0xFF111111),
           ),
         ),
       ],
@@ -329,6 +364,9 @@ class _PaymentInfoCard extends StatelessWidget {
   }
 
   String _formatDuration(Duration duration) {
+    if (duration == Duration.zero) {
+      return 'Segera upload';
+    }
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
@@ -348,8 +386,8 @@ class _PaymentInfoCard extends StatelessWidget {
   }
 }
 
-class _DummyQrisCard extends StatelessWidget {
-  const _DummyQrisCard();
+class _StoreQrisCard extends StatelessWidget {
+  const _StoreQrisCard();
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +407,7 @@ class _DummyQrisCard extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'QRIS ReWorth Demo',
+            'QRIS Toko / Admin',
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -380,13 +418,30 @@ class _DummyQrisCard extends StatelessWidget {
           AspectRatio(
             aspectRatio: 1,
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF111111), width: 1.4),
+                border: Border.all(color: const Color(0xFF111111), width: 1.2),
               ),
-              child: const _FakeQrPattern(),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/images/qris_store.jpeg',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const _FakeQrisFallback(),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Jika belum ada file QRIS asli, letakkan gambar QR di assets/images/qris_store.jpeg',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 11.5,
+              color: const Color.fromRGBO(17, 17, 17, 0.55),
             ),
           ),
         ],
@@ -395,61 +450,132 @@ class _DummyQrisCard extends StatelessWidget {
   }
 }
 
-class _FakeQrPattern extends StatelessWidget {
-  const _FakeQrPattern();
+class _FakeQrisFallback extends StatelessWidget {
+  const _FakeQrisFallback();
 
   @override
   Widget build(BuildContext context) {
-    const size = 17;
-    final random = math.Random(17);
-
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: size,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: size * size,
-      itemBuilder: (context, index) {
-        final x = index % size;
-        final y = index ~/ size;
-        final isFinder = _isFinder(x, y, size);
-        final isDark = isFinder || random.nextBool();
-
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.black : Colors.white,
-            borderRadius: BorderRadius.circular(2),
+    return Container(
+      color: const Color(0xFFF5F5F0),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.qr_code_2_rounded,
+            size: 84,
+            color: Color(0xFF1F5E23),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          Text(
+            'Tempel QRIS asli di sini',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1F5E23),
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  static bool _isFinder(int x, int y, int size) {
-    final finderOrigins = [
-      const Offset(0, 0),
-      Offset(size - 7, 0),
-      Offset(0, size - 7),
-    ];
+class _ProofUploadCard extends StatelessWidget {
+  const _ProofUploadCard({
+    required this.proofFile,
+    required this.onPickGallery,
+    required this.onPickCamera,
+  });
 
-    for (final origin in finderOrigins) {
-      final startX = origin.dx.toInt();
-      final startY = origin.dy.toInt();
-      if (x >= startX && x < startX + 7 && y >= startY && y < startY + 7) {
-        final localX = x - startX;
-        final localY = y - startY;
-        final border = localX == 0 ||
-            localX == 6 ||
-            localY == 0 ||
-            localY == 6;
-        final center = localX >= 2 && localX <= 4 && localY >= 2 && localY <= 4;
-        return border || center;
-      }
-    }
+  final XFile? proofFile;
+  final VoidCallback onPickGallery;
+  final VoidCallback onPickCamera;
 
-    return false;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Bukti Pembayaran',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111111),
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (proofFile == null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: const Color(0xFFF7F8F3),
+                border: Border.all(color: const Color(0xFFE1E7DA)),
+              ),
+              child: Text(
+                'Belum ada foto bukti pembayaran yang dipilih.',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: const Color.fromRGBO(17, 17, 17, 0.62),
+                ),
+              ),
+            )
+          else
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.file(
+                File(proofFile!.path),
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onPickGallery,
+                  icon: const Icon(Icons.photo_library_outlined),
+                  label: Text(
+                    'Galeri',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onPickCamera,
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: Text(
+                    'Kamera',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -496,10 +622,7 @@ class _PaymentSuccessOverlayState extends State<_PaymentSuccessOverlay>
             final value = Curves.easeOutBack.transform(_controller.value);
             return Transform.scale(
               scale: 0.72 + (0.28 * value),
-              child: Opacity(
-                opacity: _controller.value,
-                child: child,
-              ),
+              child: Opacity(opacity: _controller.value, child: child),
             );
           },
           child: Container(
@@ -519,11 +642,15 @@ class _PaymentSuccessOverlayState extends State<_PaymentSuccessOverlay>
                     color: Color(0xFF58B947),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_rounded, size: 52, color: Colors.white),
+                  child: const Icon(
+                    Icons.mark_email_read_rounded,
+                    size: 48,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Pembayaran Berhasil',
+                  'Bukti Terkirim',
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -532,7 +659,7 @@ class _PaymentSuccessOverlayState extends State<_PaymentSuccessOverlay>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Pesananmu sudah masuk ke sistem dan sedang diteruskan ke seller untuk diproses.',
+                  'Bukti pembayaran Anda sudah masuk. Status pesanan sekarang menunggu verifikasi admin sebelum diteruskan ke seller.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,

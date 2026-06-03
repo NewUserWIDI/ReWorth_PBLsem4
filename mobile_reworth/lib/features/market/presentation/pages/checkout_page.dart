@@ -49,8 +49,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     fee: 0,
   );
 
-  final List<String> _paymentOptions = const ['QRIS Dummy'];
-  String _selectedPayment = 'QRIS Dummy';
+  final List<String> _paymentOptions = const ['QRIS'];
+  String _selectedPayment = 'QRIS';
 
   @override
   void initState() {
@@ -481,7 +481,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     ),
                   ),
                   subtitle: Text(
-                    'Scan QR lalu tekan tombol konfirmasi pembayaran.',
+                    'Scan QR, lalu upload bukti pembayaran untuk diverifikasi admin.',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.66),
@@ -867,11 +867,51 @@ class _SectionCard extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 340;
+            if (compact) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          value,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13.5,
+                            height: 1.45,
+                            color: Colors.white.withValues(alpha: 0.72),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white.withValues(alpha: 0.52),
+                    ),
+                  ),
+                ],
+              );
+            }
+
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: compact ? 82 : 96,
+                  width: 108,
                   child: Text(
                     label,
                     style: GoogleFonts.poppins(
@@ -886,7 +926,7 @@ class _SectionCard extends StatelessWidget {
                   child: Text(
                     value,
                     style: GoogleFonts.poppins(
-                      fontSize: compact ? 13.5 : 14,
+                      fontSize: 14,
                       height: 1.45,
                       color: Colors.white.withValues(alpha: 0.72),
                     ),

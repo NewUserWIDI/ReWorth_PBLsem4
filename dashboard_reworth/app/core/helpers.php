@@ -34,21 +34,26 @@ function get_flash(): ?array
 
 function status_label(string $status): string
 {
-    return match ($status) {
+    $normalized = strtolower(trim($status));
+
+    return match ($normalized) {
         'menunggu_verifikasi' => 'Menunggu Verifikasi',
+        'menunggu pembayaran' => 'Menunggu Pembayaran',
+        'menunggu' => 'Menunggu',
         'valid' => 'Valid',
         'ditolak' => 'Ditolak',
         'diproses' => 'Diproses',
         'dikemas' => 'Dikemas',
+        'dikirim' => 'Dikirim',
         'selesai' => 'Selesai',
         'pending' => 'Pending',
         'aktif' => 'Aktif',
         'nonaktif' => 'Nonaktif',
         'baru' => 'Baru',
-        'dikirim' => 'Dikirim',
         'dibatalkan' => 'Dibatalkan',
-        'menunggu' => 'Menunggu',
         'berhasil' => 'Berhasil',
+        'belum upload' => 'Belum Upload',
+        'belum dibayar' => 'Belum Dibayar',
         'kadaluarsa' => 'Kadaluarsa',
         'gagal' => 'Gagal',
         'terverifikasi' => 'Terverifikasi',
@@ -63,9 +68,11 @@ function status_label(string $status): string
 
 function status_badge_class(string $status): string
 {
-    return match ($status) {
+    $normalized = strtolower(trim($status));
+
+    return match ($normalized) {
         'valid', 'aktif', 'selesai', 'terverifikasi', 'berhasil', 'tersedia' => 'badge-success',
-        'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas' => 'badge-warning',
+        'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas', 'menunggu pembayaran', 'belum upload', 'belum dibayar' => 'badge-warning',
         'ditolak', 'gagal', 'dibatalkan', 'nonaktif', 'suspend', 'kadaluarsa' => 'badge-danger',
         'disembunyikan', 'refund' => 'badge-neutral',
         'diproses', 'dikirim', 'tertahan' => 'badge-info',

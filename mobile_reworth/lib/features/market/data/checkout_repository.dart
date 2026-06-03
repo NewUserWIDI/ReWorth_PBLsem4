@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -35,12 +37,21 @@ class CheckoutRepository {
     final qrPayload =
         'reworth://qris/$kodePembayaran?amount=${pricing.totalBayar.round()}';
 
+    final orderStatusCandidates = [
+      'Menunggu Pembayaran',
+      'menunggu pembayaran',
+      'Menunggu',
+      'menunggu',
+      'Baru',
+      'baru',
+    ];
+
     final orderPayload = {
       'kode_pesanan': kodePesanan,
       'id_masyarakat': userId,
       'id_alamat': addressId,
       'tanggal_pesanan': now.toIso8601String(),
-      'status_pesanan': 'baru',
+      'status_pesanan': orderStatusCandidates.first,
       'subtotal': pricing.subtotalProduk,
       'biaya_pengiriman': pricing.biayaPengiriman,
       'pajak': pricing.feePlatform,
@@ -60,12 +71,10 @@ class CheckoutRepository {
     final orderInsert = await _insertWithVariants(
       table: 'pesanan',
       payloads: [
-        extendedOrderPayload,
-        orderPayload,
-        {...extendedOrderPayload, 'status_pesanan': 'pending'},
-        {...orderPayload, 'status_pesanan': 'pending'},
-        {...extendedOrderPayload, 'status_pesanan': 'menunggu'},
-        {...orderPayload, 'status_pesanan': 'menunggu'},
+        for (final status in orderStatusCandidates) ...[
+          {...extendedOrderPayload, 'status_pesanan': status},
+          {...orderPayload, 'status_pesanan': status},
+        ],
       ],
     );
     final orderRow = Map<String, dynamic>.from(orderInsert);
@@ -104,18 +113,27 @@ class CheckoutRepository {
       fallbackPayloads: fallbackDetailPayloads,
     );
 
+    final paymentStatusCandidates = [
+      'Belum Upload',
+      'belum upload',
+      'Menunggu Pembayaran',
+      'menunggu pembayaran',
+      'Belum Dibayar',
+      'belum dibayar',
+    ];
+
     final paymentPayload = {
       'id_pesanan': orderId,
       'jumlah_bayar': pricing.totalBayar,
-      'status_pembayaran': 'menunggu',
+      'status_pembayaran': paymentStatusCandidates.first,
       'referensi_pembayaran': kodePembayaran,
       'created_at': now.toIso8601String(),
       'updated_at': now.toIso8601String(),
     };
     final extendedPaymentPayload = {
       ...paymentPayload,
-      'metode_pembayaran': 'QRIS Dummy',
-      'provider_pembayaran': 'ReWorth QRIS Dummy',
+      'metode_pembayaran': 'QRIS',
+      'provider_pembayaran': 'ReWorth QRIS',
       'kode_pembayaran': kodePembayaran,
       'qr_payload': qrPayload,
       'tanggal_kadaluarsa': expiresAt.toIso8601String(),
@@ -124,10 +142,10 @@ class CheckoutRepository {
     final paymentInsert = await _insertWithVariants(
       table: 'pembayaran',
       payloads: [
-        extendedPaymentPayload,
-        paymentPayload,
-        {...extendedPaymentPayload, 'status_pembayaran': 'pending'},
-        {...paymentPayload, 'status_pembayaran': 'pending'},
+        for (final status in paymentStatusCandidates) ...[
+          {...extendedPaymentPayload, 'status_pembayaran': status},
+          {...paymentPayload, 'status_pembayaran': status},
+        ],
       ],
     );
     final paymentRow = Map<String, dynamic>.from(paymentInsert);
@@ -154,48 +172,83 @@ class CheckoutRepository {
     );
   }
 
-  Future<void> confirmDummyPayment(CheckoutPaymentSession session) async {
+  Future<void> submitPaymentProof({
+    required CheckoutPaymentSession session,
+    required List<int> fileBytes,
+    required String fileExtension,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      throw Exception('User belum login.');
+    }
+
     final now = DateTime.now().toIso8601String();
+    final safeExtension = fileExtension.trim().isEmpty
+        ? 'jpg'
+        : fileExtension.replaceAll('.', '').toLowerCase();
+    final path =
+        '${authUser.id}/${session.orderId}/proof_${DateTime.now().millisecondsSinceEpoch}.$safeExtension';
 
-    try {
-      await _client
-          .from('pembayaran')
-          .update({
-            'status_pembayaran': 'berhasil',
-            'tanggal_bayar': now,
-            'updated_at': now,
-          })
-          .eq('id_pembayaran', session.paymentId);
-    } on PostgrestException {
-      await _client
-          .from('pembayaran')
-          .update({
-            'status_pembayaran': 'selesai',
-            'tanggal_bayar': now,
-            'updated_at': now,
-          })
-          .eq('id_pembayaran', session.paymentId);
-    }
+    await _client.storage
+        .from('payment-proofs')
+        .uploadBinary(
+          path,
+          Uint8List.fromList(fileBytes),
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: 'image/$safeExtension',
+          ),
+        );
 
-    await _client
-        .from('pesanan')
-        .update({'status_pesanan': 'diproses', 'updated_at': now})
-        .eq('id_pesanan', session.orderId);
+    final publicUrl = _client.storage.from('payment-proofs').getPublicUrl(path);
 
-    for (final line in session.productLines) {
-      final productRaw = await _client
-          .from('produk')
-          .select('stok')
-          .eq('id_produk', line.productId)
-          .single();
-      final currentStock =
-          _readInt(Map<String, dynamic>.from(productRaw), const ['stok']) ?? 0;
-      final newStock = currentStock - line.quantity;
-      await _client
-          .from('produk')
-          .update({'stok': newStock < 0 ? 0 : newStock, 'updated_at': now})
-          .eq('id_produk', line.productId);
-    }
+    await _updateWithVariants(
+      table: 'pembayaran',
+      matchColumn: 'id_pembayaran',
+      matchValue: session.paymentId,
+      payloads: [
+        {
+          'status_pembayaran': 'Menunggu Verifikasi',
+          'bukti_pembayaran_path': path,
+          'bukti_pembayaran_url': publicUrl,
+          'tanggal_upload_bukti': now,
+          'updated_at': now,
+        },
+        {
+          'status_pembayaran': 'menunggu verifikasi',
+          'bukti_pembayaran_path': path,
+          'bukti_pembayaran_url': publicUrl,
+          'tanggal_upload_bukti': now,
+          'updated_at': now,
+        },
+        {
+          'status_pembayaran': 'Menunggu',
+          'bukti_pembayaran_path': path,
+          'bukti_pembayaran_url': publicUrl,
+          'tanggal_upload_bukti': now,
+          'updated_at': now,
+        },
+        {
+          'status_pembayaran': 'menunggu',
+          'bukti_pembayaran_path': path,
+          'bukti_pembayaran_url': publicUrl,
+          'tanggal_upload_bukti': now,
+          'updated_at': now,
+        },
+      ],
+    );
+
+    await _updateWithVariants(
+      table: 'pesanan',
+      matchColumn: 'id_pesanan',
+      matchValue: session.orderId,
+      payloads: [
+        {'status_pesanan': 'Menunggu Verifikasi', 'updated_at': now},
+        {'status_pesanan': 'menunggu verifikasi', 'updated_at': now},
+        {'status_pesanan': 'Menunggu Pembayaran', 'updated_at': now},
+        {'status_pesanan': 'menunggu pembayaran', 'updated_at': now},
+      ],
+    );
   }
 
   Future<Map<String, dynamic>> _insertWithVariants({
@@ -228,6 +281,24 @@ class CheckoutRepository {
     } on PostgrestException {
       await _client.from(table).insert(fallbackPayloads);
     }
+  }
+
+  Future<void> _updateWithVariants({
+    required String table,
+    required String matchColumn,
+    required Object matchValue,
+    required List<Map<String, dynamic>> payloads,
+  }) async {
+    Object? lastError;
+    for (final payload in payloads) {
+      try {
+        await _client.from(table).update(payload).eq(matchColumn, matchValue);
+        return;
+      } on PostgrestException catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError ?? Exception('Gagal memperbarui data di tabel $table.');
   }
 
   int? _readInt(Map<String, dynamic> row, List<String> keys) {

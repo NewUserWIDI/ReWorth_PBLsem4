@@ -810,7 +810,16 @@ function seller_filter_orders(array $orders, array $filters): array
     $query = strtolower(trim((string) ($filters['q'] ?? '')));
 
     return array_values(array_filter($orders, static function (array $order) use ($status, $query): bool {
-        if ($status !== '' && $status !== 'semua' && strtolower((string) ($order['status_pesanan'] ?? '')) !== $status) {
+        $orderStatus = strtolower((string) ($order['status_pesanan'] ?? ''));
+        $paymentStatus = strtolower((string) ($order['payment_status'] ?? ''));
+
+        $isWaitingPayment = in_array($orderStatus, ['menunggu pembayaran', 'menunggu verifikasi'], true)
+            || in_array($paymentStatus, ['belum upload', 'menunggu pembayaran', 'belum dibayar', 'menunggu verifikasi'], true);
+        if ($isWaitingPayment) {
+            return false;
+        }
+
+        if ($status !== '' && $status !== 'semua' && $orderStatus !== $status) {
             return false;
         }
         if ($query === '') {
@@ -853,7 +862,7 @@ function seller_fetch_order_detail(string $sellerUserId, int $orderId): ?array
 
 function seller_update_order_status(string $sellerUserId, int $orderId, string $status): array
 {
-    $allowedStatuses = ['pending', 'baru', 'diproses', 'dikemas', 'dikirim', 'selesai', 'dibatalkan'];
+    $allowedStatuses = ['diproses', 'dikemas', 'dikirim', 'selesai', 'dibatalkan'];
     $status = strtolower(trim($status));
     if (!in_array($status, $allowedStatuses, true)) {
         return ['success' => false, 'type' => 'danger', 'message' => 'Status pesanan tidak valid.'];
@@ -892,7 +901,7 @@ function seller_fetch_dashboard_data(string $sellerUserId): array
     $products = seller_fetch_products($sellerUserId);
     $orders = seller_fetch_order_summaries($sellerUserId);
     $lowStock = array_values(array_filter($products, static fn (array $item): bool => (int) ($item['stok'] ?? 0) <= 5));
-    $newOrders = array_values(array_filter($orders, static fn (array $item): bool => in_array((string) ($item['status_pesanan'] ?? ''), ['pending', 'baru'], true)));
+    $newOrders = array_values(array_filter($orders, static fn (array $item): bool => (string) ($item['status_pesanan'] ?? '') === 'diproses'));
     $completed = array_values(array_filter($orders, static fn (array $item): bool => (string) ($item['status_pesanan'] ?? '') === 'selesai'));
     $sales = array_sum(array_map(static fn (array $item): float => (float) ($item['total'] ?? 0), $completed));
 
