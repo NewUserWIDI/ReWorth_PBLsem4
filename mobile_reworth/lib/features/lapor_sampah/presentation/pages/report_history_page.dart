@@ -155,7 +155,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.s16),
             decoration: BoxDecoration(
-              color: _getStatusColor(status).withOpacity(0.1),
+              color: _getStatusColor(status).withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(AppRadius.r16),
                 topRight: Radius.circular(AppRadius.r16),

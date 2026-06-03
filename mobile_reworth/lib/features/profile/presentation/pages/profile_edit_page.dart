@@ -319,10 +319,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                                   icon: Icons.person_outline,
                                   hintText: 'Masukkan nama lengkap Anda',
                                   validator: (value) {
-                                    if (value == null || value.isEmpty)
+                                    if (value == null || value.isEmpty) {
                                       return 'Nama harus diisi';
-                                    if (value.length < 3)
+                                    }
+                                    if (value.length < 3) {
                                       return 'Minimal 3 karakter';
+                                    }
                                     return null;
                                   },
                                 ),
@@ -334,14 +336,16 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                                   keyboardType: TextInputType.phone,
                                   hintText: 'Contoh: 081234567890',
                                   validator: (value) {
-                                    if (value == null || value.isEmpty)
+                                    if (value == null || value.isEmpty) {
                                       return 'No telepon harus diisi';
+                                    }
                                     final clean = value.replaceAll(
                                       RegExp(r'[^0-9]'),
                                       '',
                                     );
-                                    if (clean.length < 10)
+                                    if (clean.length < 10) {
                                       return 'Minimal 10 digit';
+                                    }
                                     return null;
                                   },
                                 ),
