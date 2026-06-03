@@ -35,10 +35,10 @@ render_layout('Dashboard Seller', function () use ($orders, $products, $newOrder
     </section>
 
     <div class="stat-grid">
-        <?php stat_card('Total Penjualan', 'Rp ' . number_format((int) $sales, 0, ',', '.'), 'Dari pesanan selesai'); ?>
+        <?php stat_card('Pendapatan Bersih', 'Rp ' . number_format((int) $sales, 0, ',', '.'), 'Setelah fee platform checkout'); ?>
         <?php stat_card('Pesanan Baru', count($newOrders), 'Perlu diproses'); ?>
         <?php stat_card('Produk Aktif', count(array_filter($products, fn ($item) => ($item['status_produk'] ?? '') === 'aktif')), 'Tayang di market'); ?>
-        <?php stat_card('Saldo Tersedia', 'Rp ' . number_format((int) max($sales, 0), 0, ',', '.'), 'Siap direkap'); ?>
+        <?php stat_card('Saldo Tersedia', 'Rp ' . number_format((int) max($sales, 0), 0, ',', '.'), 'Net seller dari pesanan selesai'); ?>
     </div>
 
     <div class="content-grid">
@@ -84,7 +84,7 @@ render_layout('Dashboard Seller', function () use ($orders, $products, $newOrder
         </div>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>ID Pesanan</th><th>Pembeli</th><th>Status</th><th>Total Seller</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>ID Pesanan</th><th>Pembeli</th><th>Status</th><th>Net Seller</th><th>Aksi</th></tr></thead>
                 <tbody>
                     <?php if ($orders === []): ?>
                         <tr><td colspan="5" style="text-align:center;color:#6b7280;">Belum ada pesanan untuk toko ini.</td></tr>

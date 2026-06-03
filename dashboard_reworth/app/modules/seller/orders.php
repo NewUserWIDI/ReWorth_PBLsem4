@@ -38,7 +38,7 @@ render_layout('Pesanan', function () use ($orders, $tabs, $filters): void {
         </form>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>ID Pesanan</th><th>Pembeli</th><th>Tanggal</th><th>Status</th><th>Total Seller</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>ID Pesanan</th><th>Pembeli</th><th>Tanggal</th><th>Status</th><th>Net Seller</th><th>Aksi</th></tr></thead>
                 <tbody>
                     <?php if ($orders === []): ?>
                         <tr><td colspan="6" style="text-align:center;color:#6b7280;">Belum ada pesanan yang cocok.</td></tr>

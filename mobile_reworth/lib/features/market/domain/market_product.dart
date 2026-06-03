@@ -4,6 +4,7 @@ class MarketProduct {
     required this.namaProduk,
     required this.harga,
     required this.stok,
+    required this.sellerId,
     required this.gambarUrl,
     required this.gambarGaleri,
     required this.namaToko,
@@ -22,6 +23,7 @@ class MarketProduct {
   final String namaProduk;
   final double harga;
   final int stok;
+  final String sellerId;
   final String? gambarUrl;
   final List<String> gambarGaleri;
   final String namaToko;

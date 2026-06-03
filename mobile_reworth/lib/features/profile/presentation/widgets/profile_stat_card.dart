@@ -12,20 +12,25 @@ class ProfileStatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF94FF38).withValues(alpha: 0.24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.14),
+              Colors.white.withValues(alpha: 0.06),
+            ],
           ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
         ),
         child: Column(
           children: [
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
-                color: Color(0xFF94FF38),
+                color: Colors.white.withValues(alpha: 0.96),
               ),
             ),
             const SizedBox(height: 4),

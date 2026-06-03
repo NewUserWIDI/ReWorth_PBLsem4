@@ -48,11 +48,15 @@ function status_label(string $status): string
         'dikirim' => 'Dikirim',
         'dibatalkan' => 'Dibatalkan',
         'menunggu' => 'Menunggu',
+        'berhasil' => 'Berhasil',
+        'kadaluarsa' => 'Kadaluarsa',
         'gagal' => 'Gagal',
         'terverifikasi' => 'Terverifikasi',
         'disembunyikan' => 'Disembunyikan',
         'suspend' => 'Suspend',
         'refund' => 'Refund',
+        'tertahan' => 'Tertahan',
+        'tersedia' => 'Tersedia',
         default => ucwords(str_replace('_', ' ', $status)),
     };
 }
@@ -60,11 +64,11 @@ function status_label(string $status): string
 function status_badge_class(string $status): string
 {
     return match ($status) {
-        'valid', 'aktif', 'selesai', 'terverifikasi' => 'badge-success',
+        'valid', 'aktif', 'selesai', 'terverifikasi', 'berhasil', 'tersedia' => 'badge-success',
         'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas' => 'badge-warning',
-        'ditolak', 'gagal', 'dibatalkan', 'nonaktif', 'suspend' => 'badge-danger',
+        'ditolak', 'gagal', 'dibatalkan', 'nonaktif', 'suspend', 'kadaluarsa' => 'badge-danger',
         'disembunyikan', 'refund' => 'badge-neutral',
-        'diproses', 'dikirim' => 'badge-info',
+        'diproses', 'dikirim', 'tertahan' => 'badge-info',
         default => 'badge-neutral',
     };
 }

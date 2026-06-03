@@ -165,6 +165,7 @@ class MarketRepository {
             ]) ??
             0,
         stok: stok,
+        sellerId: sellerId,
         gambarUrl: imageMap[idProduk],
         gambarGaleri: imageGalleryMap[idProduk] ?? const [],
         namaToko: sellerNames[sellerId] ?? 'Toko ReWorth',
