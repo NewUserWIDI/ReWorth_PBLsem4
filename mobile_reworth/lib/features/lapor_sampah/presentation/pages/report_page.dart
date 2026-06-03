@@ -47,16 +47,21 @@ class _ReportPageState extends State<ReportPage> {
     'Lokasi',
     'Detail',
     'Konfirmasi',
-  ];
 
+  ];
+  
   static const List<String> _wasteTypes = [
-    'organik',
-    'anorganik',
-    'b3',
-    'lainnya',
-  ];
+  'Organik',
+  'Anorganik',
+  'B3',
+  'Campuran',
+];
 
-  static const List<String> _severityLevels = ['rendah', 'sedang', 'parah'];
+ static const List<String> _severityLevels = [
+  'Ringan',
+  'Sedang',
+  'Berat',
+];
 
   @override
   void initState() {
@@ -1434,19 +1439,19 @@ class _ReportPageState extends State<ReportPage> {
 
   Gradient _severityGradient(String level) {
     switch (level) {
-      case 'rendah':
+      case 'Ringan':
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [Color(0xFF1F5E23), Color(0xFF5BBF3D)],
         );
-      case 'sedang':
+      case 'Sedang':
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [Color(0xFFC27A00), Color(0xFFFFB800)],
         );
-      case 'parah':
+      case 'Berat':
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -1538,63 +1543,78 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Future<void> _showSeverityHint(String level) async {
-    final config = switch (level) {
-      'rendah' => (
-        title: 'Keparahan Rendah',
-        body:
-            'Volume sedikit, tidak berbau menyengat, dan tidak menghalangi jalan.',
-        color: const Color(0xFF2E7D32),
-      ),
-      'sedang' => (
-        title: 'Keparahan Sedang',
-        body: 'Volume menumpuk cukup banyak dan mulai mengganggu sekitar.',
-        color: const Color(0xFFF59E0B),
-      ),
-      _ => (
-        title: 'Keparahan Parah',
-        body:
-            'Sampah menumpuk sangat banyak, berbau tajam, atau menyumbat drainase.',
-        color: const Color(0xFFEF4444),
-      ),
-    };
+ Future<void> _showSeverityHint(String level) async {
+  String title = '';
+  String body = '';
+  Color color = Colors.green;
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF10251A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          config.title,
-          style: TextStyle(
-            color: config.color,
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
+  switch (level) {
+    case 'Ringan':
+      title = 'Ringan';
+      body =
+          'Volume sedikit, tidak berbau menyengat, dan tidak menghalangi jalan.';
+      color = const Color(0xFF2E7D32);
+      break;
+
+    case 'Sedang':
+      title = 'Sedang';
+      body =
+          'Volume sampah menumpuk cukup banyak dan mulai mengganggu kenyamanan sekitar.';
+      color = const Color(0xFFF59E0B);
+      break;
+
+    case 'Berat':
+      title =  'Berat';
+      body =
+          'Sampah menumpuk sangat banyak, berbau tajam, atau menyumbat saluran drainase.';
+      color = const Color(0xFFEF4444);
+      break;
+
+    default:
+      title = 'Parah';
+      body = 'Informasi tidak tersedia.';
+      color = Colors.grey;
+  }
+
+  await showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF10251A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: color,
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
         ),
-        content: Text(
-          config.body,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 14,
-            height: 1.4,
-          ),
+      ),
+      content: Text(
+        body,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.9),
+          fontSize: 14,
+          height: 1.4,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Mengerti',
-              style: TextStyle(
-                color: config.color,
-                fontWeight: FontWeight.w700,
-              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Mengerti',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 
   Future<void> _showWasteTypeInfoSheet() async {
     final items = [
@@ -1617,7 +1637,7 @@ class _ReportPageState extends State<ReportPage> {
         color: const Color(0xFFFF8A65),
       ),
       (
-        level: 'Lainnya',
+        level: 'Campuran',
         text:
             'Sampah campuran atau kategori yang belum sesuai tiga jenis utama.',
         color: const Color(0xFFB7F164),
@@ -1746,6 +1766,7 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   List<String> _wasteTypeDbCandidates(String type) {
+  return [type];
     final normalized = type.trim().toLowerCase();
     final mapped = switch (normalized) {
       'organik' => 'Organik',
@@ -1758,6 +1779,7 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   List<String> _severityDbCandidates(String severity) {
+  return [severity];
     final normalized = severity.trim().toLowerCase();
     final mapped = switch (normalized) {
       'rendah' => 'Rendah',
