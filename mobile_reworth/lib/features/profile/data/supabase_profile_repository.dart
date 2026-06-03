@@ -1,5 +1,7 @@
+// lib/features/profile/data/supabase_profile_repository.dart
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
@@ -9,6 +11,8 @@ class SupabaseProfileRepository implements ProfileRepository {
   SupabaseProfileRepository(this._client);
 
   final SupabaseClient _client;
+
+  // ========== PROFILE METHODS ==========
 
   @override
   Future<ProfileUser> getProfile() async {
@@ -25,6 +29,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           .maybeSingle();
 
       if (row == null) {
+        final now = DateTime.now();
         final newProfile = ProfileUser(
           id: authUser.id,
           nama:
@@ -39,6 +44,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           setorSampahKg: 0,
           role: 'user',
           statusPengajuanSeller: 'pending',
+          createdAt: now,
         );
 
         try {
@@ -51,6 +57,8 @@ class SupabaseProfileRepository implements ProfileRepository {
             'total_laporan_valid': 0,
             'role': 'user',
             'status_pengajuan_seller': 'pending',
+            'created_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
           });
         } catch (e) {
           print('Error creating profile: $e');
@@ -58,26 +66,7 @@ class SupabaseProfileRepository implements ProfileRepository {
         return newProfile;
       }
 
-      return ProfileUser(
-        id: row['id'] as String,
-        nama:
-            (row['nama_lengkap'] as String?) ??
-            (row['nama'] as String?) ??
-            'Pengguna ReWorth',
-        email: row['email'] as String? ?? authUser.email ?? '-',
-        noTelp:
-            (row['no_telp'] as String?) ?? (row['nomor_hp'] as String?) ?? '',
-        fotoProfil: row['foto_profil'] as String? ?? '',
-        totalPoin: (row['total_poin'] as num?)?.toInt() ?? 0,
-        totalLaporanValid:
-            (row['total_laporan_valid'] as num?)?.toInt() ??
-            (row['laporan_valid'] as num?)?.toInt() ??
-            0,
-        setorSampahKg: (row['setor_sampah_kg'] as num?)?.toInt() ?? 0,
-        role: row['role'] as String? ?? 'user',
-        statusPengajuanSeller:
-            row['status_pengajuan_seller'] as String? ?? 'pending',
-      );
+      return ProfileUser.fromJson(row);
     } catch (e) {
       print('Error getProfile: $e');
       rethrow;
@@ -94,32 +83,91 @@ class SupabaseProfileRepository implements ProfileRepository {
           .maybeSingle();
 
       if (row == null) return null;
-
-      return ProfileUser(
-        id: row['id'] as String,
-        nama:
-            (row['nama_lengkap'] as String?) ??
-            (row['nama'] as String?) ??
-            'Pengguna ReWorth',
-        email: row['email'] as String? ?? '-',
-        noTelp:
-            (row['no_telp'] as String?) ?? (row['nomor_hp'] as String?) ?? '',
-        fotoProfil: row['foto_profil'] as String? ?? '',
-        totalPoin: (row['total_poin'] as num?)?.toInt() ?? 0,
-        totalLaporanValid:
-            (row['total_laporan_valid'] as num?)?.toInt() ??
-            (row['laporan_valid'] as num?)?.toInt() ??
-            0,
-        setorSampahKg: (row['setor_sampah_kg'] as num?)?.toInt() ?? 0,
-        role: row['role'] as String? ?? 'user',
-        statusPengajuanSeller:
-            row['status_pengajuan_seller'] as String? ?? 'pending',
-      );
+      return ProfileUser.fromJson(row);
     } catch (e) {
       print('Error getProfileById: $e');
       return null;
     }
   }
+
+  @override
+  Future<ProfileUser> updateProfile({
+    required String namaLengkap,
+    required String noTelp,
+    String? fotoProfil,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      throw Exception('User belum login');
+    }
+
+    try {
+      final updateData = {
+        'nama_lengkap': namaLengkap,
+        'nama': namaLengkap,
+        'no_telp': noTelp,
+        'nomor_hp': noTelp,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (fotoProfil != null) {
+        updateData['foto_profil'] = fotoProfil;
+      }
+
+      await _client.from('profiles').update(updateData).eq('id', authUser.id);
+
+      // Return updated profile
+      return await getProfile();
+    } catch (e) {
+      print('Error updateProfile: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> uploadProfilePhoto(File imageFile) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return null;
+
+    try {
+      // Baca file sebagai bytes
+      final Uint8List fileBytes = await imageFile.readAsBytes();
+
+      if (fileBytes.isEmpty || fileBytes.length < 100) {
+        print('❌ File terlalu kecil atau kosong');
+        return null;
+      }
+
+      // Gunakan bucket 'profil' (bukan 'avatars')
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String fileName = '${authUser.id}_$timestamp.jpg';
+      const String bucket = 'profil';
+
+      print(
+        '📤 Uploading $fileName (${fileBytes.length} bytes) to bucket: $bucket',
+      );
+
+      await _client.storage
+          .from(bucket)
+          .uploadBinary(
+            fileName,
+            fileBytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+
+      final publicUrl = _client.storage.from(bucket).getPublicUrl(fileName);
+      print('✅ Upload success: $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      print('❌ Error uploadProfilePhoto: $e');
+      return null;
+    }
+  }
+
+  // ========== REWARD METHODS ==========
 
   @override
   Future<List<RewardItem>> getAvailableRewards() async {
@@ -252,14 +300,11 @@ class SupabaseProfileRepository implements ProfileRepository {
     final authUser = _client.auth.currentUser;
     if (authUser == null) throw Exception('User tidak ditemukan');
 
-    // Pastikan profile ada
     await _ensureProfileExists(authUser.id, authUser.email ?? '');
 
-    // Cek apakah ini kartu pertama, jika ya maka set sebagai primary
     final existingAccounts = await getBankAccounts();
     final isPrimary = existingAccounts.isEmpty;
 
-    // Ambil last 4 digit dari nomor rekening
     final cleanNumber = accountNumber.replaceAll(RegExp(r'\s+'), '');
     final last4 = cleanNumber.length >= 4
         ? cleanNumber.substring(cleanNumber.length - 4)
@@ -342,7 +387,6 @@ class SupabaseProfileRepository implements ProfileRepository {
         })
         .eq('id_masyarakat', authUser.id);
 
-    // Set kartu yang dipilih sebagai utama
     await _client
         .from('kartu_pembayaran')
         .update({

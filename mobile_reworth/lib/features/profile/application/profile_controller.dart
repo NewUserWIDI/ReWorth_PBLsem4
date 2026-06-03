@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../data/profile_repository.dart';
 import '../data/supabase_profile_repository.dart';
 import 'profile_state.dart';
@@ -23,7 +23,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 
   final ProfileRepository _repository;
 
-  // ========== EXISTING METHODS ==========
+  // ========== PROFILE METHODS ==========
 
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true);
@@ -35,6 +35,49 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = state.copyWith(isLoading: false);
     }
   }
+
+  // ========== UPDATE PROFILE METHODS (NEW) ==========
+
+  Future<String?> uploadProfilePhoto(File imageFile) async {
+    try {
+      return await _repository.uploadProfilePhoto(imageFile);
+    } catch (e) {
+      print('Error uploadProfilePhoto: $e');
+      return null;
+    }
+  }
+
+  Future<bool> updateProfile({
+    required String namaLengkap,
+    required String noTelp,
+    String? fotoProfil,
+  }) async {
+    state = state.copyWith(isUpdatingProfile: true, updateErrorMessage: null);
+
+    try {
+      final updatedUser = await _repository.updateProfile(
+        namaLengkap: namaLengkap,
+        noTelp: noTelp,
+        fotoProfil: fotoProfil,
+      );
+
+      state = state.copyWith(isUpdatingProfile: false, user: updatedUser);
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isUpdatingProfile: false,
+        updateErrorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  void clearUpdateError() {
+    state = state.copyWith(updateErrorMessage: null);
+  }
+
+  // ========== REWARD METHODS ==========
 
   Future<void> loadAvailableRewards() async {
     try {

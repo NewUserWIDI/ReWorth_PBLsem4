@@ -3,31 +3,35 @@ import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
 
 class ProfileState {
-  const ProfileState({
-    this.isLoading = false,
-    this.user,
-    this.availableRewards = const [],
-    this.isRedeeming = false,
-    // Bank account states
-    this.bankAccounts = const [],
-    this.isLoadingBankAccounts = false,
-    this.isAddingBankAccount = false,
-    this.isUpdatingBankAccount = false,
-    this.isDeletingBankAccount = false,
-    this.isSettingPrimaryBank = false,
-  });
-
   final bool isLoading;
   final ProfileUser? user;
   final List<RewardItem> availableRewards;
   final bool isRedeeming;
-
   final List<BankAccount> bankAccounts;
   final bool isLoadingBankAccounts;
   final bool isAddingBankAccount;
   final bool isUpdatingBankAccount;
   final bool isDeletingBankAccount;
   final bool isSettingPrimaryBank;
+
+  // fields for edit profile
+  final bool isUpdatingProfile;
+  final String? updateErrorMessage;
+
+  const ProfileState({
+    this.isLoading = false,
+    this.user,
+    this.availableRewards = const [],
+    this.isRedeeming = false,
+    this.bankAccounts = const [],
+    this.isLoadingBankAccounts = false,
+    this.isAddingBankAccount = false,
+    this.isUpdatingBankAccount = false,
+    this.isDeletingBankAccount = false,
+    this.isSettingPrimaryBank = false,
+    this.isUpdatingProfile = false,
+    this.updateErrorMessage,
+  });
 
   ProfileState copyWith({
     bool? isLoading,
@@ -40,6 +44,8 @@ class ProfileState {
     bool? isUpdatingBankAccount,
     bool? isDeletingBankAccount,
     bool? isSettingPrimaryBank,
+    bool? isUpdatingProfile,
+    String? updateErrorMessage,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -55,6 +61,8 @@ class ProfileState {
       isDeletingBankAccount:
           isDeletingBankAccount ?? this.isDeletingBankAccount,
       isSettingPrimaryBank: isSettingPrimaryBank ?? this.isSettingPrimaryBank,
+      isUpdatingProfile: isUpdatingProfile ?? this.isUpdatingProfile,
+      updateErrorMessage: updateErrorMessage ?? this.updateErrorMessage,
     );
   }
 }

@@ -109,6 +109,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Foto profil diperbarui')));
+
+        // Refresh profile data from controller
+        ref.read(profileControllerProvider.notifier).loadProfile();
       }
     } catch (e) {
       print('Error uploading avatar: $e');
@@ -381,7 +384,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  // Menu Tukar Poin Reward - bersih, hanya tombol navigasi
+                  // Menu Tukar Poin Reward
                   ProfileMenuTile(
                     icon: Icons.card_giftcard_rounded,
                     title: 'Tukar Poin Reward',
@@ -406,11 +409,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     subtitle: 'Kelola alamat pengiriman',
                     onTap: () => context.push('/address'),
                   ),
+                  // Updated Edit Profile Menu with refresh functionality
                   ProfileMenuTile(
                     icon: Icons.edit_rounded,
                     title: 'Edit Profil',
                     subtitle: 'Ubah data profil Anda',
-                    onTap: () => context.push('/profile-edit'),
+                    onTap: () async {
+                      // Navigate to edit profile and wait for result
+                      final shouldRefresh = await context.push<bool>(
+                        '/profile-edit',
+                      );
+                      if (shouldRefresh == true && mounted) {
+                        // Refresh profile data from controller
+                        ref
+                            .read(profileControllerProvider.notifier)
+                            .loadProfile();
+                        // Also reload avatar URL from database
+                        await _loadRemoteAvatar();
+                      }
+                    },
                   ),
                   ProfileMenuTile(
                     icon: Icons.logout_rounded,
