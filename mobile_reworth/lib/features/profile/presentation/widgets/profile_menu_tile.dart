@@ -25,11 +25,16 @@ class ProfileMenuTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A1E19).withValues(alpha: 0.78),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: const Color(0xFF94FF38).withValues(alpha: 0.22),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.12),
+              Colors.white.withValues(alpha: 0.06),
+            ],
           ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           boxShadow: [
             BoxShadow(
               blurRadius: 16,
@@ -44,10 +49,18 @@ class ProfileMenuTile extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF94FF38).withValues(alpha: 0.14),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.22),
+                    Colors.white.withValues(alpha: 0.08),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
-              child: Icon(icon, color: const Color(0xFF94FF38)),
+              child: Icon(icon, color: Colors.white),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -76,7 +89,7 @@ class ProfileMenuTile extends StatelessWidget {
             trailing ??
                 const Icon(
                   Icons.chevron_right_rounded,
-                  color: Color(0xFF94FF38),
+                  color: Colors.white,
                   size: 28,
                 ),
           ],

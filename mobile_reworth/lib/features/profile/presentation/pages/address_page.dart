@@ -13,6 +13,8 @@ class AddressPage extends StatefulWidget {
 }
 
 class _AddressPageState extends State<AddressPage> {
+  static const int _maxAddressCount = 3;
+
   final SupabaseClient _client = Supabase.instance.client;
 
   bool _isLoading = true;
@@ -41,32 +43,20 @@ class _AddressPageState extends State<AddressPage> {
         return;
       }
 
-      List<Map<String, dynamic>> rows = const [];
-      try {
-        final raw = await _client
-            .from('alamat')
-            .select()
-            .eq('user_id', userId)
-            .limit(3);
-        rows = List<Map<String, dynamic>>.from(raw as List);
-      } catch (_) {
-        try {
-          final raw = await _client
-              .from('alamat')
-              .select()
-              .eq('id_masyarakat', userId)
-              .limit(3);
-          rows = List<Map<String, dynamic>>.from(raw as List);
-        } catch (_) {
-          final raw = await _client.from('alamat').select().limit(3);
-          rows = List<Map<String, dynamic>>.from(raw as List);
-        }
-      }
+      final rows = await _fetchAddressRows(userId);
+      final items = rows.map(_AddressItem.fromMap).toList()
+        ..sort((a, b) => (b.isDefault ? 1 : 0).compareTo(a.isDefault ? 1 : 0));
 
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        _items = rows.map(_AddressItem.fromMap).toList();
+        _items = items;
       });
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       setState(() => _error = 'Gagal memuat alamat: $e');
     } finally {
       if (mounted) {
@@ -75,10 +65,43 @@ class _AddressPageState extends State<AddressPage> {
     }
   }
 
+  Future<List<Map<String, dynamic>>> _fetchAddressRows(String userId) async {
+    final fetchers = [
+      () => _client
+          .from('alamat')
+          .select()
+          .eq('id_masyarakat', userId)
+          .limit(_maxAddressCount)
+          .timeout(const Duration(seconds: 8)),
+      () => _client
+          .from('alamat')
+          .select()
+          .eq('user_id', userId)
+          .limit(_maxAddressCount)
+          .timeout(const Duration(seconds: 8)),
+    ];
+
+    Object? lastError;
+    for (final fetch in fetchers) {
+      try {
+        final raw = await fetch();
+        return List<Map<String, dynamic>>.from(raw as List);
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    if (lastError != null) {
+      throw lastError;
+    }
+    return const [];
+  }
+
   Future<void> _showAddDialog() async {
-    if (_items.length >= 3) {
+    if (_items.length >= _maxAddressCount) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: const Color(0xFF412020),
           content: Text(
             'Maksimal 3 alamat per akun.',
             style: GoogleFonts.poppins(fontSize: 13),
@@ -91,9 +114,9 @@ class _AddressPageState extends State<AddressPage> {
     final result = await showModalBottomSheet<_AddressFormResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFFCFCFC),
+      backgroundColor: const Color(0xFF0A1E19),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) => const _AddressFormSheet(),
     );
@@ -101,9 +124,12 @@ class _AddressPageState extends State<AddressPage> {
     if (result == null) {
       return;
     }
+
     try {
       await _insertAddress(result);
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFF173A2C),
@@ -114,10 +140,12 @@ class _AddressPageState extends State<AddressPage> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: const Color(0xFF732727),
+          backgroundColor: const Color(0xFF7A1C1C),
           content: Text(
             'Gagal menambah alamat: $e',
             style: GoogleFonts.poppins(fontSize: 13),
@@ -130,50 +158,56 @@ class _AddressPageState extends State<AddressPage> {
   Future<void> _insertAddress(_AddressFormResult data) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      return;
+      throw Exception('User belum login');
     }
 
-    final fullPayload = {
-      'user_id': userId,
-      'nama_penerima': data.receiver,
-      'nomor_hp': data.phone,
-      'jalan': data.street,
-      'kelurahan': data.kelurahan,
-      'kecamatan': data.kecamatan,
-      'kota': data.city,
-      'provinsi': data.province,
-      'kode_pos': data.postalCode,
-      'patokan': data.landmark,
-      'created_at': DateTime.now().toIso8601String(),
-    };
-
-    final fallbackPayload = {
-      'id_masyarakat': userId,
-      'jalan': data.street,
-      'kelurahan': data.kelurahan,
-      'kecamatan': data.kecamatan,
-      'patokan': data.landmark,
-      'created_at': DateTime.now().toIso8601String(),
-    };
-
+    final now = DateTime.now().toIso8601String();
+    final isPrimary = _items.isEmpty;
     final variants = <Map<String, dynamic>>[
-      fullPayload,
-      Map<String, dynamic>.from(fullPayload)..remove('created_at'),
-      fallbackPayload,
-      Map<String, dynamic>.from(fallbackPayload)..remove('created_at'),
       {
-        'user_id': userId,
+        'id_masyarakat': userId,
+        'nama_penerima': data.receiver,
+        'no_hp': data.phone,
         'jalan': data.street,
         'kelurahan': data.kelurahan,
         'kecamatan': data.kecamatan,
+        'kota': data.city,
+        'provinsi': data.province,
+        'kode_pos': data.postalCode,
         'patokan': data.landmark,
+        'alamat_utama': isPrimary,
+        'created_at': now,
+        'updated_at': now,
       },
       {
         'id_masyarakat': userId,
+        'nama_penerima': data.receiver,
+        'nomor_hp': data.phone,
         'jalan': data.street,
         'kelurahan': data.kelurahan,
         'kecamatan': data.kecamatan,
-        'pstokan': data.landmark,
+        'kota': data.city,
+        'provinsi': data.province,
+        'kode_pos': data.postalCode,
+        'patokan': data.landmark,
+        'utama': isPrimary,
+        'created_at': now,
+        'updated_at': now,
+      },
+      {
+        'user_id': userId,
+        'nama_penerima': data.receiver,
+        'no_hp': data.phone,
+        'jalan': data.street,
+        'kelurahan': data.kelurahan,
+        'kecamatan': data.kecamatan,
+        'kota': data.city,
+        'provinsi': data.province,
+        'kode_pos': data.postalCode,
+        'patokan': data.landmark,
+        'is_default': isPrimary,
+        'created_at': now,
+        'updated_at': now,
       },
     ];
 
@@ -181,18 +215,14 @@ class _AddressPageState extends State<AddressPage> {
     for (final payload in variants) {
       try {
         await _client.from('alamat').insert(payload);
-        lastError = null;
-        break;
+        await _loadAddresses();
+        return;
       } catch (e) {
         lastError = e;
       }
     }
 
-    if (lastError != null) {
-      throw lastError;
-    }
-
-    await _loadAddresses();
+    throw lastError ?? Exception('Gagal menyimpan alamat');
   }
 
   @override
@@ -206,41 +236,52 @@ class _AddressPageState extends State<AddressPage> {
             child: Column(
               children: [
                 _Header(title: 'Alamat Saya', onBack: () => context.pop()),
+                const SizedBox(height: 8),
                 Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFCFCFC),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _buildBody(),
-                  ),
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : _buildBody(),
                 ),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: _items.length >= 3
+      floatingActionButton: _items.length >= _maxAddressCount
           ? null
-          : FloatingActionButton.extended(
-              onPressed: _showAddDialog,
-              backgroundColor: const Color(0xFF2E7D32),
-              icon: const Icon(
-                Icons.add_location_alt_outlined,
-                color: Colors.white,
+          : Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Color(0xFFDCEBD5)],
+                ),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.24),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              label: Text(
-                'Tambah Alamat',
-                style: GoogleFonts.poppins(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+              child: FloatingActionButton.extended(
+                onPressed: _showAddDialog,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                icon: const Icon(
+                  Icons.add_location_alt_rounded,
+                  color: Color(0xFF082018),
+                ),
+                label: Text(
+                  'Tambah Alamat',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF082018),
+                  ),
                 ),
               ),
             ),
@@ -251,15 +292,28 @@ class _AddressPageState extends State<AddressPage> {
     if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          child: Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFFD32F2F),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 13.5,
+                  color: const Color(0xFFFFD4D4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _loadAddresses,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.24)),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Coba lagi'),
+              ),
+            ],
           ),
         ),
       );
@@ -268,39 +322,57 @@ class _AddressPageState extends State<AddressPage> {
     if (_items.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 26),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.location_off_outlined,
-                size: 52,
-                color: Color(0xFF7CA06A),
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.20),
+                      Colors.white.withValues(alpha: 0.06),
+                    ],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.location_on_outlined,
+                  size: 40,
+                  color: Colors.white,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 18),
               Text(
                 'Belum ada alamat pengiriman',
+                textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111111),
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Tambahkan alamat agar checkout lebih cepat.',
+                'Tambahkan alamat agar checkout bisa langsung memakai data dari profil Anda.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 13.5,
-                  color: const Color.fromRGBO(17, 17, 17, 0.6),
+                  color: Colors.white.withValues(alpha: 0.68),
+                  height: 1.45,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               FilledButton(
                 onPressed: _showAddDialog,
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  minimumSize: const Size(178, 48),
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF082018),
+                  minimumSize: const Size(180, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -310,7 +382,6 @@ class _AddressPageState extends State<AddressPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
                   ),
                 ),
               ),
@@ -322,23 +393,55 @@ class _AddressPageState extends State<AddressPage> {
 
     return RefreshIndicator(
       onRefresh: _loadAddresses,
+      color: Colors.white,
+      backgroundColor: const Color(0xFF0A1E19),
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-        itemCount: _items.length,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount: _items.length + 1,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final item = _items[index];
+          if (index == 0) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Alamat di sini akan otomatis muncul di checkout.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.5,
+                        color: Colors.white.withValues(alpha: 0.74),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final item = _items[index - 1];
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.05)),
+              color: const Color(0xFF0A1E19).withValues(alpha: 0.84),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withValues(alpha: 0.20),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -346,57 +449,87 @@ class _AddressPageState extends State<AddressPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        item.receiver.isEmpty
-                            ? 'Alamat Pengiriman'
-                            : item.receiver,
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111111),
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.20),
+                            Colors.white.withValues(alpha: 0.08),
+                          ],
                         ),
+                      ),
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.receiver.isEmpty
+                                ? 'Alamat Pengiriman'
+                                : item.receiver,
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (item.phone.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              item.phone,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                color: Colors.white.withValues(alpha: 0.70),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     if (item.isDefault)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 5,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE9F7DD),
+                          color: Colors.white.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.16),
+                          ),
                         ),
                         child: Text(
                           'Utama',
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF2E7D32),
+                            color: Colors.white,
                           ),
                         ),
                       ),
                   ],
                 ),
-                if (item.phone.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    item.phone,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: const Color.fromRGBO(17, 17, 17, 0.65),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   item.fullAddress,
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,
-                    height: 1.45,
-                    color: const Color.fromRGBO(17, 17, 17, 0.78),
+                    height: 1.5,
+                    color: Colors.white.withValues(alpha: 0.82),
                   ),
                 ),
               ],
@@ -437,7 +570,7 @@ class _PremiumBackdrop extends StatelessWidget {
                 height: 320,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFB7F164).withValues(alpha: 0.16),
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
                 ),
               ),
             ),
@@ -458,37 +591,35 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: onBack,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.08),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: IconButton(
+              onPressed: onBack,
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
               ),
             ),
           ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -499,6 +630,7 @@ class _Header extends StatelessWidget {
 
 class _AddressItem {
   const _AddressItem({
+    required this.id,
     required this.receiver,
     required this.phone,
     required this.street,
@@ -511,6 +643,7 @@ class _AddressItem {
     required this.isDefault,
   });
 
+  final String id;
   final String receiver;
   final String phone;
   final String street;
@@ -530,24 +663,29 @@ class _AddressItem {
       city,
       province,
       postalCode,
-    ].where((e) => e.trim().isNotEmpty).toList();
-    final basic = parts.join(', ');
+    ].where((value) => value.trim().isNotEmpty).toList();
+
+    final base = parts.join(', ');
     if (landmark.trim().isEmpty) {
-      return basic;
+      return base;
     }
-    if (basic.isEmpty) {
-      return landmark;
+    if (base.isEmpty) {
+      return 'Patokan: $landmark';
     }
-    return '$basic\nPatokan: $landmark';
+    return '$base\nPatokan: $landmark';
   }
 
   factory _AddressItem.fromMap(Map<String, dynamic> map) {
     String read(List<String> keys) {
       for (final key in keys) {
         final value = map[key];
-        if (value == null) continue;
+        if (value == null) {
+          continue;
+        }
         final text = value.toString().trim();
-        if (text.isNotEmpty) return text;
+        if (text.isNotEmpty) {
+          return text;
+        }
       }
       return '';
     }
@@ -555,18 +693,27 @@ class _AddressItem {
     bool readBool(List<String> keys) {
       for (final key in keys) {
         final value = map[key];
-        if (value == null) continue;
-        if (value is bool) return value;
-        if (value is num) return value > 0;
+        if (value == null) {
+          continue;
+        }
+        if (value is bool) {
+          return value;
+        }
+        if (value is num) {
+          return value > 0;
+        }
         final text = value.toString().toLowerCase();
-        if (text == 'true' || text == '1') return true;
+        if (text == 'true' || text == '1') {
+          return true;
+        }
       }
       return false;
     }
 
     return _AddressItem(
+      id: read(['id_alamat', 'id', 'address_id']),
       receiver: read(['nama_penerima', 'receiver_name', 'nama']),
-      phone: read(['nomor_hp', 'phone', 'no_hp']),
+      phone: read(['no_hp', 'nomor_hp', 'phone']),
       street: read(['jalan', 'street', 'alamat']),
       kelurahan: read(['kelurahan']),
       kecamatan: read(['kecamatan', 'district']),
@@ -574,7 +721,7 @@ class _AddressItem {
       province: read(['provinsi', 'province']),
       postalCode: read(['kode_pos', 'postal_code']),
       landmark: read(['patokan', 'landmark']),
-      isDefault: readBool(['is_default', 'utama']),
+      isDefault: readBool(['alamat_utama', 'is_default', 'utama']),
     );
   }
 }
@@ -639,79 +786,109 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomInset),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tambah Alamat',
-                style: GoogleFonts.poppins(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111111),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _field(_receiver, 'Nama Penerima'),
-              const SizedBox(height: 10),
-              _field(_phone, 'Nomor HP'),
-              const SizedBox(height: 10),
-              _field(
-                _street,
-                'Jalan / Alamat Lengkap',
-                requiredField: true,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _field(_kelurahan, 'Kelurahan')),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _field(_kecamatan, 'Kecamatan', requiredField: true),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(child: _field(_city, 'Kota')),
-                  const SizedBox(width: 10),
-                  Expanded(child: _field(_province, 'Provinsi')),
-                ],
-              ),
-              const SizedBox(height: 10),
-              _field(_postal, 'Kode Pos'),
-              const SizedBox(height: 10),
-              _field(_landmark, 'Patokan', requiredField: true, maxLines: 2),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7D32),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    'Simpan Alamat',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1E19),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 50,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.20),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 18),
+                Text(
+                  'Tambah Alamat',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _field(_receiver, 'Nama Penerima'),
+                const SizedBox(height: 14),
+                _field(_phone, 'Nomor HP'),
+                const SizedBox(height: 14),
+                _field(
+                  _street,
+                  'Jalan / Alamat Lengkap',
+                  requiredField: true,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(child: _field(_kelurahan, 'Kelurahan')),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _field(
+                        _kecamatan,
+                        'Kecamatan',
+                        requiredField: true,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(child: _field(_city, 'Kota')),
+                    const SizedBox(width: 10),
+                    Expanded(child: _field(_province, 'Provinsi')),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _field(_postal, 'Kode Pos'),
+                const SizedBox(height: 14),
+                _field(_landmark, 'Patokan', requiredField: true, maxLines: 2),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.white, Color(0xFFDCEBD5)],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: const Color(0xFF082018),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    child: Text(
+                      'Simpan Alamat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -724,37 +901,63 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     bool requiredField = false,
     int maxLines = 1,
   }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      style: GoogleFonts.poppins(fontSize: 14),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.poppins(fontSize: 13),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.80),
+          ),
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFF1A2A25),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.12),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.28),
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFD32F2F)),
+            ),
+          ),
+          validator: (value) {
+            if (!requiredField) {
+              return null;
+            }
+            if (value == null || value.trim().isEmpty) {
+              return 'Wajib diisi';
+            }
+            return null;
+          },
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-      ),
-      validator: (value) {
-        if (!requiredField) {
-          return null;
-        }
-        if (value == null || value.trim().isEmpty) {
-          return 'Wajib diisi';
-        }
-        return null;
-      },
+      ],
     );
   }
 
@@ -762,6 +965,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
     Navigator.pop(
       context,
       _AddressFormResult(

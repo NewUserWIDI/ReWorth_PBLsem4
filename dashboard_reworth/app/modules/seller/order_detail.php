@@ -65,7 +65,7 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment): vo
         <div class="panel-header"><h2>Produk Dibeli</h2></div>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>Produk</th><th>Harga</th><th>Qty</th><th>Subtotal</th></tr></thead>
+                <thead><tr><th>Produk</th><th>Harga</th><th>Qty</th><th>Subtotal</th><th>Fee</th><th>Net Seller</th></tr></thead>
                 <tbody>
                     <?php foreach (($order['items'] ?? []) as $product): ?>
                         <tr>
@@ -73,6 +73,8 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment): vo
                             <td>Rp <?= e(number_format((int) $product['harga_satuan'], 0, ',', '.')) ?></td>
                             <td><?= e((string) $product['jumlah']) ?></td>
                             <td>Rp <?= e(number_format((int) $product['subtotal'], 0, ',', '.')) ?></td>
+                            <td>Rp <?= e(number_format((int) ($product['fee_platform_item'] ?? 0), 0, ',', '.')) ?></td>
+                            <td>Rp <?= e(number_format((int) ($product['pendapatan_seller'] ?? $product['subtotal']), 0, ',', '.')) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -84,7 +86,7 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment): vo
         <div class="panel-header">
             <div>
                 <h2>Ringkasan Pembayaran</h2>
-                <p class="panel-subtitle">Total seller Rp <?= e(number_format((int) $order['total'], 0, ',', '.')) ?> | Status pembayaran <?= e(status_label((string) (($payment['status_pembayaran'] ?? '') !== '' ? $payment['status_pembayaran'] : 'pending'))) ?></p>
+                <p class="panel-subtitle">Net seller Rp <?= e(number_format((int) $order['total'], 0, ',', '.')) ?> | Status pembayaran <?= e(status_label((string) (($payment['status_pembayaran'] ?? '') !== '' ? $payment['status_pembayaran'] : 'pending'))) ?></p>
             </div>
             <form method="post" class="toolbar-right" style="display:flex;gap:10px;align-items:center;">
                 <select class="select" name="status_pesanan" required>
@@ -94,6 +96,11 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment): vo
                 </select>
                 <button class="btn btn-primary" type="submit">Simpan Status</button>
             </form>
+        </div>
+        <div class="stat-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 16px;">
+            <div><span class="panel-subtitle">Subtotal Bruto</span><strong>Rp <?= e(number_format((int) ($order['subtotal_bruto_seller'] ?? 0), 0, ',', '.')) ?></strong></div>
+            <div><span class="panel-subtitle">Fee Platform</span><strong>Rp <?= e(number_format((int) ($order['fee_platform_seller'] ?? 0), 0, ',', '.')) ?></strong></div>
+            <div><span class="panel-subtitle">Pendapatan Bersih</span><strong>Rp <?= e(number_format((int) ($order['total'] ?? 0), 0, ',', '.')) ?></strong></div>
         </div>
     </section>
     <?php

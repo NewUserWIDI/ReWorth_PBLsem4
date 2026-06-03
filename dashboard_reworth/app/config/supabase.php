@@ -6,6 +6,7 @@ declare(strict_types=1);
  * Optional local config file:
  * return [
  *   'url' => 'https://your-project.supabase.co',
+ *   'secret_key' => 'your-secret-key',
  *   'service_role_key' => 'your-service-role-key',
  *   'anon_key' => 'your-anon-key',
  * ];
@@ -27,7 +28,9 @@ define(
 define(
     'SUPABASE_API_KEY',
     (string) (
-        $supabaseLocalConfig['service_role_key']
+        $supabaseLocalConfig['secret_key']
+        ?? getenv('SUPABASE_SECRET_KEY')
+        ?? $supabaseLocalConfig['service_role_key']
         ?? getenv('SUPABASE_SERVICE_ROLE_KEY')
         ?? $supabaseLocalConfig['anon_key']
         ?? getenv('SUPABASE_ANON_KEY')

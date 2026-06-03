@@ -77,7 +77,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           ),
           SafeArea(
             child: RefreshIndicator(
-              color: const Color(0xFF5BBF3D),
+              color: Colors.white,
               backgroundColor: const Color(0xFFFAFAF7),
               onRefresh: () async {
                 ref.invalidate(marketProductsProvider);
@@ -120,45 +120,53 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                           ),
                         )
                       else
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: filteredProducts.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 14,
-                                crossAxisSpacing: 14,
-                                childAspectRatio: 0.84,
-                              ),
-                          itemBuilder: (context, index) {
-                            final product = filteredProducts[index];
-                            return _ProductCard(
-                              product: product,
-                              isFavorite: wishlistIds.contains(
-                                product.idProduk,
-                              ),
-                              onTapFavorite: () => ref
-                                  .read(wishlistControllerProvider.notifier)
-                                  .toggleFavorite(product.idProduk),
-                              onTapAdd: () {
-                                ref
-                                    .read(cartControllerProvider.notifier)
-                                    .addProduct(product);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: const Color(0xFF173A2C),
-                                    behavior: SnackBarBehavior.floating,
-                                    content: Text(
-                                      '${product.namaProduk} ditambahkan ke keranjang',
-                                    ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isNarrow = constraints.maxWidth < 380;
+                            final aspectRatio = isNarrow ? 0.70 : 0.78;
+                            return GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: filteredProducts.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 14,
+                                    childAspectRatio: aspectRatio,
+                                  ),
+                              itemBuilder: (context, index) {
+                                final product = filteredProducts[index];
+                                return _ProductCard(
+                                  product: product,
+                                  isFavorite: wishlistIds.contains(
+                                    product.idProduk,
+                                  ),
+                                  onTapFavorite: () => ref
+                                      .read(wishlistControllerProvider.notifier)
+                                      .toggleFavorite(product.idProduk),
+                                  onTapAdd: () {
+                                    ref
+                                        .read(cartControllerProvider.notifier)
+                                        .addProduct(product);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: const Color(
+                                          0xFF173A2C,
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        content: Text(
+                                          '${product.namaProduk} ditambahkan ke keranjang',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  onTapCard: () => context.push(
+                                    '/market/product/${product.idProduk}',
+                                    extra: product,
                                   ),
                                 );
                               },
-                              onTapCard: () => context.push(
-                                '/market/product/${product.idProduk}',
-                                extra: product,
-                              ),
                             );
                           },
                         ),
@@ -235,7 +243,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         border: Border.all(
           color: _searchController.text.isEmpty
               ? Colors.transparent
-              : const Color(0xFFB7F164).withValues(alpha: 0.60),
+              : Colors.white.withValues(alpha: 0.32),
         ),
         boxShadow: [
           BoxShadow(
@@ -292,15 +300,13 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           top: -18,
           child: _AmbientGlow(
             size: 130,
-            color: const Color(0xFF5BBF3D).withValues(alpha: 0.13),
+            color: Colors.white.withValues(alpha: 0.10),
           ),
         ),
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: const Color(0xFFB7F164).withValues(alpha: 0.20),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.22),
@@ -351,21 +357,17 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                     ? const LinearGradient(
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
-                        colors: [Color(0xFF5BBF3D), Color(0xFFB7F164)],
+                        colors: [Colors.white, Color(0xFFDCEBD5)],
                       )
                     : null,
                 color: isActive ? null : Colors.white.withValues(alpha: 0.04),
                 border: Border.all(
-                  color: const Color(
-                    0xFFB7F164,
-                  ).withValues(alpha: isActive ? 0.20 : 0.35),
+                  color: Colors.white.withValues(alpha: isActive ? 0.18 : 0.22),
                 ),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: const Color(
-                            0xFF5BBF3D,
-                          ).withValues(alpha: 0.28),
+                          color: Colors.black.withValues(alpha: 0.18),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -378,7 +380,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                   fontSize: 15,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                   color: isActive
-                      ? const Color(0xFF0A2C17)
+                      ? const Color(0xFF082018)
                       : Colors.white.withValues(alpha: 0.78),
                 ),
               ),
@@ -399,12 +401,10 @@ class _MarketPageState extends ConsumerState<MarketPage> {
         gradient: const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFF1F5E23), Color(0xFF2E7D32), Color(0xFF5BBF3D)],
+          colors: [Color(0xFF13372B), Color(0xFF1E4B3A), Color(0xFF315E4C)],
           stops: [0.0, 0.55, 1.0],
         ),
-        border: Border.all(
-          color: const Color(0xFFB7F164).withValues(alpha: 0.28),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.24),
@@ -423,7 +423,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFB7F164).withValues(alpha: 0.16),
+                color: Colors.white.withValues(alpha: 0.10),
               ),
             ),
           ),
@@ -476,8 +476,8 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                       ),
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFAFAF7),
-                      foregroundColor: const Color(0xFF1F5E23),
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF082018),
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
@@ -609,9 +609,7 @@ class _MarketError extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0A1E19).withValues(alpha: 0.84),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFB7F164).withValues(alpha: 0.22),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
       ),
       child: Text(
         message,
@@ -677,11 +675,11 @@ class _ProductCardState extends State<_ProductCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      height: 124,
+                      height: 112,
                       width: double.infinity,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEEF6E8),
+                          color: const Color(0xFFF2F5EF),
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: ClipRRect(
@@ -712,15 +710,12 @@ class _ProductCardState extends State<_ProductCard> {
                                 gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF5BBF3D),
-                                    Color(0xFF2E7D32),
-                                  ],
+                                  colors: [Colors.white, Color(0xFFDCEBD5)],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF2E7D32).withValues(
-                                      alpha: _pressedAdd ? 0.18 : 0.32,
+                                    color: Colors.black.withValues(
+                                      alpha: _pressedAdd ? 0.12 : 0.20,
                                     ),
                                     blurRadius: _pressedAdd ? 12 : 18,
                                     offset: const Offset(0, 8),
@@ -729,7 +724,7 @@ class _ProductCardState extends State<_ProductCard> {
                               ),
                               child: const Icon(
                                 Icons.add_rounded,
-                                color: Colors.white,
+                                color: Color(0xFF082018),
                                 size: 24,
                               ),
                             ),

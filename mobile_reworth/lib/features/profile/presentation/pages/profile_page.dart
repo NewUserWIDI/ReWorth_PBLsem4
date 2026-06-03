@@ -148,9 +148,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (state.isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF001F1A),
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF94FF38)),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
@@ -178,7 +176,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           .loadProfile();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF94FF38),
+                      backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF0A1A12),
                     ),
                     child: const Text('Coba lagi'),
@@ -251,10 +249,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0A1E19).withValues(alpha: 0.78),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.14),
+                          Colors.white.withValues(alpha: 0.06),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: const Color(0xFF94FF38).withValues(alpha: 0.22),
+                        color: Colors.white.withValues(alpha: 0.12),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -276,9 +281,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: const Color(
-                                      0xFF94FF38,
-                                    ).withValues(alpha: 0.8),
+                                    color: Colors.white.withValues(alpha: 0.76),
                                     width: 2.4,
                                   ),
                                 ),
@@ -295,7 +298,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                       avatarUrl.isEmpty && _localAvatar == null
                                       ? const Icon(
                                           Icons.person_rounded,
-                                          color: Color(0xFF94FF38),
+                                          color: Colors.white,
                                           size: 52,
                                         )
                                       : null,
@@ -309,7 +312,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   height: 30,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: const Color(0xFF94FF38),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [Colors.white, Color(0xFFDCEBD5)],
+                                    ),
                                     border: Border.all(
                                       color: const Color(0xFF0A1A12),
                                       width: 1.2,
@@ -358,9 +365,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             'Data lengkap profil sedang disinkronkan.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: const Color(
-                                0xFF94FF38,
-                              ).withValues(alpha: 0.9),
+                              color: Colors.white.withValues(alpha: 0.84),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),

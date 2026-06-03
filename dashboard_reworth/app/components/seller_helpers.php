@@ -639,6 +639,7 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
             'items' => [],
             'total_seller' => 0,
             'total_qty' => 0,
+            'gross_subtotal' => 0,
         ];
 
         $subtotal = (float) ($detail['subtotal'] ?? 0);
@@ -650,8 +651,11 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
             'jumlah' => $qty,
             'harga_satuan' => (float) ($detail['harga_satuan'] ?? 0),
             'subtotal' => $subtotal,
+            'fee_platform_item' => isset($detail['fee_platform_item']) ? (float) $detail['fee_platform_item'] : null,
+            'pendapatan_seller' => isset($detail['pendapatan_seller']) ? (float) $detail['pendapatan_seller'] : null,
+            'status_pencairan' => (string) ($detail['status_pencairan'] ?? ''),
         ];
-        $grouped[$orderId]['total_seller'] += $subtotal;
+        $grouped[$orderId]['gross_subtotal'] += $subtotal;
         $grouped[$orderId]['total_qty'] += $qty;
     }
 
@@ -705,6 +709,28 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
 
         $buyerId = (string) ($order['id_masyarakat'] ?? '');
         $buyer = $profileMap[$buyerId] ?? [];
+        $subtotalProduk = isset($order['subtotal_produk'])
+            ? (float) $order['subtotal_produk']
+            : (float) ($order['subtotal'] ?? $grouped[$orderId]['gross_subtotal']);
+        $feePlatform = isset($order['fee_platform'])
+            ? (float) $order['fee_platform']
+            : (float) ($order['pajak'] ?? 0);
+        $biayaLayanan = isset($order['biaya_layanan'])
+            ? (float) $order['biaya_layanan']
+            : 500.0;
+        $items = seller_finalize_order_items(
+            $grouped[$orderId]['items'],
+            $subtotalProduk,
+            $feePlatform
+        );
+        $pendapatanSeller = array_sum(array_map(
+            static fn (array $item): float => (float) ($item['pendapatan_seller'] ?? 0),
+            $items
+        ));
+        $feePlatformSeller = array_sum(array_map(
+            static fn (array $item): float => (float) ($item['fee_platform_item'] ?? 0),
+            $items
+        ));
         $summary = [
             'id_pesanan' => $orderId,
             'id' => (string) $orderId,
@@ -715,19 +741,67 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
             'tanggal' => (string) ($order['tanggal_pesanan'] ?? ''),
             'status' => strtolower((string) ($order['status_pesanan'] ?? 'pending')),
             'status_pesanan' => strtolower((string) ($order['status_pesanan'] ?? 'pending')),
-            'subtotal_seller' => (float) $grouped[$orderId]['total_seller'],
-            'total' => (float) $grouped[$orderId]['total_seller'],
+            'subtotal_seller' => (float) $grouped[$orderId]['gross_subtotal'],
+            'subtotal_bruto_seller' => (float) $grouped[$orderId]['gross_subtotal'],
+            'fee_platform_seller' => $feePlatformSeller,
+            'biaya_layanan' => $biayaLayanan,
+            'fee_platform_order' => $feePlatform,
+            'total' => $pendapatanSeller,
+            'pendapatan_seller' => $pendapatanSeller,
             'total_order' => (float) ($order['total_bayar'] ?? 0),
             'total_qty' => (int) $grouped[$orderId]['total_qty'],
             'id_alamat' => (int) ($order['id_alamat'] ?? 0),
             'id_kartu' => (int) ($order['id_kartu'] ?? 0),
             'payment_status' => strtolower((string) ($paymentMap[$orderId]['status_pembayaran'] ?? '')),
-            'items' => $grouped[$orderId]['items'],
+            'items' => $items,
         ];
         $summaries[] = $summary;
     }
 
     return seller_filter_orders($summaries, $filters);
+}
+
+function seller_finalize_order_items(array $items, float $subtotalProduk, float $feePlatform): array
+{
+    if ($items === []) {
+        return [];
+    }
+
+    $remainingFee = $feePlatform;
+    $finalized = [];
+    $lastIndex = count($items) - 1;
+
+    foreach ($items as $index => $item) {
+        $grossSubtotal = (float) ($item['subtotal'] ?? 0);
+        $storedFee = $item['fee_platform_item'] ?? null;
+        $storedNet = $item['pendapatan_seller'] ?? null;
+
+        if ($storedFee !== null && $storedNet !== null) {
+            $feeItem = (float) $storedFee;
+            $netItem = (float) $storedNet;
+        } else {
+            $feeItem = $index === $lastIndex
+                ? $remainingFee
+                : seller_round_money(
+                    $subtotalProduk <= 0 ? 0 : $feePlatform * ($grossSubtotal / $subtotalProduk)
+                );
+            $netItem = seller_round_money($grossSubtotal - $feeItem);
+        }
+
+        $remainingFee = seller_round_money($remainingFee - $feeItem);
+        $finalized[] = [
+            ...$item,
+            'fee_platform_item' => seller_round_money($feeItem),
+            'pendapatan_seller' => seller_round_money($netItem),
+        ];
+    }
+
+    return $finalized;
+}
+
+function seller_round_money(float $value): float
+{
+    return round($value, 2);
 }
 
 function seller_filter_orders(array $orders, array $filters): array
@@ -800,6 +874,15 @@ function seller_update_order_status(string $sellerUserId, int $orderId, string $
     if ($updated === [] && supabase_last_error() !== null) {
         return ['success' => false, 'type' => 'danger', 'message' => seller_supabase_message('Gagal memperbarui status pesanan.')];
     }
+
+    $payoutStatus = $status === 'selesai' ? 'tersedia' : 'tertahan';
+    supabase_update('detail_pesanan', [
+        'status_pencairan' => $payoutStatus,
+        'tanggal_pencairan' => $status === 'selesai' ? gmdate('c') : null,
+    ], [
+        'id_pesanan' => 'eq.' . $orderId,
+        'id_seller' => 'eq.' . $sellerUserId,
+    ]);
 
     return ['success' => true, 'type' => 'success', 'message' => 'Status pesanan berhasil diperbarui.'];
 }

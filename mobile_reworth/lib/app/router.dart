@@ -12,10 +12,12 @@ import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dar
 import 'package:mobile_reworth/features/lapor_sampah/presentation/pages/report_page.dart';
 import 'package:mobile_reworth/features/lapor_sampah/presentation/pages/report_history_page.dart';
 import 'package:mobile_reworth/features/market/domain/market_product.dart';
+import 'package:mobile_reworth/features/market/domain/checkout_payment_session.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/cart_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/checkout_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/product_detail_page.dart';
+import 'package:mobile_reworth/features/market/presentation/pages/qris_payment_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/seller_registration_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/wishlist_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
@@ -123,6 +125,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/checkout',
         builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/checkout/payment',
+        builder: (context, state) => QrisPaymentPage(
+          session: state.extra is CheckoutPaymentSession
+              ? state.extra as CheckoutPaymentSession
+              : null,
+        ),
       ),
       GoRoute(
         path: '/order-history',

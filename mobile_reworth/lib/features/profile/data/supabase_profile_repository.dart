@@ -279,7 +279,8 @@ class SupabaseProfileRepository implements ProfileRepository {
           .eq('id_masyarakat', authUser.id)
           .eq('status_aktif', true)
           .order('kartu_utama', ascending: false)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(const Duration(seconds: 8));
 
       final rows = List<Map<String, dynamic>>.from(response);
       return rows.map((row) => BankAccount.fromJson(row)).toList();

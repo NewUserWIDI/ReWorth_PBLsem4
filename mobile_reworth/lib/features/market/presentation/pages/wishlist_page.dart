@@ -23,90 +23,90 @@ class WishlistPage extends ConsumerWidget {
       backgroundColor: const Color(0xFF001F1A),
       body: Stack(
         children: [
-          const _PremiumBackdrop(),
+          const _WishlistBackdrop(),
           SafeArea(
             child: Column(
               children: [
                 _WishlistHeader(onBack: () => context.pop()),
                 Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFCFCFC),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(32),
-                        topRight: Radius.circular(32),
-                      ),
-                    ),
-                    child: productsAsync.when(
-                      loading: () => const LoadingView(
-                        message: 'Memuat wishlist...',
-                      ),
-                      error: (error, _) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            'Gagal memuat wishlist.\n$error',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: const Color(0xFFD32F2F),
-                            ),
+                  child: productsAsync.when(
+                    loading: () =>
+                        const LoadingView(message: 'Memuat wishlist...'),
+                    error: (error, _) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'Gagal memuat wishlist.\n$error',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: const Color(0xFFFFD4D4),
                           ),
                         ),
                       ),
-                      data: (products) {
-                        final favorites = products
-                            .where((p) => favoriteIds.contains(p.idProduk))
-                            .toList();
-
-                        if (favorites.isEmpty) {
-                          return _WishlistEmpty(
-                            onExplore: () => context.go('/market'),
-                          );
-                        }
-
-                        return GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-                          itemCount: favorites.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 14,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: 0.71,
-                              ),
-                          itemBuilder: (context, index) {
-                            final product = favorites[index];
-                            return _WishlistCard(
-                              product: product,
-                              onTapCard: () => context.push(
-                                '/market/product/${product.idProduk}',
-                                extra: product,
-                              ),
-                              onRemove: () => ref
-                                  .read(wishlistControllerProvider.notifier)
-                                  .removeFavorite(product.idProduk),
-                              onAddToCart: () {
-                                ref
-                                    .read(cartControllerProvider.notifier)
-                                    .addProduct(product);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    behavior: SnackBarBehavior.floating,
-                                    backgroundColor: const Color(0xFF173A2C),
-                                    content: Text(
-                                      '${product.namaProduk} ditambahkan ke keranjang',
-                                      style: GoogleFonts.poppins(fontSize: 13),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        );
-                      },
                     ),
+                    data: (products) {
+                      final favorites = products
+                          .where(
+                            (product) => favoriteIds.contains(product.idProduk),
+                          )
+                          .toList();
+
+                      if (favorites.isEmpty) {
+                        return _WishlistEmpty(
+                          onExplore: () => context.go('/market'),
+                        );
+                      }
+
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 380;
+                          final aspectRatio = isNarrow ? 0.62 : 0.68;
+
+                          return GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            itemCount: favorites.length,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 14,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: aspectRatio,
+                                ),
+                            itemBuilder: (context, index) {
+                              final product = favorites[index];
+                              return _WishlistCard(
+                                product: product,
+                                onTapCard: () => context.push(
+                                  '/market/product/${product.idProduk}',
+                                  extra: product,
+                                ),
+                                onRemove: () => ref
+                                    .read(wishlistControllerProvider.notifier)
+                                    .removeFavorite(product.idProduk),
+                                onAddToCart: () {
+                                  ref
+                                      .read(cartControllerProvider.notifier)
+                                      .addProduct(product);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      behavior: SnackBarBehavior.floating,
+                                      backgroundColor: const Color(0xFF173A2C),
+                                      content: Text(
+                                        '${product.namaProduk} ditambahkan ke keranjang',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -118,8 +118,8 @@ class WishlistPage extends ConsumerWidget {
   }
 }
 
-class _PremiumBackdrop extends StatelessWidget {
-  const _PremiumBackdrop();
+class _WishlistBackdrop extends StatelessWidget {
+  const _WishlistBackdrop();
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +147,7 @@ class _PremiumBackdrop extends StatelessWidget {
                 height: 320,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFB7F164).withValues(alpha: 0.16),
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
                 ),
               ),
             ),
@@ -167,35 +167,34 @@ class _WishlistHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: onBack,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
-                  size: 20,
-                  color: Colors.white,
-                ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.10),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+            ),
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                size: 20,
+                color: Colors.white,
               ),
             ),
           ),
-          Text(
-            'Wishlist',
-            style: GoogleFonts.poppins(
-              fontSize: 27,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Wishlist',
+              style: GoogleFonts.poppins(
+                fontSize: 27,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -226,13 +225,13 @@ class _WishlistCard extends StatelessWidget {
         onTap: onTapCard,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFF0A1E19).withValues(alpha: 0.86),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.05)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
             ],
@@ -245,11 +244,11 @@ class _WishlistCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      height: 128,
+                      height: 122,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        color: const Color(0xFFEEF6E8),
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(18),
@@ -265,7 +264,7 @@ class _WishlistCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         height: 1.33,
-                        color: const Color(0xFF0B2E20),
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -274,7 +273,7 @@ class _WishlistCard extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111111),
+                        color: Colors.white,
                       ),
                     ),
                     const Spacer(),
@@ -284,7 +283,8 @@ class _WishlistCard extends StatelessWidget {
                       child: FilledButton(
                         onPressed: onAddToCart,
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF082018),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -294,7 +294,6 @@ class _WishlistCard extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -303,8 +302,8 @@ class _WishlistCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                right: 20,
-                top: 20,
+                right: 16,
+                top: 16,
                 child: GestureDetector(
                   onTap: onRemove,
                   child: Container(
@@ -360,24 +359,25 @@ class _ProductImage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (url == null || url!.isEmpty) {
       return Container(
-        color: const Color(0xFFEEF6E8),
+        color: Colors.white.withValues(alpha: 0.04),
         alignment: Alignment.center,
         child: const Icon(
           Icons.image_not_supported_outlined,
-          color: Color(0xFF2E7D32),
+          color: Colors.white70,
           size: 28,
         ),
       );
     }
+
     return Image.network(
       url!,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => Container(
-        color: const Color(0xFFEEF6E8),
+        color: Colors.white.withValues(alpha: 0.04),
         alignment: Alignment.center,
         child: const Icon(
           Icons.broken_image_outlined,
-          color: Color(0xFF2E7D32),
+          color: Colors.white70,
           size: 28,
         ),
       ),
@@ -403,12 +403,12 @@ class _WishlistEmpty extends StatelessWidget {
               height: 88,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFEEF6E8),
+                color: Color(0x1FFFFFFF),
               ),
               child: const Icon(
                 Icons.favorite_border_rounded,
                 size: 42,
-                color: Color(0xFF5BBF3D),
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 16),
@@ -417,7 +417,7 @@ class _WishlistEmpty extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF111111),
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 8),
@@ -426,14 +426,15 @@ class _WishlistEmpty extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13.5,
-                color: const Color.fromRGBO(17, 17, 17, 0.62),
+                color: Colors.white.withValues(alpha: 0.62),
               ),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: onExplore,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF082018),
                 minimumSize: const Size(190, 48),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(999),
