@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../core/middleware.php';
 require_once __DIR__ . '/../../layout/main_layout.php';
 require_once __DIR__ . '/../../components/badge_status.php';
 require_once __DIR__ . '/../../components/admin_helpers.php';
+require_once __DIR__ . '/../../components/market_helpers.php';
 
 require_role('admin');
 
@@ -15,12 +16,13 @@ $filters = [
     'seller' => $_GET['seller'] ?? '',
     'status_produk' => $_GET['status_produk'] ?? '',
 ];
-$rows = admin_products($filters);
+$rows = admin_market_products($filters);
 $pagination = admin_paginate($rows, max(1, (int) ($_GET['page'] ?? 1)), 10);
-$kategoriOptions = admin_unique_values(mock_admin_products(), 'kategori');
-$sellerOptions = admin_unique_values(mock_admin_products(), 'seller');
+$kategoriOptions = admin_market_unique_values($rows, 'kategori');
+$sellerOptions = admin_market_unique_values($rows, 'seller');
+$sourceLabel = admin_market_data_source_label();
 
-render_layout('Mini Market', function () use ($filters, $pagination, $kategoriOptions, $sellerOptions): void {
+render_layout('Mini Market', function () use ($filters, $pagination, $kategoriOptions, $sellerOptions, $sourceLabel): void {
     ?>
     <section class="panel">
         <div class="panel-header">
@@ -28,6 +30,7 @@ render_layout('Mini Market', function () use ($filters, $pagination, $kategoriOp
                 <h2>Mini Market</h2>
                 <p>Monitoring produk seluruh seller.</p>
             </div>
+            <span class="status-badge badge-neutral">Sumber: <?= e($sourceLabel) ?></span>
         </div>
         <form class="toolbar" method="get">
             <div class="toolbar-left">
@@ -70,7 +73,13 @@ render_layout('Mini Market', function () use ($filters, $pagination, $kategoriOp
                     <?php else: foreach ($pagination['items'] as $item): ?>
                         <tr>
                             <td><?= e((string) $item['id_produk']) ?></td>
-                            <td><img class="report-thumb" src="<?= e(url((string) $item['foto'])) ?>" alt="foto produk" style="width:54px;height:54px;"></td>
+                            <td>
+                                <?php if (filter_var((string) $item['foto'], FILTER_VALIDATE_URL)): ?>
+                                    <img class="report-thumb" src="<?= e((string) $item['foto']) ?>" alt="foto produk" style="width:54px;height:54px;">
+                                <?php else: ?>
+                                    <img class="report-thumb" src="<?= e(url((string) ($item['foto'] !== '' ? $item['foto'] : 'assets/logo_reworth.jpeg'))) ?>" alt="foto produk" style="width:54px;height:54px;">
+                                <?php endif; ?>
+                            </td>
                             <td><?= e((string) $item['nama_produk']) ?></td>
                             <td><?= e((string) $item['seller']) ?></td>
                             <td><?= e((string) $item['kategori']) ?></td>

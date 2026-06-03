@@ -5,25 +5,24 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../core/middleware.php';
 require_once __DIR__ . '/../../layout/main_layout.php';
 require_once __DIR__ . '/../../components/stat_card.php';
-require_once __DIR__ . '/../../data/mock_data.php';
+require_once __DIR__ . '/../../components/seller_helpers.php';
 
 require_active_seller();
 
-render_layout('Pelanggan', function (): void {
-    $orders = mock_orders();
-    $customers = [];
-    foreach ($orders as $order) {
-        $name = $order['pembeli'];
-        $customers[$name]['orders'] = ($customers[$name]['orders'] ?? 0) + 1;
-        $customers[$name]['total'] = ($customers[$name]['total'] ?? 0) + (int) $order['total'];
-        $customers[$name]['last'] = $order['tanggal'];
-    }
+$user = current_user() ?? [];
+$sellerUserId = (string) ($user['seller_user_id'] ?? $user['user_id'] ?? '');
+$customers = seller_fetch_customers($sellerUserId);
+$totalOrders = array_sum(array_map(static fn (array $row): int => (int) ($row['orders'] ?? 0), $customers));
+$totalSpend = array_sum(array_map(static fn (array $row): float => (float) ($row['total'] ?? 0), $customers));
+$repeatCustomers = count(array_filter($customers, static fn (array $row): bool => (int) ($row['orders'] ?? 0) > 1));
+
+render_layout('Pelanggan', function () use ($customers, $totalOrders, $totalSpend, $repeatCustomers): void {
     ?>
     <div class="stat-grid">
         <?php stat_card('Total Pelanggan', count($customers), 'Dari pesanan toko', 'primary'); ?>
-        <?php stat_card('Repeat Order', 0, 'Menunggu data transaksi'); ?>
-        <?php stat_card('Pelanggan Baru', count($customers), 'Bulan ini', 'lime'); ?>
-        <?php stat_card('Total Belanja', 'Rp ' . number_format(array_sum(array_column($orders, 'total')), 0, ',', '.'), 'Akumulasi pesanan'); ?>
+        <?php stat_card('Repeat Order', $repeatCustomers, 'Pelanggan dengan pesanan > 1'); ?>
+        <?php stat_card('Total Pesanan', $totalOrders, 'Akumulasi semua order', 'lime'); ?>
+        <?php stat_card('Total Belanja', 'Rp ' . number_format((int) $totalSpend, 0, ',', '.'), 'Akumulasi penjualan seller'); ?>
     </div>
 
     <section class="panel">
@@ -32,21 +31,24 @@ render_layout('Pelanggan', function (): void {
                 <h2>Pelanggan</h2>
                 <p>Pembeli yang pernah bertransaksi dengan toko Anda.</p>
             </div>
-            <input class="input" style="width: 280px;" type="search" placeholder="Cari pelanggan">
         </div>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>Nama Pelanggan</th><th>Jumlah Pesanan</th><th>Total Belanja</th><th>Terakhir Belanja</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Nama Pelanggan</th><th>Email</th><th>Jumlah Pesanan</th><th>Total Belanja</th><th>Terakhir Belanja</th></tr></thead>
                 <tbody>
-                    <?php foreach ($customers as $name => $customer): ?>
-                        <tr>
-                            <td><?= e($name) ?></td>
-                            <td><?= e((string) $customer['orders']) ?></td>
-                            <td>Rp <?= e(number_format((int) $customer['total'], 0, ',', '.')) ?></td>
-                            <td><?= e($customer['last']) ?></td>
-                            <td><button class="btn btn-secondary" type="button">Detail</button></td>
-                        </tr>
-                    <?php endforeach; ?>
+                    <?php if ($customers === []): ?>
+                        <tr><td colspan="5" style="text-align:center;color:#6b7280;">Belum ada pelanggan untuk toko ini.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($customers as $customer): ?>
+                            <tr>
+                                <td><?= e((string) $customer['nama']) ?></td>
+                                <td><?= e((string) (($customer['email'] ?? '') !== '' ? $customer['email'] : '-')) ?></td>
+                                <td><?= e((string) $customer['orders']) ?></td>
+                                <td>Rp <?= e(number_format((int) $customer['total'], 0, ',', '.')) ?></td>
+                                <td><?= e(substr((string) $customer['last'], 0, 10)) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
