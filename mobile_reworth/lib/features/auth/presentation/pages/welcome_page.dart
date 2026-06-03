@@ -124,8 +124,8 @@ class _WelcomeBackgroundPainter extends CustomPainter {
     final rightGlowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF35E06C).withOpacity(0.14),
-          const Color(0xFF1FA55A).withOpacity(0.06),
+          const Color(0xFF35E06C).withValues(alpha: 0.14),
+          const Color(0xFF1FA55A).withValues(alpha: 0.06),
           Colors.transparent,
         ],
         stops: const [0.0, 0.42, 1.0],
@@ -163,11 +163,11 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFF41EA67).withOpacity(0.08),
-          const Color(0xFF41EA67).withOpacity(0.20),
-          const Color(0xFF41EA67).withOpacity(0.22),
-          const Color(0xFF2BCB75).withOpacity(0.16),
-          const Color(0xFF2BCB75).withOpacity(0.08),
+          const Color(0xFF41EA67).withValues(alpha: 0.08),
+          const Color(0xFF41EA67).withValues(alpha: 0.20),
+          const Color(0xFF41EA67).withValues(alpha: 0.22),
+          const Color(0xFF2BCB75).withValues(alpha: 0.16),
+          const Color(0xFF2BCB75).withValues(alpha: 0.08),
         ],
         stops: const [0.0, 0.22, 0.48, 0.74, 1.0],
       ).createShader(rect)
@@ -188,11 +188,11 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFF55F57B).withOpacity(0.08),
-          const Color(0xFF41EA67).withOpacity(0.30),
-          const Color(0xFF41EA67).withOpacity(0.46),
-          const Color(0xFF2EDC6C).withOpacity(0.30),
-          const Color(0xFF1F8A50).withOpacity(0.08),
+          const Color(0xFF55F57B).withValues(alpha: 0.08),
+          const Color(0xFF41EA67).withValues(alpha: 0.30),
+          const Color(0xFF41EA67).withValues(alpha: 0.46),
+          const Color(0xFF2EDC6C).withValues(alpha: 0.30),
+          const Color(0xFF1F8A50).withValues(alpha: 0.08),
         ],
         stops: const [0.0, 0.18, 0.46, 0.74, 1.0],
       ).createShader(rect)
@@ -213,11 +213,11 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFFB9FFC8).withOpacity(0.10),
-          const Color(0xFF5AF67E).withOpacity(0.30),
-          const Color(0xFF41EA67).withOpacity(0.54),
-          const Color(0xFF2EDC6C).withOpacity(0.34),
-          const Color(0xFF41EA67).withOpacity(0.12),
+          const Color(0xFFB9FFC8).withValues(alpha: 0.10),
+          const Color(0xFF5AF67E).withValues(alpha: 0.30),
+          const Color(0xFF41EA67).withValues(alpha: 0.54),
+          const Color(0xFF2EDC6C).withValues(alpha: 0.34),
+          const Color(0xFF41EA67).withValues(alpha: 0.12),
         ],
         stops: const [0.0, 0.20, 0.48, 0.74, 1.0],
       ).createShader(rect)
@@ -239,11 +239,11 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFFD9FFC3).withOpacity(0.12),
-          const Color(0xFFB9FFC8).withOpacity(0.34),
-          const Color(0xFF8AFF9E).withOpacity(0.72),
-          const Color(0xFF5AF67E).withOpacity(0.54),
-          const Color(0xFF41EA67).withOpacity(0.16),
+          const Color(0xFFD9FFC3).withValues(alpha: 0.12),
+          const Color(0xFFB9FFC8).withValues(alpha: 0.34),
+          const Color(0xFF8AFF9E).withValues(alpha: 0.72),
+          const Color(0xFF5AF67E).withValues(alpha: 0.54),
+          const Color(0xFF41EA67).withValues(alpha: 0.16),
         ],
         stops: const [0.0, 0.18, 0.48, 0.76, 1.0],
       ).createShader(rect)
@@ -264,11 +264,11 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topRight,
         end: Alignment.bottomLeft,
         colors: [
-          const Color(0xFFFFFFFF).withOpacity(0.00),
-          const Color(0xFFCFFFCB).withOpacity(0.22),
-          const Color(0xFFA6F08C).withOpacity(0.42),
-          const Color(0xFF55F57B).withOpacity(0.22),
-          const Color(0xFFFFFFFF).withOpacity(0.00),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.00),
+          const Color(0xFFCFFFCB).withValues(alpha: 0.22),
+          const Color(0xFFA6F08C).withValues(alpha: 0.42),
+          const Color(0xFF55F57B).withValues(alpha: 0.22),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.00),
         ],
         stops: const [0.0, 0.20, 0.48, 0.78, 1.0],
       ).createShader(rect)
@@ -282,9 +282,9 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
         colors: [
-          Colors.black.withOpacity(0.48),
-          Colors.black.withOpacity(0.22),
-          Colors.black.withOpacity(0.00),
+          Colors.black.withValues(alpha: 0.48),
+          Colors.black.withValues(alpha: 0.22),
+          Colors.black.withValues(alpha: 0.00),
         ],
         stops: const [0.0, 0.54, 1.0],
       ).createShader(rect);
@@ -296,8 +296,8 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Colors.black.withOpacity(0.20),
-          Colors.black.withOpacity(0.00),
+          Colors.black.withValues(alpha: 0.20),
+          Colors.black.withValues(alpha: 0.00),
         ],
         stops: const [0.0, 0.30],
       ).createShader(rect);
@@ -309,8 +309,8 @@ class _WelcomeBackgroundPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Colors.black.withOpacity(0.00),
-          Colors.black.withOpacity(0.34),
+          Colors.black.withValues(alpha: 0.00),
+          Colors.black.withValues(alpha: 0.34),
         ],
         stops: const [0.46, 1.0],
       ).createShader(rect);
@@ -352,7 +352,7 @@ class _WelcomeTextBlock extends StatelessWidget {
         Text(
           'Ubah sampah jadi\nlangkah baik',
           style: GoogleFonts.poppins(
-            color: Colors.white.withOpacity(0.95),
+            color: Colors.white.withValues(alpha: 0.95),
             fontSize: taglineSize,
             height: 1.16,
             fontWeight: FontWeight.w800,
@@ -365,7 +365,7 @@ class _WelcomeTextBlock extends StatelessWidget {
           'dukung produk daur ulang dalam\n'
           'satu ekosistem hijau.',
           style: GoogleFonts.poppins(
-            color: Colors.white.withOpacity(0.76),
+            color: Colors.white.withValues(alpha: 0.76),
             fontSize: bodySize,
             height: 1.58,
             fontWeight: FontWeight.w400,
@@ -409,25 +409,25 @@ class _GetStartedPillState extends State<_GetStartedPill> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: Colors.white.withOpacity(0.09),
+              color: Colors.white.withValues(alpha: 0.09),
               width: 1,
             ),
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: [
-                const Color(0xFF0C1E14).withOpacity(0.98),
-                const Color(0xFF06110B).withOpacity(0.98),
+                const Color(0xFF0C1E14).withValues(alpha: 0.98),
+                const Color(0xFF06110B).withValues(alpha: 0.98),
               ],
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.36),
+                color: Colors.black.withValues(alpha: 0.36),
                 blurRadius: 28,
                 offset: const Offset(0, 14),
               ),
               BoxShadow(
-                color: const Color(0xFF41EA67).withOpacity(0.10),
+                color: const Color(0xFF41EA67).withValues(alpha: 0.10),
                 blurRadius: 26,
                 spreadRadius: -8,
               ),
@@ -450,7 +450,7 @@ class _GetStartedPillState extends State<_GetStartedPill> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF41EA67).withOpacity(0.34),
+                      color: const Color(0xFF41EA67).withValues(alpha: 0.34),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -483,14 +483,14 @@ class _GetStartedPillState extends State<_GetStartedPill> {
                 children: [
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: Colors.white.withOpacity(0.34),
+                    color: Colors.white.withValues(alpha: 0.34),
                     size: 22,
                   ),
                   Transform.translate(
                     offset: const Offset(-7, 0),
                     child: Icon(
                       Icons.chevron_right_rounded,
-                      color: Colors.white.withOpacity(0.40),
+                      color: Colors.white.withValues(alpha: 0.40),
                       size: 22,
                     ),
                   ),
@@ -498,7 +498,7 @@ class _GetStartedPillState extends State<_GetStartedPill> {
                     offset: const Offset(-14, 0),
                     child: Icon(
                       Icons.chevron_right_rounded,
-                      color: Colors.white.withOpacity(0.46),
+                      color: Colors.white.withValues(alpha: 0.46),
                       size: 22,
                     ),
                   ),
@@ -529,7 +529,7 @@ class _RegisterLink extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 14.5,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withOpacity(0.58),
+            color: Colors.white.withValues(alpha: 0.58),
           ),
           children: [
             const TextSpan(text: 'Belum punya akun?  '),

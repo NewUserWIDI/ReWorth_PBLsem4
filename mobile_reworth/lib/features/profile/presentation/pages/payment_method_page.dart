@@ -719,8 +719,9 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
   void initState() {
     super.initState();
     if (widget.initialBankName != null) _bank.text = widget.initialBankName!;
-    if (widget.initialCardType != null)
+    if (widget.initialCardType != null) {
       _selectedCardType = widget.initialCardType;
+    }
     if (widget.initialOwnerName != null) _owner.text = widget.initialOwnerName!;
     if (widget.initialAccountNumber != null) {
       if (widget.isEditMode) {
