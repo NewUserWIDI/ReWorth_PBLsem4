@@ -72,6 +72,7 @@ Widget build(BuildContext context) {
           : TabBarView(
               children: [
                 _buildReportList(
+                  
                   reportController,
                   'aktif',
                 ),
