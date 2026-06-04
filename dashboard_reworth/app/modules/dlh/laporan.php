@@ -12,7 +12,7 @@ require_role('dlh');
 
 $tab = $_GET['tab'] ?? 'semua';
 $tabStatus = match ($tab) {
-    'menunggu' => 'menunggu',
+    'menunggu' => 'pending',
     'diproses' => 'diproses',
     'selesai' => 'selesai',
     'ditolak' => 'ditolak',
@@ -47,7 +47,7 @@ render_layout('Laporan Sampah', function () use ($reports, $filters, $tab, $keca
                 <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari ID, lokasi, pelapor..." style="min-width:260px;">
                 <select class="select" name="status">
                     <option value="">Semua status</option>
-                    <option value="menunggu" <?= $filters['status'] === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
+                    <option value="menunggu" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
                     <option value="diproses" <?= $filters['status'] === 'diproses' ? 'selected' : '' ?>>Diproses</option>
                     <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
                     <option value="ditolak" <?= $filters['status'] === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
