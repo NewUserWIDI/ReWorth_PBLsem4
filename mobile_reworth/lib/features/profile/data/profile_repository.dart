@@ -2,6 +2,7 @@ import 'dart:io';
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
+import '../domain/seller_application.dart';
 
 abstract class ProfileRepository {
   // Profile methods
@@ -41,4 +42,18 @@ abstract class ProfileRepository {
   });
   Future<void> deleteBankAccount(String cardId);
   Future<void> setPrimaryBankAccount(String cardId);
+
+  Future<SellerApplication?> getLatestSellerApplication();
+  Future<void> submitSellerApplication({
+    required String fullName,
+    required String phone,
+    required String email,
+    required String storeName,
+    required String storeDescription,
+    required String storeAddress,
+    required String category,
+    required String productTypes,
+    required String usernameProposal,
+    required String passwordProposal,
+  });
 }

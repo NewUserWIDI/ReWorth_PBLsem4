@@ -1,10 +1,13 @@
 // lib/features/profile/data/supabase_profile_repository.dart
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
+import '../domain/seller_application.dart';
 import 'profile_repository.dart';
 
 class SupabaseProfileRepository implements ProfileRepository {
@@ -396,6 +399,104 @@ class SupabaseProfileRepository implements ProfileRepository {
         })
         .eq('id_kartu', int.parse(cardId))
         .eq('id_masyarakat', authUser.id);
+  }
+
+  @override
+  Future<SellerApplication?> getLatestSellerApplication() async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      return null;
+    }
+
+    try {
+      final row = await _client
+          .from('pengajuan_seller')
+          .select()
+          .eq('id_masyarakat', authUser.id)
+          .order('tanggal_pengajuan', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (row == null) {
+        return null;
+      }
+
+      return SellerApplication.fromJson(row);
+    } catch (e) {
+      print('Error getLatestSellerApplication: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> submitSellerApplication({
+    required String fullName,
+    required String phone,
+    required String email,
+    required String storeName,
+    required String storeDescription,
+    required String storeAddress,
+    required String category,
+    required String productTypes,
+    required String usernameProposal,
+    required String passwordProposal,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      throw Exception('User belum login');
+    }
+
+    final existing = await getLatestSellerApplication();
+    if (existing != null && (existing.isPending || existing.isApproved)) {
+      throw Exception(
+        'Pengajuan seller Anda masih aktif. Silakan cek detail pengajuan di profil.',
+      );
+    }
+
+    final bankAccounts = await getBankAccounts();
+    if (bankAccounts.isEmpty) {
+      throw Exception(
+        'Tambahkan akun bank terlebih dahulu untuk rekening pencairan seller.',
+      );
+    }
+
+    await _ensureProfileExists(authUser.id, authUser.email ?? email);
+
+    final now = DateTime.now().toIso8601String();
+    await _client.from('pengajuan_seller').insert({
+      'id_masyarakat': authUser.id,
+      'nama_toko_usulan': storeName,
+      'deskripsi_toko': storeDescription,
+      'alamat_toko': storeAddress,
+      'kategori_jualan': category,
+      'jenis_produk_jualan': productTypes,
+      'foto_toko': '',
+      'foto_produk_contoh': '',
+      'username_usulan': usernameProposal,
+      'password_hash_usulan': passwordProposal,
+      'status_pengajuan': 'Pending',
+      'alasan_penolakan': '',
+      'tanggal_pengajuan': now,
+      'created_at': now,
+      'updated_at': now,
+    });
+
+    try {
+      await _client
+          .from('profiles')
+          .update({
+            'nama_lengkap': fullName,
+            'nama': fullName,
+            'email': email,
+            'no_telp': phone,
+            'nomor_hp': phone,
+            'status_pengajuan_seller': 'Pending',
+            'updated_at': now,
+          })
+          .eq('id', authUser.id);
+    } catch (e) {
+      print('Error update profile after seller application: $e');
+    }
   }
 
   // ========== HELPER METHODS ==========

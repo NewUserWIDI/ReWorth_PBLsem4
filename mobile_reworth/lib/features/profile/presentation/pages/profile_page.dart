@@ -144,7 +144,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final totalLaporan =
         profileUser?.totalLaporanValid ?? authUser?.jumlahLaporanValid ?? 0;
     final avatarUrl = _remoteAvatarUrl ?? fotoProfil;
-
     if (state.isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF001F1A),
@@ -227,8 +226,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFB5FF77).withValues(alpha: 0.30),
-                      const Color(0xFF5BE22F).withValues(alpha: 0.14),
+                      const Color(0xFF8FCF8B).withValues(alpha: 0.24),
+                      const Color(0xFF4D8E63).withValues(alpha: 0.12),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.48, 1.0],
@@ -397,6 +396,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onTap: () => context.push('/rewards'),
                   ),
                   ProfileMenuTile(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'Riwayat Pesanan',
+                    subtitle: 'Pantau status belanja mini market Anda',
+                    onTap: () => context.push('/order-history'),
+                  ),
+                  ProfileMenuTile(
                     icon: Icons.history_rounded,
                     title: 'Riwayat Lapor Sampah',
                     subtitle: 'Lihat riwayat laporan Anda',
@@ -405,7 +410,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ProfileMenuTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Akun Bank',
-                    subtitle: 'Tambahkan akun bank Anda',
+                    subtitle: 'Kelola rekening pencairan dan pembayaran',
                     onTap: () => context.push('/payment-method'),
                   ),
                   ProfileMenuTile(

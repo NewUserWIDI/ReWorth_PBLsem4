@@ -11,7 +11,7 @@ import '../../application/market_controller.dart';
 import '../../application/wishlist_controller.dart';
 import '../../domain/market_product.dart';
 
-class ProductDetailPage extends ConsumerWidget {
+class ProductDetailPage extends ConsumerStatefulWidget {
   const ProductDetailPage({
     super.key,
     required this.productId,
@@ -22,7 +22,21 @@ class ProductDetailPage extends ConsumerWidget {
   final MarketProduct? initialProduct;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
+  final PageController _galleryController = PageController();
+  int _currentImageIndex = 0;
+
+  @override
+  void dispose() {
+    _galleryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final productsAsync = ref.watch(marketProductsProvider);
 
     return Scaffold(
@@ -49,7 +63,8 @@ class ProductDetailPage extends ConsumerWidget {
               ),
               data: (products) {
                 final product =
-                    initialProduct ?? _findById(products, productId);
+                    widget.initialProduct ??
+                    _findById(products, widget.productId);
                 if (product == null) {
                   return Center(
                     child: Text(
@@ -61,6 +76,12 @@ class ProductDetailPage extends ConsumerWidget {
                       ),
                     ),
                   );
+                }
+
+                final gallery = _galleryUrls(product);
+                if (_currentImageIndex >= gallery.length &&
+                    gallery.isNotEmpty) {
+                  _currentImageIndex = 0;
                 }
 
                 final isFavorite = ref.watch(
@@ -90,56 +111,21 @@ class ProductDetailPage extends ConsumerWidget {
                                 .read(wishlistControllerProvider.notifier)
                                 .toggleFavorite(product.idProduk),
                           ),
-                          const SizedBox(height: 12),
-                          _HeroImage(url: product.gambarUrl),
-                          const SizedBox(height: 18),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFCFCFC),
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.14),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.namaProduk,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF111111),
-                                    height: 1.2,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                _InfoTriplet(product: product),
-                                const SizedBox(height: 20),
-                                _SectionTitle('Detail Barang'),
-                                const SizedBox(height: 8),
-                                _BodyText(product.deskripsi),
-                                const SizedBox(height: 18),
-                                _SectionTitle('Manfaat'),
-                                const SizedBox(height: 8),
-                                _BodyText(product.manfaat),
-                                const SizedBox(height: 18),
-                                _SectionTitle('Cara Penggunaan'),
-                                const SizedBox(height: 8),
-                                _BodyText(product.caraPenggunaan),
-                                const SizedBox(height: 18),
-                                _SectionTitle('Informasi Seller'),
-                                const SizedBox(height: 10),
-                                _SellerCard(product: product),
-                              ],
-                            ),
+                          const SizedBox(height: 16),
+                          _GallerySection(
+                            controller: _galleryController,
+                            images: gallery,
+                            currentIndex: _currentImageIndex,
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentImageIndex = index;
+                              });
+                            },
                           ),
+                          const SizedBox(height: 18),
+                          _SummaryCard(product: product),
+                          const SizedBox(height: 18),
+                          _DetailSection(product: product),
                         ],
                       ),
                     ),
@@ -180,6 +166,19 @@ class ProductDetailPage extends ConsumerWidget {
       }
     }
     return null;
+  }
+
+  List<String> _galleryUrls(MarketProduct product) {
+    final urls = <String>[];
+    if (product.gambarUrl != null && product.gambarUrl!.isNotEmpty) {
+      urls.add(product.gambarUrl!);
+    }
+    for (final image in product.gambarGaleri) {
+      if (image.isNotEmpty && !urls.contains(image)) {
+        urls.add(image);
+      }
+    }
+    return urls;
   }
 }
 
@@ -240,21 +239,17 @@ class _HeaderActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _CircleIcon(
-          icon: Icons.arrow_back_rounded,
-          onTap: onBack,
-        ),
+        _CircleIcon(icon: Icons.arrow_back_rounded, onTap: onBack),
         const Spacer(),
         _CircleIcon(
-          icon: isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          iconColor: isFavorite ? const Color(0xFFEF3D3D) : Colors.white,
+          icon: isFavorite
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
+          iconColor: isFavorite ? const Color(0xFFFF8B8B) : Colors.white,
           onTap: onToggleFavorite,
         ),
         const SizedBox(width: 10),
-        _CircleIcon(
-          icon: Icons.shopping_bag_outlined,
-          onTap: onCart,
-        ),
+        _CircleIcon(icon: Icons.shopping_bag_outlined, onTap: onCart),
       ],
     );
   }
@@ -289,84 +284,176 @@ class _CircleIcon extends StatelessWidget {
   }
 }
 
-class _HeroImage extends StatelessWidget {
-  const _HeroImage({required this.url});
+class _GallerySection extends StatelessWidget {
+  const _GallerySection({
+    required this.controller,
+    required this.images,
+    required this.currentIndex,
+    required this.onPageChanged,
+  });
 
-  final String? url;
+  final PageController controller;
+  final List<String> images;
+  final int currentIndex;
+  final ValueChanged<int> onPageChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: 290,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-        color: const Color(0xFF10311C),
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF6FAF0), Color(0xFFE7F1DD)],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.26),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: (url == null || url!.isEmpty)
-            ? const Center(
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  size: 54,
-                  color: Color(0xFFB7F164),
-                ),
-              )
-            : Image.network(
-                url!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    size: 54,
-                    color: Color(0xFFB7F164),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1.1,
+            child: PageView.builder(
+              controller: controller,
+              itemCount: images.isEmpty ? 1 : images.length,
+              onPageChanged: onPageChanged,
+              itemBuilder: (context, index) {
+                final imageUrl = images.isEmpty ? null : images[index];
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    color: Colors.white,
+                    child: imageUrl == null
+                        ? const Center(
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 58,
+                              color: Color(0xFF7A8E6B),
+                            ),
+                          )
+                        : Image.network(
+                            imageUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 58,
+                                    color: Color(0xFF7A8E6B),
+                                  ),
+                                ),
+                          ),
                   ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              images.isEmpty ? 1 : images.length,
+              (index) => AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: currentIndex == index ? 20 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: currentIndex == index
+                      ? const Color(0xFF6A9B56)
+                      : const Color(0xFFB9C9B0),
                 ),
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _InfoTriplet extends StatelessWidget {
-  const _InfoTriplet({required this.product});
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.product});
 
   final MarketProduct product;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F7F3),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.05)),
+        borderRadius: BorderRadius.circular(28),
+        color: const Color(0xFF0F281F),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Cell(label: 'Jenis', value: product.jenis),
-          _DividerCell(),
-          _Cell(label: 'Harga', value: _rupiah(product.harga)),
-          _DividerCell(),
-          _Cell(
-            label: 'Stok',
-            value: product.stok > 0 ? '${product.stok} item' : 'Habis',
+          Text(
+            product.namaProduk,
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            product.namaToko,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFFDCE9D0),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Text(
+                _rupiah(product.harga),
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFF7F4EA),
+                ),
+              ),
+              const Spacer(),
+              _MetricChip(
+                icon: Icons.star_rounded,
+                label: product.rating <= 0
+                    ? 'Baru'
+                    : '${product.rating.toStringAsFixed(1)} (${product.jumlahUlasan})',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _InfoChip(label: product.kategori),
+              _InfoChip(label: product.berat),
+              _InfoChip(
+                label: product.stok > 0 ? 'Stok ${product.stok}' : 'Stok habis',
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  String _rupiah(double value) {
+  static String _rupiah(double value) {
     final asInt = value.toInt();
     final chars = asInt.toString().split('').reversed.toList();
     final buffer = StringBuffer();
@@ -376,38 +463,34 @@ class _InfoTriplet extends StatelessWidget {
       }
       buffer.write(chars[i]);
     }
-    final formatted = buffer.toString().split('').reversed.join();
-    return 'Rp $formatted';
+    return 'Rp ${buffer.toString().split('').reversed.join()}';
   }
 }
 
-class _Cell extends StatelessWidget {
-  const _Cell({required this.label, required this.value});
+class _MetricChip extends StatelessWidget {
+  const _MetricChip({required this.icon, required this.label});
 
+  final IconData icon;
   final String label;
-  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.08),
+      ),
+      child: Row(
         children: [
+          Icon(icon, size: 18, color: const Color(0xFFFFD36C)),
+          const SizedBox(width: 6),
           Text(
             label,
             style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: const Color.fromRGBO(17, 17, 17, 0.58),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111111),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
         ],
@@ -416,14 +499,67 @@ class _Cell extends StatelessWidget {
   }
 }
 
-class _DividerCell extends StatelessWidget {
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.label});
+
+  final String label;
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 1,
-      height: 44,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: const Color.fromRGBO(0, 0, 0, 0.12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.06),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 12.8,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFFE8F0DE),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailSection extends StatelessWidget {
+  const _DetailSection({required this.product});
+
+  final MarketProduct product;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: const Color(0xFF0B221B),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle('Deskripsi'),
+          const SizedBox(height: 8),
+          _BodyText(product.deskripsi),
+          const SizedBox(height: 18),
+          _SectionTitle('Manfaat'),
+          const SizedBox(height: 8),
+          _BodyText(product.manfaat),
+          const SizedBox(height: 18),
+          _SectionTitle('Cara Penggunaan'),
+          const SizedBox(height: 8),
+          _BodyText(product.caraPenggunaan),
+          const SizedBox(height: 18),
+          _SectionTitle('Informasi Toko'),
+          const SizedBox(height: 10),
+          _SellerCard(product: product),
+        ],
+      ),
     );
   }
 }
@@ -438,9 +574,9 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       value,
       style: GoogleFonts.poppins(
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: FontWeight.w700,
-        color: const Color(0xFF111111),
+        color: Colors.white,
       ),
     );
   }
@@ -459,7 +595,7 @@ class _BodyText extends StatelessWidget {
         fontSize: 14.5,
         height: 1.58,
         fontWeight: FontWeight.w400,
-        color: const Color.fromRGBO(17, 17, 17, 0.78),
+        color: Colors.white.withValues(alpha: 0.78),
       ),
     );
   }
@@ -475,23 +611,20 @@ class _SellerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF6F7F3),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 46,
+            height: 46,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFEAF5E1),
+              color: Color(0xFF1A3A31),
             ),
-            child: const Icon(
-              Icons.storefront_outlined,
-              color: Color(0xFF2E7D32),
-            ),
+            child: const Icon(Icons.storefront_outlined, color: Colors.white),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -503,7 +636,7 @@ class _SellerCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111111),
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -512,7 +645,7 @@ class _SellerCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
-                    color: const Color.fromRGBO(17, 17, 17, 0.58),
+                    color: Colors.white.withValues(alpha: 0.62),
                   ),
                 ),
               ],
@@ -550,14 +683,16 @@ class _BottomActions extends StatelessWidget {
             Expanded(
               child: SizedBox(
                 height: 56,
-                child: FilledButton(
+                child: TextButton(
                   onPressed: outOfStock ? null : onAddCart,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: outOfStock
-                        ? const Color(0xFFBFC9B9)
-                        : const Color(0xFF2E7D32),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.10),
+                      ),
                     ),
                   ),
                   child: Text(
@@ -575,19 +710,19 @@ class _BottomActions extends StatelessWidget {
             const SizedBox(width: 10),
             SizedBox(
               height: 56,
-              width: 132,
+              width: 138,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
                   gradient: const LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [Color(0xFF1F5E23), Color(0xFF2E7D32)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFF2FAEA), Color(0xFFD8ECC8)],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1F5E23).withValues(alpha: 0.24),
-                      blurRadius: 20,
+                      color: Colors.black.withValues(alpha: 0.16),
+                      blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
                   ],
@@ -599,7 +734,7 @@ class _BottomActions extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: const Color(0xFF0F231C),
                     ),
                   ),
                 ),

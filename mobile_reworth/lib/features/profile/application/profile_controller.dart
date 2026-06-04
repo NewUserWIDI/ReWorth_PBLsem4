@@ -19,6 +19,7 @@ class ProfileController extends StateNotifier<ProfileState> {
     loadProfile();
     loadAvailableRewards();
     loadBankAccounts();
+    loadSellerApplication();
   }
 
   final ProfileRepository _repository;
@@ -203,6 +204,69 @@ class ProfileController extends StateNotifier<ProfileState> {
       return false;
     } finally {
       state = state.copyWith(isSettingPrimaryBank: false);
+    }
+  }
+
+  Future<void> loadSellerApplication() async {
+    state = state.copyWith(
+      isLoadingSellerApplication: true,
+      sellerApplicationErrorMessage: null,
+    );
+    try {
+      final application = await _repository.getLatestSellerApplication();
+      state = state.copyWith(
+        isLoadingSellerApplication: false,
+        sellerApplication: application,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingSellerApplication: false,
+        sellerApplication: null,
+        sellerApplicationErrorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<bool> submitSellerApplication({
+    required String fullName,
+    required String phone,
+    required String email,
+    required String storeName,
+    required String storeDescription,
+    required String storeAddress,
+    required String category,
+    required String productTypes,
+    required String usernameProposal,
+    required String passwordProposal,
+  }) async {
+    state = state.copyWith(
+      isSubmittingSellerApplication: true,
+      sellerApplicationErrorMessage: null,
+    );
+    try {
+      await _repository.submitSellerApplication(
+        fullName: fullName,
+        phone: phone,
+        email: email,
+        storeName: storeName,
+        storeDescription: storeDescription,
+        storeAddress: storeAddress,
+        category: category,
+        productTypes: productTypes,
+        usernameProposal: usernameProposal,
+        passwordProposal: passwordProposal,
+      );
+      await loadProfile();
+      await loadSellerApplication();
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSubmittingSellerApplication: false,
+        sellerApplicationErrorMessage: e.toString(),
+      );
+      return false;
+    } finally {
+      state = state.copyWith(isSubmittingSellerApplication: false);
     }
   }
 }

@@ -18,6 +18,11 @@ class ReportPage extends StatefulWidget {
 }
 
 class _ReportPageState extends State<ReportPage> {
+  static const Color _softAccent = Color(0xFFA9E58B);
+  static const Color _softAccentStrong = Color(0xFF8FD86A);
+  static const Color _softAccentText = Color(0xFFE7F6D9);
+  static const Color _softAccentGlow = Color(0xFFD8F7B8);
+
   final SupabaseClient _client = Supabase.instance.client;
   final ImagePicker _picker = ImagePicker();
 
@@ -47,21 +52,16 @@ class _ReportPageState extends State<ReportPage> {
     'Lokasi',
     'Detail',
     'Konfirmasi',
-
   ];
-  
-  static const List<String> _wasteTypes = [
-  'Organik',
-  'Anorganik',
-  'B3',
-  'Campuran',
-];
 
- static const List<String> _severityLevels = [
-  'Ringan',
-  'Sedang',
-  'Berat',
-];
+  static const List<String> _wasteTypes = [
+    'Organik',
+    'Anorganik',
+    'B3',
+    'Campuran',
+  ];
+
+  static const List<String> _severityLevels = ['Ringan', 'Sedang', 'Berat'];
 
   @override
   void initState() {
@@ -360,42 +360,31 @@ class _ReportPageState extends State<ReportPage> {
                   height: 66,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF94FF38).withValues(alpha: 0.22),
+                    color: _softAccent.withValues(alpha: 0.22),
                   ),
                   child: const Icon(
                     Icons.check_rounded,
                     size: 38,
-                    color: Color(0xFF94FF38),
+                    color: _softAccent,
                   ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Laporan Terkirim',
+                  'Laporan berhasil diajukan',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Laporan Anda berhasil dikirim dan akan diverifikasi oleh petugas.',
+                  'Laporan Anda sedang menunggu verifikasi.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     height: 1.45,
                     color: Colors.white.withValues(alpha: 0.78),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Reward 10 poin diberikan setelah laporan dinyatakan valid.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.5,
-                    color: Color(0xFF94FF38),
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -407,7 +396,7 @@ class _ReportPageState extends State<ReportPage> {
                       context.go('/report-history');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF94FF38),
+                      backgroundColor: _softAccent,
                       foregroundColor: const Color(0xFF0A1A12),
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(
@@ -415,7 +404,7 @@ class _ReportPageState extends State<ReportPage> {
                       ),
                     ),
                     child: const Text(
-                      'Lihat Status',
+                      'Lihat Riwayat',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -429,7 +418,7 @@ class _ReportPageState extends State<ReportPage> {
                     context.go('/home');
                   },
                   child: Text(
-                    'Kembali ke Beranda',
+                    'Nanti saja',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.84),
                       fontSize: 14,
@@ -489,8 +478,8 @@ class _ReportPageState extends State<ReportPage> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFFB5FF77).withValues(alpha: 0.38),
-                        const Color(0xFF5BE22F).withValues(alpha: 0.18),
+                        _softAccentGlow.withValues(alpha: 0.28),
+                        _softAccentStrong.withValues(alpha: 0.14),
                         Colors.transparent,
                       ],
                       stops: const [0.0, 0.42, 1.0],
@@ -598,7 +587,7 @@ class _ReportPageState extends State<ReportPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isActive
-                          ? const Color(0xFF94FF38)
+                          ? _softAccent
                           : Colors.white.withValues(alpha: 0.10),
                     ),
                     child: Center(
@@ -633,7 +622,7 @@ class _ReportPageState extends State<ReportPage> {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isActive
-                      ? const Color(0xFF94FF38)
+                      ? _softAccent
                       : Colors.white.withValues(alpha: 0.52),
                 ),
               ),
@@ -669,7 +658,7 @@ class _ReportPageState extends State<ReportPage> {
             return const Icon(
               Icons.info_outline_rounded,
               size: 120,
-              color: Color(0xFF94FF38),
+              color: _softAccent,
             );
           },
         ),
@@ -695,17 +684,17 @@ class _ReportPageState extends State<ReportPage> {
         const SizedBox(height: 20),
         _infoRuleCard(
           icon: Icons.check_rounded,
-          iconColor: const Color(0xFF94FF38),
+          iconColor: _softAccent,
           text: 'Sampah mengganggu pejalan kaki atau pengguna jalan.',
         ),
         _infoRuleCard(
           icon: Icons.check_rounded,
-          iconColor: const Color(0xFF94FF38),
+          iconColor: _softAccent,
           text: 'Sampah menyumbat gorong gorong atau drainase.',
         ),
         _infoRuleCard(
           icon: Icons.check_rounded,
-          iconColor: const Color(0xFF94FF38),
+          iconColor: _softAccent,
           text:
               'Sampah mengotori lingkungan secara signifikan atau memicu polusi.',
         ),
@@ -727,9 +716,7 @@ class _ReportPageState extends State<ReportPage> {
           decoration: BoxDecoration(
             color: const Color(0xFF0D2B21).withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: const Color(0xFF94FF38).withValues(alpha: 0.35),
-            ),
+            border: Border.all(color: _softAccent.withValues(alpha: 0.30)),
           ),
           child: RichText(
             text: TextSpan(
@@ -746,7 +733,7 @@ class _ReportPageState extends State<ReportPage> {
                 TextSpan(
                   text: '10 poin!',
                   style: TextStyle(
-                    color: Color(0xFF94FF38),
+                    color: _softAccent,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -808,7 +795,7 @@ class _ReportPageState extends State<ReportPage> {
           const Center(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 32),
-              child: CircularProgressIndicator(color: Color(0xFF94FF38)),
+              child: CircularProgressIndicator(color: _softAccent),
             ),
           )
         else
@@ -881,7 +868,7 @@ class _ReportPageState extends State<ReportPage> {
                   height: 42,
                   child: const Icon(
                     Icons.location_on_rounded,
-                    color: Color(0xFF94FF38),
+                    color: Colors.white,
                     size: 42,
                   ),
                 ),
@@ -919,12 +906,12 @@ class _ReportPageState extends State<ReportPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF94FF38).withValues(alpha: 0.14),
+                  color: _softAccent.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.location_on_rounded,
-                  color: Color(0xFF5BE22F),
+                  color: Colors.white,
                   size: 24,
                 ),
               ),
@@ -966,7 +953,7 @@ class _ReportPageState extends State<ReportPage> {
                 child: const Text(
                   'Ubah\nLokasi',
                   style: TextStyle(
-                    color: Color(0xFF5BE22F),
+                    color: _softAccentText,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -996,7 +983,7 @@ class _ReportPageState extends State<ReportPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Foto Sampah *',
+          'Foto Sampah',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -1057,7 +1044,7 @@ class _ReportPageState extends State<ReportPage> {
         Row(
           children: [
             const Text(
-              'Jenis Sampah *',
+              'Jenis Sampah',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -1070,7 +1057,7 @@ class _ReportPageState extends State<ReportPage> {
               child: const Text(
                 'Info Jenis',
                 style: TextStyle(
-                  color: Color(0xFFB5FF77),
+                  color: _softAccentText,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1089,6 +1076,7 @@ class _ReportPageState extends State<ReportPage> {
                   selected: _selectedWasteType == type,
                   onTap: () => setState(() => _selectedWasteType = type),
                   onLongPress: () => _showWasteTypeHint(type),
+                  gradient: _wasteTypeGradient(type),
                 ),
               )
               .toList(),
@@ -1097,7 +1085,7 @@ class _ReportPageState extends State<ReportPage> {
         Row(
           children: [
             const Text(
-              'Tingkat Keparahan *',
+              'Tingkat Keparahan',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -1110,7 +1098,7 @@ class _ReportPageState extends State<ReportPage> {
               child: const Text(
                 'Info Level',
                 style: TextStyle(
-                  color: Color(0xFFB5FF77),
+                  color: _softAccentText,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1136,7 +1124,7 @@ class _ReportPageState extends State<ReportPage> {
         ),
         const SizedBox(height: 20),
         const Text(
-          'Deskripsi *',
+          'Deskripsi',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -1368,7 +1356,7 @@ class _ReportPageState extends State<ReportPage> {
           color: selected ? null : Colors.white.withValues(alpha: 0.06),
           border: Border.all(
             color: selected
-                ? Colors.white.withValues(alpha: 0.30)
+                ? Colors.white.withValues(alpha: 0.24)
                 : Colors.white.withValues(alpha: 0.12),
           ),
         ),
@@ -1401,12 +1389,10 @@ class _ReportPageState extends State<ReportPage> {
             Colors.white.withValues(alpha: 0.04),
           ],
         ),
-        border: Border.all(
-          color: const Color(0xFF94FF38).withValues(alpha: 0.40),
-        ),
+        border: Border.all(color: _softAccent.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF94FF38).withValues(alpha: 0.12),
+            color: _softAccentStrong.withValues(alpha: 0.10),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1443,23 +1429,52 @@ class _ReportPageState extends State<ReportPage> {
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFF1F5E23), Color(0xFF5BBF3D)],
+          colors: [Color(0xFF5B8C52), Color(0xFF9FD78A)],
         );
       case 'Sedang':
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFFC27A00), Color(0xFFFFB800)],
+          colors: [Color(0xFF8BA368), Color(0xFFC7D990)],
         );
       case 'Berat':
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFFB91C1C), Color(0xFFEF4444)],
+          colors: [Color(0xFF6D7F5A), Color(0xFFA6BC82)],
         );
       default:
         return const LinearGradient(
-          colors: [Color(0xFF2E7D32), Color(0xFF5BBF3D)],
+          colors: [Color(0xFF5B8C52), Color(0xFF9FD78A)],
+        );
+    }
+  }
+
+  Gradient _wasteTypeGradient(String type) {
+    switch (type) {
+      case 'Organik':
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF709961), Color(0xFFA9E58B)],
+        );
+      case 'Anorganik':
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF7A9670), Color(0xFFC3E3B2)],
+        );
+      case 'B3':
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF738863), Color(0xFFB5D79C)],
+        );
+      default:
+        return const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFF708B65), Color(0xFFA8D58E)],
         );
     }
   }
@@ -1543,78 +1558,72 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
- Future<void> _showSeverityHint(String level) async {
-  String title = '';
-  String body = '';
-  Color color = Colors.green;
+  Future<void> _showSeverityHint(String level) async {
+    String title = '';
+    String body = '';
+    Color color = Colors.green;
 
-  switch (level) {
-    case 'Ringan':
-      title = 'Ringan';
-      body =
-          'Volume sedikit, tidak berbau menyengat, dan tidak menghalangi jalan.';
-      color = const Color(0xFF2E7D32);
-      break;
+    switch (level) {
+      case 'Ringan':
+        title = 'Ringan';
+        body =
+            'Volume sedikit, tidak berbau menyengat, dan tidak menghalangi jalan.';
+        color = const Color(0xFF2E7D32);
+        break;
 
-    case 'Sedang':
-      title = 'Sedang';
-      body =
-          'Volume sampah menumpuk cukup banyak dan mulai mengganggu kenyamanan sekitar.';
-      color = const Color(0xFFF59E0B);
-      break;
+      case 'Sedang':
+        title = 'Sedang';
+        body =
+            'Volume sampah menumpuk cukup banyak dan mulai mengganggu kenyamanan sekitar.';
+        color = const Color(0xFFF59E0B);
+        break;
 
-    case 'Berat':
-      title =  'Berat';
-      body =
-          'Sampah menumpuk sangat banyak, berbau tajam, atau menyumbat saluran drainase.';
-      color = const Color(0xFFEF4444);
-      break;
+      case 'Berat':
+        title = 'Berat';
+        body =
+            'Sampah menumpuk sangat banyak, berbau tajam, atau menyumbat saluran drainase.';
+        color = const Color(0xFFEF4444);
+        break;
 
-    default:
-      title = 'Parah';
-      body = 'Informasi tidak tersedia.';
-      color = Colors.grey;
-  }
+      default:
+        title = 'Parah';
+        body = 'Informasi tidak tersedia.';
+        color = Colors.grey;
+    }
 
-  await showDialog<void>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: const Color(0xFF10251A),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: color,
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      content: Text(
-        body,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.9),
-          fontSize: 14,
-          height: 1.4,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Mengerti',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF10251A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: color,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ],
-    ),
-  );
-}
-
+        content: Text(
+          body,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Tutup',
+              style: TextStyle(color: color, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _showWasteTypeInfoSheet() async {
     final items = [
@@ -1753,7 +1762,7 @@ class _ReportPageState extends State<ReportPage> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Mengerti',
+              'Tutup',
               style: TextStyle(
                 color: config.color,
                 fontWeight: FontWeight.w700,
@@ -1766,34 +1775,11 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   List<String> _wasteTypeDbCandidates(String type) {
-  return [type];
-    final normalized = type.trim().toLowerCase();
-    final mapped = switch (normalized) {
-      'organik' => 'Organik',
-      'anorganik' => 'Anorganik',
-      'b3' => 'B3',
-      'lainnya' => 'Lainnya',
-      _ => _capitalize(normalized),
-    };
-    return {mapped, normalized}.toList();
+    return [type];
   }
 
   List<String> _severityDbCandidates(String severity) {
-  return [severity];
-    final normalized = severity.trim().toLowerCase();
-    final mapped = switch (normalized) {
-      'rendah' => 'Rendah',
-      'sedang' => 'Sedang',
-      'parah' => 'Parah',
-      'tinggi' => 'Tinggi',
-      _ => _capitalize(normalized),
-    };
-    final aliases = switch (normalized) {
-      'parah' => ['tinggi', 'Tinggi'],
-      'tinggi' => ['parah', 'Parah'],
-      _ => <String>[],
-    };
-    return {mapped, normalized, ...aliases}.toList();
+    return [severity];
   }
 
   Widget _buildPrimaryButton() {
@@ -1809,16 +1795,16 @@ class _ReportPageState extends State<ReportPage> {
       child: ElevatedButton(
         onPressed: _isSubmitting ? null : _onPrimaryAction,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF94FF38),
+          backgroundColor: _softAccent,
           foregroundColor: const Color(0xFF0A1A12),
           disabledBackgroundColor: const Color(
-            0xFF94FF38,
+            0xFFA9E58B,
           ).withValues(alpha: 0.6),
           minimumSize: const Size.fromHeight(60),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          shadowColor: const Color(0xFF94FF38).withValues(alpha: 0.28),
+          shadowColor: _softAccentStrong.withValues(alpha: 0.22),
           elevation: 10,
         ),
         child: Text(

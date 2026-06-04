@@ -1,6 +1,7 @@
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
+import '../domain/seller_application.dart';
 
 class ProfileState {
   final bool isLoading;
@@ -13,6 +14,10 @@ class ProfileState {
   final bool isUpdatingBankAccount;
   final bool isDeletingBankAccount;
   final bool isSettingPrimaryBank;
+  final SellerApplication? sellerApplication;
+  final bool isLoadingSellerApplication;
+  final bool isSubmittingSellerApplication;
+  final String? sellerApplicationErrorMessage;
 
   // fields for edit profile
   final bool isUpdatingProfile;
@@ -29,6 +34,10 @@ class ProfileState {
     this.isUpdatingBankAccount = false,
     this.isDeletingBankAccount = false,
     this.isSettingPrimaryBank = false,
+    this.sellerApplication,
+    this.isLoadingSellerApplication = false,
+    this.isSubmittingSellerApplication = false,
+    this.sellerApplicationErrorMessage,
     this.isUpdatingProfile = false,
     this.updateErrorMessage,
   });
@@ -44,6 +53,10 @@ class ProfileState {
     bool? isUpdatingBankAccount,
     bool? isDeletingBankAccount,
     bool? isSettingPrimaryBank,
+    SellerApplication? sellerApplication,
+    bool? isLoadingSellerApplication,
+    bool? isSubmittingSellerApplication,
+    String? sellerApplicationErrorMessage,
     bool? isUpdatingProfile,
     String? updateErrorMessage,
   }) {
@@ -61,6 +74,13 @@ class ProfileState {
       isDeletingBankAccount:
           isDeletingBankAccount ?? this.isDeletingBankAccount,
       isSettingPrimaryBank: isSettingPrimaryBank ?? this.isSettingPrimaryBank,
+      sellerApplication: sellerApplication ?? this.sellerApplication,
+      isLoadingSellerApplication:
+          isLoadingSellerApplication ?? this.isLoadingSellerApplication,
+      isSubmittingSellerApplication:
+          isSubmittingSellerApplication ?? this.isSubmittingSellerApplication,
+      sellerApplicationErrorMessage:
+          sellerApplicationErrorMessage ?? this.sellerApplicationErrorMessage,
       isUpdatingProfile: isUpdatingProfile ?? this.isUpdatingProfile,
       updateErrorMessage: updateErrorMessage ?? this.updateErrorMessage,
     );

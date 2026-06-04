@@ -9,7 +9,7 @@ import '../../../../shared/widgets/loading_view.dart';
 import '../../application/cart_controller.dart';
 import '../../application/market_controller.dart';
 import '../../application/wishlist_controller.dart';
-import '../../domain/market_product.dart';
+import '../widgets/market_catalog_card.dart';
 
 class WishlistPage extends ConsumerWidget {
   const WishlistPage({super.key});
@@ -75,16 +75,17 @@ class WishlistPage extends ConsumerWidget {
                                 ),
                             itemBuilder: (context, index) {
                               final product = favorites[index];
-                              return _WishlistCard(
+                              return MarketCatalogCard(
                                 product: product,
+                                isFavorite: true,
                                 onTapCard: () => context.push(
                                   '/market/product/${product.idProduk}',
                                   extra: product,
                                 ),
-                                onRemove: () => ref
+                                onTapFavorite: () => ref
                                     .read(wishlistControllerProvider.notifier)
                                     .removeFavorite(product.idProduk),
-                                onAddToCart: () {
+                                onTapAdd: () {
                                   ref
                                       .read(cartControllerProvider.notifier)
                                       .addProduct(product);
@@ -198,188 +199,6 @@ class _WishlistHeader extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _WishlistCard extends StatelessWidget {
-  const _WishlistCard({
-    required this.product,
-    required this.onTapCard,
-    required this.onRemove,
-    required this.onAddToCart,
-  });
-
-  final MarketProduct product;
-  final VoidCallback onTapCard;
-  final VoidCallback onRemove;
-  final VoidCallback onAddToCart;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTapCard,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF0A1E19).withValues(alpha: 0.86),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.16),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 122,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        color: Colors.white.withValues(alpha: 0.08),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: _ProductImage(url: product.gambarUrl),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      product.namaProduk,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        height: 1.33,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _rupiah(product.harga),
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Spacer(),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: FilledButton(
-                        onPressed: onAddToCart,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF082018),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Tambah',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                right: 16,
-                top: 16,
-                child: GestureDetector(
-                  onTap: onRemove,
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.14),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.favorite_rounded,
-                      color: Color(0xFFEF3D3D),
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _rupiah(double value) {
-    final asInt = value.toInt();
-    final chars = asInt.toString().split('').reversed.toList();
-    final buffer = StringBuffer();
-    for (var i = 0; i < chars.length; i++) {
-      if (i > 0 && i % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(chars[i]);
-    }
-    final formatted = buffer.toString().split('').reversed.join();
-    return 'Rp $formatted';
-  }
-}
-
-class _ProductImage extends StatelessWidget {
-  const _ProductImage({required this.url});
-
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return Container(
-        color: Colors.white.withValues(alpha: 0.04),
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.image_not_supported_outlined,
-          color: Colors.white70,
-          size: 28,
-        ),
-      );
-    }
-
-    return Image.network(
-      url!,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) => Container(
-        color: Colors.white.withValues(alpha: 0.04),
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.broken_image_outlined,
-          color: Colors.white70,
-          size: 28,
-        ),
       ),
     );
   }

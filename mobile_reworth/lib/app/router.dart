@@ -7,6 +7,7 @@ import 'package:mobile_reworth/core/constants/app_spacing.dart';
 import 'package:mobile_reworth/features/auth/application/auth_controller.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/home_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart';
+import 'package:mobile_reworth/features/auth/presentation/pages/notifications_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
 import 'package:mobile_reworth/features/lapor_sampah/presentation/pages/report_page.dart';
@@ -26,6 +27,7 @@ import 'package:mobile_reworth/features/profile/presentation/pages/address_page.
 import 'package:mobile_reworth/features/profile/presentation/pages/payment_method_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_edit_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/rewards_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/seller_application_page.dart';
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
 
@@ -152,8 +154,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PaymentMethodPage(),
       ),
       GoRoute(
+        path: '/seller-application',
+        builder: (context, state) => const SellerApplicationPage(),
+      ),
+      GoRoute(
         path: '/profile-edit',
         builder: (context, state) => const ProfileEditPage(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsPage(),
       ),
     ],
   );
