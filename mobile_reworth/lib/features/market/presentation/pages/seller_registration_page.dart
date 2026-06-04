@@ -1,8 +1,4 @@
-// lib/features/market/presentation/pages/seller_registration_page.dart
-
 import 'dart:io';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,17 +10,21 @@ import '../../../profile/domain/profile_user.dart';
 import '../../../profile/domain/seller_application.dart';
 
 // ============ THEME COLORS ============
-const Color _primaryColor = Color(0xFF2E7D32);
-const Color _primaryLightColor = Color(0xFF4CAF50);
-const Color _backgroundColor = Color(0xFF001F1A);
-const Color _cardColor = Color(0xFFFFFFFF);
-const Color _surfaceColor = Color(0xFFFAFAFA);
-const Color _textColor = Color(0xFF1A1A1A);
-const Color _textSecondaryColor = Color(0xFF757575);
-const Color _borderColor = Color(0xFFE0E0E0);
-const Color _errorColor = Color(0xFFEF4444);
-const Color _warningColor = Color(0xFFFFA726);
-const Color _successColor = Color(0xFF4CAF50);
+const Color _primaryColor = Color(0xFF4CAF50); // Hijau terang untuk tombol
+const Color _primaryDarkColor = Color(0xFF2E7D32); // Hijau tua
+const Color _backgroundColor = Color(
+  0xFF001F1A,
+); // Background gelap kehijauan (original)
+const Color _cardColor = Color(
+  0xFF0D2A22,
+); // Card gelap kehijauan (lebih terang dari bg)
+const Color _surfaceColor = Color(0xFF1A3A30); // Surface input field
+const Color _textColor = Color(0xFFFFFFFF); // PUTIH untuk text utama
+const Color _textSecondaryColor = Color(0xFFB0C4B0); // Abu-abu kehijauan terang
+const Color _borderColor = Color(0xFF2A4A3E); // Border hijau gelap
+const Color _errorColor = Color(0xFFEF4444); // Merah error
+const Color _warningColor = Color(0xFFFFA726); // Oranye warning
+const Color _successColor = Color(0xFF4CAF50); // Hijau sukses
 
 class SellerRegistrationPage extends ConsumerStatefulWidget {
   const SellerRegistrationPage({super.key});
@@ -104,9 +104,7 @@ class _SellerRegistrationPageState
     if (profileState.isLoading) {
       return const Scaffold(
         backgroundColor: _backgroundColor,
-        body: Center(
-          child: CircularProgressIndicator(color: _primaryLightColor),
-        ),
+        body: Center(child: CircularProgressIndicator(color: _primaryColor)),
       );
     }
 
@@ -122,388 +120,300 @@ class _SellerRegistrationPageState
 
     return Scaffold(
       backgroundColor: _backgroundColor,
-      body: Stack(
-        children: [
-          const _Backdrop(),
-          SafeArea(
-            child: Column(
-              children: [
-                _Header(onBack: () => context.pop()),
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                      decoration: BoxDecoration(
-                        color: _cardColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoCard(user),
-                            const SizedBox(height: 24),
-                            const Divider(color: _borderColor, height: 1),
-                            const SizedBox(height: 20),
-
-                            _sectionTitle('Informasi Toko'),
-                            const SizedBox(height: 12),
-
-                            _label('Nama Toko *'),
-                            _input(
-                              controller: _namaTokoController,
-                              hint: 'Masukkan nama toko Anda',
-                              icon: Icons.storefront_outlined,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Nama toko wajib diisi';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            _label('Deskripsi Toko'),
-                            _input(
-                              controller: _deskripsiTokoController,
-                              hint: 'Ceritakan produk dan keunggulan toko Anda',
-                              icon: Icons.description_outlined,
-                              maxLines: 3,
-                            ),
-
-                            _label('Alamat Toko'),
-                            _input(
-                              controller: _alamatTokoController,
-                              hint:
-                                  'Contoh: Jalan Merdeka No. 10, Kelurahan Sukamaju, Kecamatan Beji, Kota Depok',
-                              icon: Icons.location_on_outlined,
-                              maxLines: 3,
-                            ),
-
-                            _label('Kategori Jualan'),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _kategoriJualan,
-                              isExpanded: true,
-                              dropdownColor: _cardColor,
-                              borderRadius: BorderRadius.circular(12),
-                              decoration: _decoration(
-                                hint: 'Pilih kategori',
-                                icon: Icons.category_outlined,
-                              ),
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: _textColor,
-                              ),
-                              items: _kategoriOptions.map((value) {
-                                return DropdownMenuItem(
-                                  value: value,
-                                  child: Text(
-                                    value,
-                                    style: GoogleFonts.poppins(
-                                      color: _textColor,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _kategoriJualan = value);
-                                }
-                              },
-                            ),
-
-                            _label('Jenis Produk yang Dijual'),
-                            _input(
-                              controller: _jenisProdukController,
-                              hint:
-                                  'Contoh: Tas daur ulang, kompos organik, eco enzyme',
-                              icon: Icons.inventory_2_outlined,
-                            ),
-
-                            const SizedBox(height: 20),
-                            const Divider(color: _borderColor, height: 1),
-                            const SizedBox(height: 20),
-
-                            _sectionTitle('Dokumen Pendukung'),
-                            const SizedBox(height: 12),
-
-                            _label('Foto Toko (Opsional)'),
-                            _buildImagePicker(
-                              imageFile: _fotoTokoFile,
-                              onTap: () => _pickImage(isFotoToko: true),
-                              title: 'Upload Foto Toko',
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            _label('Foto Produk Contoh (Opsional)'),
-                            _buildImagePicker(
-                              imageFile: _fotoProdukFile,
-                              onTap: () => _pickImage(isFotoToko: false),
-                              title: 'Upload Contoh Produk',
-                            ),
-
-                            const SizedBox(height: 20),
-                            const Divider(color: _borderColor, height: 1),
-                            const SizedBox(height: 20),
-
-                            _sectionTitle('Akun Dashboard Seller'),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.blue.withValues(alpha: 0.2),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.info_outline,
-                                    color: Colors.blue,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Username dan password ini akan digunakan untuk login ke dashboard seller',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            _label('Username Dashboard *'),
-                            _input(
-                              controller: _usernameController,
-                              hint: 'Buat username untuk login dashboard',
-                              icon: Icons.account_circle_outlined,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Username wajib diisi';
-                                }
-                                if (value.length < 4) {
-                                  return 'Username minimal 4 karakter';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            _label('Password Dashboard *'),
-                            _input(
-                              controller: _passwordController,
-                              hint: 'Minimal 8 karakter',
-                              icon: Icons.lock_outline_rounded,
-                              obscureText: _obscurePassword,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  color: _textSecondaryColor,
-                                  size: 21,
-                                ),
-                                onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Password wajib diisi';
-                                }
-                                if (value.length < 8) {
-                                  return 'Password minimal 8 karakter';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            _label('Konfirmasi Password *'),
-                            _input(
-                              controller: _konfirmasiPasswordController,
-                              hint: 'Ulangi password',
-                              icon: Icons.verified_user_outlined,
-                              obscureText: _obscureConfirmPassword,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  color: _textSecondaryColor,
-                                  size: 21,
-                                ),
-                                onPressed: () => setState(
-                                  () => _obscureConfirmPassword =
-                                      !_obscureConfirmPassword,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Konfirmasi password wajib diisi';
-                                }
-                                if (value != _passwordController.text) {
-                                  return 'Password tidak sesuai';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 28),
-
-                            SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: ElevatedButton(
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () => _submit(),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 2,
-                                ),
-                                child: _isSubmitting
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Ajukan Menjadi Seller',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImagePicker({
-    required File? imageFile,
-    required VoidCallback onTap,
-    required String title,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 120,
-        decoration: BoxDecoration(
-          color: _surfaceColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _borderColor, width: 1),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => context.pop(),
         ),
-        child: imageFile != null
-            ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(imageFile, fit: BoxFit.cover),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        onPressed: onTap,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate_outlined,
-                    color: _primaryColor.withValues(alpha: 0.6),
-                    size: 40,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: _primaryColor,
-                    ),
+        title: Text(
+          'Pengajuan Seller',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Info User Card
+            _infoCard(user),
+            const SizedBox(height: 16),
+
+            // Form Card
+            Container(
+              decoration: BoxDecoration(
+                color: _cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _borderColor, width: 0.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Informasi Toko
+                    _sectionTitle('Informasi Toko'),
+
+                    _inputField(
+                      controller: _namaTokoController,
+                      label: 'Nama Toko',
+                      hint: 'Masukkan nama toko Anda',
+                      icon: Icons.storefront_outlined,
+                      isRequired: true,
+                    ),
+
+                    _inputField(
+                      controller: _deskripsiTokoController,
+                      label: 'Deskripsi Toko',
+                      hint: 'Ceritakan produk dan keunggulan toko Anda',
+                      icon: Icons.description_outlined,
+                      maxLines: 3,
+                    ),
+
+                    _inputField(
+                      controller: _alamatTokoController,
+                      label: 'Alamat Toko',
+                      hint: 'Jalan, Kelurahan, Kecamatan, Kota',
+                      icon: Icons.location_on_outlined,
+                      maxLines: 2,
+                    ),
+
+                    _dropdownField(
+                      label: 'Kategori Jualan',
+                      value: _kategoriJualan,
+                      items: _kategoriOptions,
+                      icon: Icons.category_outlined,
+                      onChanged: (value) {
+                        if (value != null)
+                          setState(() => _kategoriJualan = value);
+                      },
+                    ),
+
+                    _inputField(
+                      controller: _jenisProdukController,
+                      label: 'Jenis Produk',
+                      hint: 'Contoh: Tas daur ulang, kompos organik',
+                      icon: Icons.inventory_2_outlined,
+                    ),
+
+                    // Divider
+                    Divider(height: 32, color: _borderColor),
+
+                    // Dokumen Pendukung
+                    _sectionTitle('Dokumen Pendukung'),
+
+                    _imagePickerField(
+                      label: 'Foto Toko (Opsional)',
+                      imageFile: _fotoTokoFile,
+                      onTap: () => _pickImage(isFotoToko: true),
+                    ),
+
+                    _imagePickerField(
+                      label: 'Foto Produk (Opsional)',
+                      imageFile: _fotoProdukFile,
+                      onTap: () => _pickImage(isFotoToko: false),
+                    ),
+
+                    // Divider
+                    Divider(height: 32, color: _borderColor),
+
+                    // Akun Dashboard
+                    _sectionTitle('Akun Dashboard Seller'),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Colors.blue,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Username dan password untuk login ke dashboard seller',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.blue.shade300,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    _inputField(
+                      controller: _usernameController,
+                      label: 'Username Dashboard',
+                      hint: 'Buat username untuk login dashboard',
+                      icon: Icons.account_circle_outlined,
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Username wajib diisi';
+                        }
+                        if (value.length < 4) {
+                          return 'Username minimal 4 karakter';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    _inputField(
+                      controller: _passwordController,
+                      label: 'Password Dashboard',
+                      hint: 'Minimal 8 karakter',
+                      icon: Icons.lock_outline_rounded,
+                      isRequired: true,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: _textSecondaryColor,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Password wajib diisi';
+                        }
+                        if (value.length < 8) {
+                          return 'Password minimal 8 karakter';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    _inputField(
+                      controller: _konfirmasiPasswordController,
+                      label: 'Konfirmasi Password',
+                      hint: 'Ulangi password',
+                      icon: Icons.verified_user_outlined,
+                      isRequired: true,
+                      obscureText: _obscureConfirmPassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: _textSecondaryColor,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Konfirmasi password wajib diisi';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Password tidak sesuai';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Tombol Submit
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : () => _submit(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'Ajukan Menjadi Seller',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // ============ WIDGETS ============
 
   Widget _infoCard(ProfileUser? user) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _primaryLightColor.withValues(alpha: 0.08),
+        color: _cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _primaryLightColor.withValues(alpha: 0.2)),
+        border: Border.all(color: _borderColor, width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: _primaryLightColor.withValues(alpha: 0.15),
-            child: Text(
-              user?.nama.isNotEmpty == true ? user!.nama[0].toUpperCase() : '?',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: _primaryColor,
-              ),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _primaryColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
             ),
+            child: Icon(Icons.person_outline, color: _primaryColor, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -513,7 +423,7 @@ class _SellerRegistrationPageState
                 Text(
                   user?.nama ?? 'Memuat...',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: _textColor,
                   ),
@@ -537,17 +447,17 @@ class _SellerRegistrationPageState
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: _primaryLightColor.withValues(alpha: 0.15),
+              color: _warningColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               _getStatusText(user?.statusPengajuanSeller),
               style: GoogleFonts.poppins(
                 fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: _primaryColor,
+                fontWeight: FontWeight.w600,
+                color: _warningColor,
               ),
             ),
           ),
@@ -572,91 +482,269 @@ class _SellerRegistrationPageState
   }
 
   Widget _sectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        color: _primaryColor,
-      ),
-    );
-  }
-
-  Widget _label(String text) {
     return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 6),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Text(
-        text,
+        title,
         style: GoogleFonts.poppins(
-          fontSize: 13.5,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: _textColor.withValues(alpha: 0.85),
+          color: _primaryColor,
         ),
       ),
     );
   }
 
-  Widget _input({
+  Widget _inputField({
     required TextEditingController controller,
+    required String label,
     required String hint,
     required IconData icon,
-    String? Function(String?)? validator,
+    bool isRequired = false,
     TextInputType? keyboardType,
     bool obscureText = false,
     int maxLines = 1,
     Widget? suffixIcon,
+    String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      maxLines: obscureText ? 1 : maxLines,
-      style: GoogleFonts.poppins(
-        fontSize: 15,
-        color: _textColor,
-        fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: _textSecondaryColor,
+                ),
+              ),
+              if (isRequired)
+                Text(
+                  ' *',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: _errorColor,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: controller,
+            validator:
+                validator ??
+                (isRequired
+                    ? (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return '$label tidak boleh kosong';
+                        }
+                        return null;
+                      }
+                    : null),
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            maxLines: obscureText ? 1 : maxLines,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: _textColor,
+              fontWeight: FontWeight.w400,
+            ),
+            cursorColor: _primaryColor,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.poppins(
+                color: _textSecondaryColor.withValues(alpha: 0.5),
+                fontSize: 13,
+              ),
+              prefixIcon: Icon(icon, color: _textSecondaryColor, size: 20),
+              suffixIcon: suffixIcon,
+              filled: true,
+              fillColor: _surfaceColor,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: _primaryColor, width: 1),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFFEF4444),
+                  width: 1,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-      cursorColor: _primaryColor,
-      decoration: _decoration(hint: hint, icon: icon, suffixIcon: suffixIcon),
     );
   }
 
-  InputDecoration _decoration({
-    required String hint,
+  Widget _dropdownField({
+    required String label,
+    required String value,
+    required List<String> items,
     required IconData icon,
-    Widget? suffixIcon,
+    required Function(String?) onChanged,
   }) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: GoogleFonts.poppins(
-        color: _textSecondaryColor.withValues(alpha: 0.7),
-        fontSize: 14,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: _textSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            value: value,
+            isExpanded: true,
+            dropdownColor: _surfaceColor, // Warna dropdown item gelap
+            borderRadius: BorderRadius.circular(12),
+            icon: Icon(Icons.arrow_drop_down, color: _textSecondaryColor),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: _textColor,
+            ),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, color: _textSecondaryColor, size: 20),
+              filled: true,
+              fillColor:
+                  _surfaceColor, // Background dropdown tertutup jadi gelap
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: _primaryColor, width: 1),
+              ),
+            ),
+            items: items.map((item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(
+                  item,
+                  style: GoogleFonts.poppins(fontSize: 14, color: _textColor),
+                ),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ],
       ),
-      prefixIcon: Icon(
-        icon,
-        color: _primaryColor.withValues(alpha: 0.7),
-        size: 21,
-      ),
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: _surfaceColor,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: _borderColor, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: _borderColor, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: _primaryColor, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: _errorColor, width: 1),
+    );
+  }
+
+  Widget _imagePickerField({
+    required String label,
+    required File? imageFile,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: _textSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: double.infinity,
+              height: 100,
+              decoration: BoxDecoration(
+                color: _surfaceColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _borderColor, width: 1),
+              ),
+              child: imageFile != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(imageFile, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              onPressed: onTap,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          color: _textSecondaryColor,
+                          size: 32,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Upload Foto',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: _textSecondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -665,17 +753,9 @@ class _SellerRegistrationPageState
     FocusScope.of(context).unfocus();
     await Future.delayed(const Duration(milliseconds: 100));
 
-    print('🔵 SUBMIT: Form divalidasi...');
-
     if (!_formKey.currentState!.validate()) {
-      print('❌ SUBMIT: Form tidak valid');
       return;
     }
-
-    print('✅ SUBMIT: Form valid');
-    print('📝 Data:');
-    print('   - Nama Toko: ${_namaTokoController.text.trim()}');
-    print('   - Username: ${_usernameController.text.trim()}');
 
     setState(() => _isSubmitting = true);
 
@@ -686,24 +766,18 @@ class _SellerRegistrationPageState
       String? fotoProdukUrl;
 
       if (_fotoTokoFile != null) {
-        print('🟡 Upload foto toko...');
         fotoTokoUrl = await profileController.uploadSellerPhoto(
           _fotoTokoFile!,
           'foto_toko',
         );
-        print('   Foto Toko URL: $fotoTokoUrl');
       }
 
       if (_fotoProdukFile != null) {
-        print('🟡 Upload foto produk...');
         fotoProdukUrl = await profileController.uploadSellerPhoto(
           _fotoProdukFile!,
           'foto_produk',
         );
-        print('   Foto Produk URL: $fotoProdukUrl');
       }
-
-      print('🟡 Memanggil submitSellerApplication...');
 
       final success = await profileController.submitSellerApplication(
         namaTokoUsulan: _namaTokoController.text.trim(),
@@ -723,10 +797,7 @@ class _SellerRegistrationPageState
         fotoProdukContoh: fotoProdukUrl,
       );
 
-      print('📊 Hasil success = $success');
-
       if (success && mounted) {
-        print('✅ Berhasil!');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: _primaryColor,
@@ -738,7 +809,6 @@ class _SellerRegistrationPageState
         );
         context.pop();
       } else if (mounted) {
-        print('❌ Gagal, success = false');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: _errorColor,
@@ -746,9 +816,7 @@ class _SellerRegistrationPageState
           ),
         );
       }
-    } catch (e, stackTrace) {
-      print('❌ ERROR: $e');
-      print('📚 Stack trace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -761,80 +829,89 @@ class _SellerRegistrationPageState
       if (mounted) {
         setState(() => _isSubmitting = false);
       }
-      print('🏁 Submit selesai');
     }
   }
 
   Widget _buildPendingPage() {
     return Scaffold(
       backgroundColor: _backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(onBack: () => context.pop()),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: _warningColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.pending_actions,
-                          size: 64,
-                          color: _warningColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Menunggu Verifikasi',
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Pengajuan seller Anda sedang dalam proses verifikasi oleh admin',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // HANYA TOMBOL KEMBALI (tanpa tombol batalkan)
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          onPressed: () => context.pop(),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: Text(
-                            'Kembali',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Pengajuan Seller',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: _warningColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.pending_actions,
+                  size: 48,
+                  color: _warningColor,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Menunggu Verifikasi',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Pengajuan seller Anda sedang dalam proses verifikasi oleh admin',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: () => context.pop(),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Kembali',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -843,169 +920,80 @@ class _SellerRegistrationPageState
   Widget _buildAlreadySellerPage() {
     return Scaffold(
       backgroundColor: _backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(onBack: () => context.pop()),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: _successColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.check_circle,
-                          size: 64,
-                          color: _successColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Anda Sudah Menjadi Seller!',
-                        style: GoogleFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Selamat! Akun seller Anda sudah aktif.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          onPressed: () => context.pop(),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: Text(
-                            'Kembali',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => context.pop(),
         ),
+        title: Text(
+          'Pengajuan Seller',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
       ),
-    );
-  }
-}
-
-// ============ HELPER WIDGETS ============
-
-class _Backdrop extends StatelessWidget {
-  const _Backdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
-              stops: [0, 0.52, 1],
-            ),
-          ),
-        ),
-        Positioned(
-          top: -140,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 120, sigmaY: 120),
-              child: Container(
-                width: 340,
-                height: 340,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
+                  color: _successColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFFB5FF77).withValues(alpha: 0.34),
-                      const Color(0xFF5BE22F).withValues(alpha: 0.14),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
                 ),
+                child: Icon(Icons.check_circle, size: 48, color: _successColor),
               ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: onBack,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
+              const SizedBox(height: 24),
+              Text(
+                'Anda Sudah Menjadi Seller!',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
                   color: Colors.white,
-                  size: 20,
                 ),
               ),
-            ),
+              const SizedBox(height: 12),
+              Text(
+                'Selamat! Akun seller Anda sudah aktif.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: () => context.pop(),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Kembali',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          Text(
-            'Registrasi Seller',
-            style: GoogleFonts.poppins(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
