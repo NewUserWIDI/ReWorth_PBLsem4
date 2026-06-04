@@ -9,78 +9,87 @@ require_once __DIR__ . '/../config/supabase.php';
  */
 function dlh_reports(array $filters = []): array
 {
-    // Query dasar
-    $query = 'laporan_sampah?select=*,profiles(nama_lengkap,nama,no_telp,email)&order=waktu_lapor.desc';
-    
-    $conditions = [];
-    
-    // Filter by ID
-    if (!empty($filters['id'])) {
-        $conditions[] = 'id_laporan=eq.' . intval($filters['id']);
+    $result = supabase_fetch(
+        'laporan_sampah?select=*,profiles(*)'
+    );
+
+    if (!is_array($result)) {
+        return [];
     }
+
     
-    // Filter search query
-    if (!empty($filters['q'])) {
-        $search = addslashes($filters['q']);
-        $conditions[] = 'or=(jalan.ilike.%' . $search . '%,kelurahan.ilike.%' . $search . '%,kecamatan.ilike.%' . $search . '%)';
-    }
-    
-    // Filter status
-    if (!empty($filters['status'])) {
-        $conditions[] = 'status_laporan=eq.' . $filters['status'];
-    }
-    
-    // Filter severity
-    if (!empty($filters['severity'])) {
-        $conditions[] = 'tingkat_keparahan=eq.' . $filters['severity'];
-    }
-    
-    // Filter kecamatan
-    if (!empty($filters['kecamatan'])) {
-        $conditions[] = 'kecamatan=eq.' . $filters['kecamatan'];
-    }
-    
-    // Filter date range
-    if (!empty($filters['date_from'])) {
-        $conditions[] = 'waktu_lapor=gte.' . $filters['date_from'];
-    }
-    if (!empty($filters['date_to'])) {
-        $conditions[] = 'waktu_lapor=lte.' . $filters['date_to'] . ' 23:59:59';
-    }
-    
-    if (!empty($conditions)) {
-        $query .= '&' . implode('&', $conditions);
-    }
-    
-    $result = supabase_fetch($query);
-    
-    // Format data
+
     $reports = [];
+
     foreach ($result as $row) {
         $reports[] = [
-            'id_laporan' => $row['id_laporan'],
-            'foto_sampah' => $row['foto_sampah'],
-            'jalan' => $row['jalan'],
-            'kelurahan' => $row['kelurahan'],
-            'kecamatan' => $row['kecamatan'],
-            'patokan' => $row['patokan'],
-            'deskripsi' => $row['deskripsi'],
-            'jenis_sampah' => $row['jenis_sampah'],
-            'tingkat_keparahan' => $row['tingkat_keparahan'],
-            'status_laporan' => $row['status_laporan'],
-            'alasan_ditolak' => $row['alasan_ditolak'],
-            'waktu_lapor' => $row['waktu_lapor'],
-            'latitude' => $row['latitude'],
-            'longitude' => $row['longitude'],
-            'nama_pelapor' => $row['profiles']['nama_lengkap'] ?? $row['profiles']['nama'] ?? '-',
-            'no_telp' => $row['profiles']['no_telp'] ?? '-',
+            'id_laporan' => $row['id_laporan'] ?? null,
+            'foto_sampah' => $row['foto_sampah'] ?? '',
+            'jalan' => $row['jalan'] ?? '',
+            'kelurahan' => $row['kelurahan'] ?? '',
+            'kecamatan' => $row['kecamatan'] ?? '',
+            'patokan' => $row['patokan'] ?? '',
+            'deskripsi' => $row['deskripsi'] ?? '',
+            'jenis_sampah' => $row['jenis_sampah'] ?? '',
+            'tingkat_keparahan' => $row['tingkat_keparahan'] ?? '',
+            'status_laporan' => $row['status_laporan'] ?? '',
+            'alasan_ditolak' => $row['alasan_ditolak'] ?? null,
+            'waktu_lapor' => $row['waktu_lapor'] ?? '',
+            'latitude' => $row['latitude'] ?? null,
+            'longitude' => $row['longitude'] ?? null,
+
+            'nama_pelapor' => $row['profiles']['nama_lengkap']
+                ?? $row['profiles']['nama']
+                ?? '-',
+
             'email' => $row['profiles']['email'] ?? '-',
+
+            'no_telp' => $row['profiles']['no_telp']
+                ?? $row['profiles']['nomor_hp']
+                ?? '-',
         ];
     }
-    
-    return $reports;
+
+    // Filter status
+if (!empty($filters['status'])) {
+    $reports = array_filter($reports, function ($report) use ($filters) {
+        return strtolower($report['status_laporan'])
+            === strtolower($filters['status']);
+    });
 }
 
+// Filter pencarian
+if (!empty($filters['q'])) {
+    $q = strtolower(trim($filters['q']));
+
+    $reports = array_filter($reports, function ($report) use ($q) {
+        return str_contains(strtolower($report['jalan'] ?? ''), $q)
+            || str_contains(strtolower($report['kecamatan'] ?? ''), $q)
+            || str_contains(strtolower($report['nama_pelapor'] ?? ''), $q)
+            || str_contains((string)($report['id_laporan'] ?? ''), $q);
+    });
+}
+
+// Filter tingkat keparahan
+if (!empty($filters['severity'])) {
+    $reports = array_filter($reports, function ($report) use ($filters) {
+        return strtolower($report['tingkat_keparahan'])
+            === strtolower($filters['severity']);
+    });
+}
+
+// Filter kecamatan
+if (!empty($filters['kecamatan'])) {
+    $reports = array_filter($reports, function ($report) use ($filters) {
+        return strtolower($report['kecamatan'])
+            === strtolower($filters['kecamatan']);
+    });
+}
+
+$reports = array_values($reports);
+
+    return $reports;
+}
 /**
  * Ambil laporan berdasarkan ID
  */
@@ -95,7 +104,9 @@ function dlh_report_by_id(int $idLaporan): ?array
  */
 function dlh_status_count(array $reports, string $status): int
 {
-    return count(array_filter($reports, fn (array $item): bool => ($item['status_laporan'] ?? '') === $status));
+    return count(array_filter($reports, function ($item) use ($status) {
+        return ($item['status_laporan'] ?? '') === $status;
+    }));
 }
 
 /**
@@ -115,7 +126,14 @@ function dlh_active_reports(array $reports): array
         $status = $item['status_laporan'] ?? '';
         $lat = $item['latitude'] ?? null;
         $lng = $item['longitude'] ?? null;
-        return in_array($status, ['menunggu', 'diproses', 'pending', 'processing'], true) && is_numeric($lat) && is_numeric($lng);
+
+        return in_array(
+            $status,
+            ['menunggu', 'diproses', 'pending', 'processing'],
+            true
+        )
+        && is_numeric($lat)
+        && is_numeric($lng);
     }));
 }
 
@@ -140,37 +158,47 @@ function dlh_unique_kecamatan(): array
  */
 function dlh_update_status(int $id, string $status, ?string $alasan = null, ?int $poin = null): bool
 {
-    $data = ['status_laporan' => $status];
+    $data = [
+        'status_laporan' => $status
+    ];
+
     if ($alasan !== null) {
         $data['alasan_ditolak'] = $alasan;
     }
+
     if ($poin !== null) {
         $data['poin_diberikan'] = $poin;
     }
-    
-    $result = supabaseRequest('laporan_sampah?id_laporan=eq.' . $id, 'PATCH', $data);
-    return $result['ok'] ?? false;
+
+    $result = supabase_update(
+        'laporan_sampah',
+        $data,
+        ['id_laporan' => 'eq.' . $id]
+    );
+
+    return is_array($result);
 }
+
 
 /**
  * Path ilustrasi DLH
  */
 function dlh_illustration_path(): string
 {
-    $singleCandidates = ['assets/ilust_dlh.png', 'assets/ilust_dlh.jpg', 'assets/ilust_dlh.jpeg', 'assets/ilust_dlh.webp'];
+    $singleCandidates = ['assets/dlh.png', 'assets/dlh.jpg', 'assets/dlh.jpeg', 'assets/dlh.webp'];
     foreach ($singleCandidates as $path) {
         if (is_file(__DIR__ . '/../../' . $path)) {
             return $path;
         }
     }
 
-    $folderCandidates = glob(__DIR__ . '/../../assets/ilust_dlh/*.{png,jpg,jpeg,webp,svg}', GLOB_BRACE) ?: [];
+    $folderCandidates = glob(__DIR__ . '/../../assets/dlh/*.{png,jpg,jpeg,webp,svg}', GLOB_BRACE) ?: [];
     if ($folderCandidates !== []) {
         $first = basename($folderCandidates[0]);
-        return 'assets/ilust_dlh/' . $first;
+        return 'assets/dlh/' . $first;
     }
 
-    return 'assets/ilust_dlh.png';
+    return 'assets/dlh.png';
 }
 
 /**
