@@ -8,14 +8,16 @@ require_once __DIR__ . '/../../components/badge_status.php';
 require_once __DIR__ . '/../../components/severity_badge.php';
 require_once __DIR__ . '/../../components/dlh_helpers.php';
 
+
 require_role('dlh');
 
 $tab = $_GET['tab'] ?? 'semua';
+
 $tabStatus = match ($tab) {
     'menunggu' => 'pending',
-    'diproses' => 'diproses',
-    'selesai' => 'selesai',
-    'ditolak' => 'ditolak',
+    'diproses' => 'processing',
+    'selesai' => 'completed',
+    'ditolak' => 'rejected',
     default => '',
 };
 
@@ -47,16 +49,17 @@ render_layout('Laporan Sampah', function () use ($reports, $filters, $tab, $keca
                 <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari ID, lokasi, pelapor..." style="min-width:260px;">
                 <select class="select" name="status">
                     <option value="">Semua status</option>
-                    <option value="menunggu" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
-                    <option value="diproses" <?= $filters['status'] === 'diproses' ? 'selected' : '' ?>>Diproses</option>
-                    <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="ditolak" <?= $filters['status'] === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
+                <option value="processing" <?= $filters['status'] === 'processing' ? 'selected' : '' ?>>Diproses</option>
+                <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Selesai</option>
+                <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
                 </select>
                 <select class="select" name="severity">
                     <option value="">Semua tingkat</option>
-                    <option value="ringan" <?= $filters['severity'] === 'ringan' ? 'selected' : '' ?>>Ringan</option>
-                    <option value="sedang" <?= $filters['severity'] === 'sedang' ? 'selected' : '' ?>>Sedang</option>
-                    <option value="parah" <?= $filters['severity'] === 'parah' ? 'selected' : '' ?>>Parah</option>
+                   <option value="">Semua tingkat</option>
+                    <option value="Ringan" <?= $filters['severity'] === 'Ringan' ? 'selected' : '' ?>>Ringan</option>
+                    <option value="Sedang" <?= $filters['severity'] === 'Sedang' ? 'selected' : '' ?>>Sedang</option>
+                    <option value="Berat" <?= $filters['severity'] === 'Berat' ? 'selected' : '' ?>>Berat</option>
                 </select>
                 <select class="select" name="kecamatan">
                     <option value="">Semua kecamatan</option>
