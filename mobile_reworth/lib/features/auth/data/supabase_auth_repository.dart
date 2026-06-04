@@ -27,13 +27,15 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser?> register(RegisterRequest request) async {
+    // Logout dulu kalau ada session aktif untuk mencegah data lama tertampil
+    if (_client.auth.currentSession != null) {
+      await _client.auth.signOut();
+    }
+
     final response = await _client.auth.signUp(
       email: request.email,
       password: request.password,
-      data: {
-        'nama': request.nama,
-        'nomor_hp': request.nomorHp,
-      },
+      data: {'nama': request.nama, 'nomor_hp': request.nomorHp},
     );
 
     final user = response.user;
@@ -42,16 +44,19 @@ class SupabaseAuthRepository implements AuthRepository {
     // Supabase may return a user without an active session when email
     // confirmation is enabled. For this app flow, registration still enters
     // the app immediately using the signup user data.
-    final fallbackUser = _mapToAppUser(
-      user,
-      {
-        'nama': request.nama,
-        'nomor_hp': request.nomorHp,
-        'email': request.email,
-        'total_poin': 0,
-        'laporan_valid': 0,
-      },
-    );
+    final fallbackUser = _mapToAppUser(user, {
+      'nama_lengkap': request.nama,
+      'nama': request.nama,
+      'no_telp': request.nomorHp,
+      'nomor_hp': request.nomorHp,
+      'email': request.email,
+      'total_poin': 0,
+      'laporan_valid': 0,
+      'total_laporan_valid': 0,
+      'streak_poin': 0,
+      'role': 'Masyarakat',
+      'status_pengajuan_seller': 'Belum Daftar',
+    });
 
     if (_client.auth.currentSession == null) {
       try {
@@ -123,13 +128,21 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       await _client.from('profiles').upsert({
         'id': userId,
+        'nama_lengkap': nama,
         'nama': nama,
         'email': email,
+        'no_telp': nomorHp,
         'nomor_hp': nomorHp,
         'foto_profil': '',
         'total_poin': 0,
         'laporan_valid': 0,
         'setor_sampah_kg': 0,
+        'total_laporan_valid': 0,
+        'streak_poin': 0,
+        'role': 'Masyarakat',
+        'status_pengajuan_seller': 'Belum Daftar',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       });
     } catch (_) {
       // Auth is the source of truth here; profile can be completed later.
@@ -139,12 +152,18 @@ class SupabaseAuthRepository implements AuthRepository {
   AppUser _mapToAppUser(User user, Map<String, dynamic>? profile) {
     final metadata = user.userMetadata ?? <String, dynamic>{};
 
-    final nama = (profile?['nama'] as String?) ??
+    final nama =
+        (profile?['nama_lengkap'] as String?) ??
+        (profile?['nama'] as String?) ??
         (metadata['nama'] as String?) ??
         'Pengguna ReWorth';
-    final nomorHp = (profile?['nomor_hp'] as String?) ??
+
+    final nomorHp =
+        (profile?['no_telp'] as String?) ??
+        (profile?['nomor_hp'] as String?) ??
         (metadata['nomor_hp'] as String?) ??
         '-';
+
     final email = (profile?['email'] as String?) ?? user.email ?? '-';
 
     return AppUser(
@@ -153,8 +172,9 @@ class SupabaseAuthRepository implements AuthRepository {
       email: email,
       password: '',
       poin: (profile?['total_poin'] as num?)?.toInt() ?? 0,
-      streak: 0,
-      jumlahLaporanValid: (profile?['laporan_valid'] as num?)?.toInt() ?? 0,
+      streak: (profile?['streak_poin'] as num?)?.toInt() ?? 0,
+      jumlahLaporanValid:
+          (profile?['total_laporan_valid'] as num?)?.toInt() ?? 0,
       alamatTersimpan: const [],
       metodePembayaran: const [],
       wishlist: const [],

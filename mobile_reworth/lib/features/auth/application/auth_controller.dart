@@ -28,7 +28,15 @@ class AuthController extends ChangeNotifier {
   AppUser? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
 
-  Future<AuthActionResult> login({required String email, required String password}) async {
+  Future<void> refreshCurrentUser() async {
+    _currentUser = _repository.getCurrentUser();
+    notifyListeners();
+  }
+
+  Future<AuthActionResult> login({
+    required String email,
+    required String password,
+  }) async {
     _setLoading(true);
     try {
       final user = await _repository
@@ -87,6 +95,13 @@ class AuthController extends ChangeNotifier {
       }
 
       _currentUser = user;
+
+      // Delay singkat untuk memastikan profile sudah tersimpan di database
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Refresh untuk memastikan data dari tabel profiles terbaca
+      await refreshCurrentUser();
+
       notifyListeners();
       return const AuthActionResult(
         success: true,
@@ -147,4 +162,3 @@ class AuthController extends ChangeNotifier {
     return message.isEmpty ? 'Terjadi kesalahan autentikasi' : message;
   }
 }
-
