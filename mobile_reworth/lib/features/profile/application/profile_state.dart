@@ -18,8 +18,6 @@ class ProfileState {
   final bool isLoadingSellerApplication;
   final bool isSubmittingSellerApplication;
   final String? sellerApplicationErrorMessage;
-
-  // fields for edit profile
   final bool isUpdatingProfile;
   final String? updateErrorMessage;
 

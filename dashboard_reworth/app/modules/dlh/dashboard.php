@@ -14,6 +14,8 @@ require_role('dlh');
 $allReports = dlh_reports();
 $activeReports = dlh_active_reports($allReports);
 $markers = array_map(function (array $item): array {
+
+
     return [
         'id' => (int) $item['id_laporan'],
         'lat' => (float) $item['latitude'],
@@ -45,10 +47,10 @@ render_layout('Dashboard DLH', function () use ($allReports, $activeReports, $ma
     </section>
 
     <div class="stat-grid">
-        <?php stat_card('Laporan Baru', dlh_status_count($allReports, 'menunggu'), 'Perlu verifikasi awal'); ?>
-        <?php stat_card('Diproses', dlh_status_count($allReports, 'diproses'), 'Sedang ditangani petugas'); ?>
-        <?php stat_card('Selesai', dlh_status_count($allReports, 'selesai'), 'Sudah ditindaklanjuti'); ?>
-        <?php stat_card('Titik Sampah Aktif', count($activeReports), 'Koordinat valid'); ?>
+    <?php stat_card('Laporan Baru', dlh_status_count($allReports, 'pending'), 'Perlu verifikasi awal'); ?>
+    <?php stat_card('Diproses', dlh_status_count($allReports, 'processing'), 'Sedang ditangani petugas'); ?>
+    <?php stat_card('Selesai', dlh_status_count($allReports, 'completed'), 'Sudah ditindaklanjuti'); ?>
+    <?php stat_card('Titik Sampah Aktif', count($activeReports), 'Koordinat valid'); ?>
     </div>
 
     <div class="two-col-grid">
@@ -68,10 +70,9 @@ render_layout('Dashboard DLH', function () use ($allReports, $activeReports, $ma
         <section class="panel">
             <div class="panel-header"><h2>Tingkat Keparahan</h2></div>
             <div class="quick-cards">
-                <article class="quick-card"><strong><?= e((string) dlh_severity_count($allReports, 'ringan')) ?></strong><span>Ringan</span></article>
-                <article class="quick-card"><strong><?= e((string) dlh_severity_count($allReports, 'sedang')) ?></strong><span>Sedang</span></article>
-                <article class="quick-card"><strong><?= e((string) dlh_severity_count($allReports, 'parah')) ?></strong><span>Parah</span></article>
-                <article class="quick-card"><strong><?= e((string) count($allReports)) ?></strong><span>Total Laporan</span></article>
+            <article class="quick-card"><strong><?= e((string) dlh_severity_count($allReports, 'Ringan')) ?></strong><span>Ringan</span></article>
+            <article class="quick-card"><strong><?= e((string) dlh_severity_count($allReports, 'Sedang')) ?></strong><span>Sedang</span></article>
+            <article class="quick-card"><strong><?= e((string) dlh_severity_count($allReports, 'Berat')) ?></strong><span>Berat</span></article>
             </div>
             <div class="map-legend" style="margin-top:14px;">
                 <span><i class="dot dot-light"></i> Ringan</span>
@@ -143,4 +144,3 @@ render_layout('Dashboard DLH', function () use ($allReports, $activeReports, $ma
     </script>
     <?php
 });
-

@@ -1,29 +1,25 @@
 import 'dart:io';
+
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
 import '../domain/seller_application.dart';
 
 abstract class ProfileRepository {
-  // Profile methods
   Future<ProfileUser> getProfile();
   Future<ProfileUser?> getProfileById(String userId);
 
-  // Update profile methods (NEW)
   Future<ProfileUser> updateProfile({
     required String namaLengkap,
     required String noTelp,
     String? fotoProfil,
   });
 
-  // Upload profile photo (NEW)
   Future<String?> uploadProfilePhoto(File imageFile);
 
-  // Reward methods
   Future<List<RewardItem>> getAvailableRewards();
   Future<bool> redeemReward(int rewardId);
 
-  // Bank account methods
   Future<List<BankAccount>> getBankAccounts();
   Future<void> addBankAccount({
     required String bankName,
@@ -43,17 +39,29 @@ abstract class ProfileRepository {
   Future<void> deleteBankAccount(String cardId);
   Future<void> setPrimaryBankAccount(String cardId);
 
+  Future<String?> uploadSellerPhoto(File imageFile, String jenis);
   Future<SellerApplication?> getLatestSellerApplication();
+  Future<SellerApplication?> getSellerApplicationStatus();
+
   Future<void> submitSellerApplication({
-    required String fullName,
-    required String phone,
-    required String email,
-    required String storeName,
-    required String storeDescription,
-    required String storeAddress,
-    required String category,
-    required String productTypes,
-    required String usernameProposal,
-    required String passwordProposal,
+    String? fullName,
+    String? phone,
+    String? email,
+    String? storeName,
+    String? storeDescription,
+    String? storeAddress,
+    String? category,
+    String? productTypes,
+    String? usernameProposal,
+    String? passwordProposal,
+    String? namaTokoUsulan,
+    String? deskripsiToko,
+    String? alamatToko,
+    String? kategoriJualan,
+    String? jenisProdukJualan,
+    String? usernameUsulan,
+    String? passwordHashUsulan,
+    String? fotoToko,
+    String? fotoProdukContoh,
   });
 }

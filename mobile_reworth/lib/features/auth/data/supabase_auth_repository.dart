@@ -27,32 +27,21 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser?> register(RegisterRequest request) async {
+    // Logout dulu kalau ada session aktif
+    if (_client.auth.currentSession != null) {
+      await _client.auth.signOut();
+    }
+
     final response = await _client.auth.signUp(
       email: request.email,
       password: request.password,
-      data: {
-        'nama': request.nama,
-        'nomor_hp': request.nomorHp,
-      },
+      data: {'nama_lengkap': request.nama, 'no_telp': request.nomorHp},
     );
 
     final user = response.user;
     if (user == null) return null;
 
-    // Supabase may return a user without an active session when email
-    // confirmation is enabled. For this app flow, registration still enters
-    // the app immediately using the signup user data.
-    final fallbackUser = _mapToAppUser(
-      user,
-      {
-        'nama': request.nama,
-        'nomor_hp': request.nomorHp,
-        'email': request.email,
-        'total_poin': 0,
-        'laporan_valid': 0,
-      },
-    );
-
+    // Auto login setelah registrasi jika session belum aktif
     if (_client.auth.currentSession == null) {
       try {
         await _client.auth.signInWithPassword(
@@ -60,19 +49,20 @@ class SupabaseAuthRepository implements AuthRepository {
           password: request.password,
         );
       } on AuthException {
-        return fallbackUser;
+        // Jika auto login gagal, tetap lanjut
       }
     }
 
-    await _tryUpsertProfileRow(
+    // Insert ke tabel profiles
+    await _insertProfileRow(
       userId: user.id,
       nama: request.nama,
       email: request.email,
-      nomorHp: request.nomorHp,
+      noTelp: request.nomorHp,
     );
 
     final profile = await _readProfileRow(user.id);
-    return profile == null ? fallbackUser : _mapToAppUser(user, profile);
+    return _mapToAppUser(user, profile);
   }
 
   @override
@@ -85,10 +75,15 @@ class SupabaseAuthRepository implements AuthRepository {
     final user = _client.auth.currentUser;
     if (user == null) return null;
 
-    final metadata = user.userMetadata ?? <String, dynamic>{};
     return AppUser(
-      nama: (metadata['nama'] as String?) ?? 'Pengguna ReWorth',
-      nomorHp: (metadata['nomor_hp'] as String?) ?? '-',
+      nama:
+          user.userMetadata?['nama_lengkap'] as String? ??
+          user.userMetadata?['nama'] as String? ??
+          'Pengguna ReWorth',
+      nomorHp:
+          user.userMetadata?['no_telp'] as String? ??
+          user.userMetadata?['nomor_hp'] as String? ??
+          '-',
       email: user.email ?? '-',
       password: '',
       poin: 0,
@@ -109,42 +104,74 @@ class SupabaseAuthRepository implements AuthRepository {
           .eq('id', userId)
           .maybeSingle();
       return row;
-    } catch (_) {
+    } catch (e) {
+      print('❌ _readProfileRow error: $e');
       return null;
     }
   }
 
-  Future<void> _tryUpsertProfileRow({
+  Future<void> _insertProfileRow({
     required String userId,
     required String nama,
     required String email,
-    required String nomorHp,
+    required String noTelp,
   }) async {
+    print('🔵 Inserting profile for user: $userId');
+
     try {
-      await _client.from('profiles').upsert({
+      // Coba insert dengan data minimal
+      await _client.from('profiles').insert({
         'id': userId,
-        'nama': nama,
+        'nama_lengkap': nama,
+        'no_telp': noTelp,
         'email': email,
-        'nomor_hp': nomorHp,
-        'foto_profil': '',
-        'total_poin': 0,
-        'laporan_valid': 0,
-        'setor_sampah_kg': 0,
+        'role': 'user',
+        'status_pengajuan_seller': null,
       });
-    } catch (_) {
-      // Auth is the source of truth here; profile can be completed later.
+      print('✅ Profile inserted successfully');
+    } catch (e) {
+      print('❌ ERROR inserting profile: $e');
+
+      // Jika gagal, coba lagi dengan cara berbeda (tanpa role)
+      try {
+        print('🔵 Retry without role...');
+        await _client.from('profiles').insert({
+          'id': userId,
+          'nama_lengkap': nama,
+          'no_telp': noTelp,
+          'email': email,
+          'status_pengajuan_seller': null,
+        });
+
+        // Update role setelah insert
+        await _client
+            .from('profiles')
+            .update({'role': 'user'})
+            .eq('id', userId);
+
+        print('✅ Profile inserted and updated successfully');
+      } catch (e2) {
+        print('❌ Second attempt also failed: $e2');
+        rethrow;
+      }
     }
   }
 
   AppUser _mapToAppUser(User user, Map<String, dynamic>? profile) {
-    final metadata = user.userMetadata ?? <String, dynamic>{};
-
-    final nama = (profile?['nama'] as String?) ??
-        (metadata['nama'] as String?) ??
+    final nama =
+        (profile?['nama_lengkap'] as String?) ??
+        (profile?['nama'] as String?) ??
+        user.userMetadata?['nama_lengkap'] as String? ??
+        user.userMetadata?['nama'] as String? ??
         'Pengguna ReWorth';
-    final nomorHp = (profile?['nomor_hp'] as String?) ??
-        (metadata['nomor_hp'] as String?) ??
+
+    final nomorHp =
+        (profile?['no_telp'] as String?) ??
+        (profile?['nomor_hp'] as String?) ??
+        user.userMetadata?['no_telp'] as String? ??
+        user.userMetadata?['nomor_hp'] as String? ??
         '-';
+
     final email = (profile?['email'] as String?) ?? user.email ?? '-';
 
     return AppUser(
@@ -153,8 +180,9 @@ class SupabaseAuthRepository implements AuthRepository {
       email: email,
       password: '',
       poin: (profile?['total_poin'] as num?)?.toInt() ?? 0,
-      streak: 0,
-      jumlahLaporanValid: (profile?['laporan_valid'] as num?)?.toInt() ?? 0,
+      streak: (profile?['streak_poin'] as num?)?.toInt() ?? 0,
+      jumlahLaporanValid:
+          (profile?['total_laporan_valid'] as num?)?.toInt() ?? 0,
       alamatTersimpan: const [],
       metodePembayaran: const [],
       wishlist: const [],

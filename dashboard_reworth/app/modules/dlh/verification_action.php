@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-
+require_once __DIR__ . '/../../core/middleware.php';
+require_once __DIR__ . '/../../components/dlh_helpers.php';
 require_once __DIR__ . '/../../core/middleware.php';
 
 require_role('dlh');
@@ -20,22 +21,31 @@ if ($id === '' || $action === '') {
 }
 
 if ($action === 'reject') {
-    if (mb_strlen(preg_replace('/\s+/', ' ', $reason)) < 10) {
+
+    if (mb_strlen(trim($reason)) < 10) {
         set_flash('danger', 'Alasan penolakan minimal 10 karakter.');
         redirect('app/modules/dlh/laporan_detail.php?id=' . urlencode($id));
     }
 
-    set_flash('success', 'Laporan #' . $id . ' ditolak. Alasan: ' . $reason . ' (mock).');
+    dlh_update_status((int)$id, 'rejected', $reason);
+
+    set_flash('success', 'Laporan berhasil ditolak.');
     redirect('app/modules/dlh/riwayat.php');
 }
 
 if ($action === 'accept') {
-    set_flash('success', 'Laporan #' . $id . ' berhasil diverifikasi dan diubah ke status diproses (mock).');
+
+    dlh_update_status((int)$id, 'processing');
+
+    set_flash('success', 'Laporan berhasil diverifikasi.');
     redirect('app/modules/dlh/monitoring.php');
 }
 
 if ($action === 'finish') {
-    set_flash('success', 'Laporan #' . $id . ' ditandai selesai (mock).');
+
+    dlh_update_status((int)$id, 'completed');
+
+    set_flash('success', 'Laporan selesai diproses.');
     redirect('app/modules/dlh/riwayat.php');
 }
 

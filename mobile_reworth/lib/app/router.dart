@@ -10,10 +10,10 @@ import 'package:mobile_reworth/features/auth/presentation/pages/login_page.dart'
 import 'package:mobile_reworth/features/auth/presentation/pages/notifications_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile_reworth/features/auth/presentation/pages/welcome_page.dart';
-import 'package:mobile_reworth/features/lapor_sampah/presentation/pages/report_page.dart';
 import 'package:mobile_reworth/features/lapor_sampah/presentation/pages/report_history_page.dart';
-import 'package:mobile_reworth/features/market/domain/market_product.dart';
+import 'package:mobile_reworth/features/lapor_sampah/presentation/pages/report_page.dart';
 import 'package:mobile_reworth/features/market/domain/checkout_payment_session.dart';
+import 'package:mobile_reworth/features/market/domain/market_product.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/cart_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/checkout_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/market_page.dart';
@@ -22,11 +22,12 @@ import 'package:mobile_reworth/features/market/presentation/pages/product_detail
 import 'package:mobile_reworth/features/market/presentation/pages/qris_payment_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/seller_registration_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/wishlist_page.dart';
-import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/address_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/payment_method_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_edit_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/rewards_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/seller_application_detail_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/seller_application_page.dart';
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
@@ -61,13 +62,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
-
-      // ==================== SHELL ROUTE (BOTTOM NAVIGATION) ====================
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-          // ? MENGGUNAKAN ReportPage (bukan placeholder)
           GoRoute(
             path: '/report',
             builder: (context, state) => const ReportPage(),
@@ -82,10 +80,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-
-      // ==================== ROUTES DI LUAR BOTTOM NAVIGATION ====================
-
-      // ? MENGGUNAKAN ReportHistoryPage (bukan placeholder)
       GoRoute(
         path: '/report-history',
         builder: (context, state) => const ReportHistoryPage(),
@@ -111,6 +105,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/seller-registration',
         builder: (context, state) => const SellerRegistrationPage(),
+      ),
+      GoRoute(
+        path: '/seller-application',
+        builder: (context, state) => const SellerApplicationPage(),
+      ),
+      GoRoute(
+        path: '/seller-application-detail',
+        name: 'seller-application-detail',
+        builder: (context, state) => const SellerApplicationDetailPage(),
       ),
       GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
       GoRoute(
@@ -152,10 +155,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/payment-method',
         builder: (context, state) => const PaymentMethodPage(),
-      ),
-      GoRoute(
-        path: '/seller-application',
-        builder: (context, state) => const SellerApplicationPage(),
       ),
       GoRoute(
         path: '/profile-edit',

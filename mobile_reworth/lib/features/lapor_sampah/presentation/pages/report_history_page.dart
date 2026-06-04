@@ -24,12 +24,14 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final reportState = ref.watch(reportControllerProvider);
-    final reportController = ref.read(reportControllerProvider.notifier);
+ @override
+Widget build(BuildContext context) {
+  final reportState = ref.watch(reportControllerProvider);
+  final reportController = ref.read(reportControllerProvider.notifier);
 
-    return Scaffold(
+  return DefaultTabController(
+    length: 3,
+    child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
@@ -46,7 +48,9 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s24),
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.s24,
+            ),
             child: const TabBar(
               tabs: [
                 Tab(text: 'Aktif'),
@@ -57,33 +61,34 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
               unselectedLabelColor: Colors.white70,
               indicatorColor: Colors.white,
               indicatorWeight: 3,
-              labelStyle: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-              ),
             ),
           ),
         ),
       ),
       body: reportState.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : DefaultTabController(
-              length: 3,
-              child: TabBarView(
-                children: [
-                  _buildReportList(reportController, 'aktif'),
-                  _buildReportList(reportController, 'selesai'),
-                  _buildReportList(reportController, 'ditolak'),
-                ],
-              ),
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : TabBarView(
+              children: [
+                _buildReportList(
+                  
+                  reportController,
+                  'aktif',
+                ),
+                _buildReportList(
+                  reportController,
+                  'selesai',
+                ),
+                _buildReportList(
+                  reportController,
+                  'ditolak',
+                ),
+              ],
             ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildReportList(ReportController controller, String status) {
     final reports = controller.getReportsByStatus(status);
     

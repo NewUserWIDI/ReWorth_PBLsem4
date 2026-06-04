@@ -80,27 +80,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final bytes = await picked.readAsBytes();
-      final path =
-          'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final bucket = 'avatars';
+      final path = 'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      const bucket = 'avatars';
 
-      await client.storage
-          .from(bucket)
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
-          );
+      await client.storage.from(bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
 
       final publicUrl = client.storage.from(bucket).getPublicUrl(path);
 
-      await client
-          .from('profiles')
-          .update({'foto_profil': publicUrl})
-          .eq('id', userId);
+      await client.from('profiles').update({'foto_profil': publicUrl}).eq(
+        'id',
+        userId,
+      );
 
       if (mounted) {
         setState(() {
@@ -110,7 +104,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           context,
         ).showSnackBar(const SnackBar(content: Text('Foto profil diperbarui')));
 
-        // Refresh profile data from controller
         ref.read(profileControllerProvider.notifier).loadProfile();
       }
     } catch (e) {
@@ -144,6 +137,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final totalLaporan =
         profileUser?.totalLaporanValid ?? authUser?.jumlahLaporanValid ?? 0;
     final avatarUrl = _remoteAvatarUrl ?? fotoProfil;
+    final statusPengajuan = profileUser?.statusPengajuanSeller ?? 'nonaktif';
+
     if (state.isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFF001F1A),
@@ -170,9 +165,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      ref
-                          .read(profileControllerProvider.notifier)
-                          .loadProfile();
+                      ref.read(profileControllerProvider.notifier).loadProfile();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -311,7 +304,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   height: 30,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: LinearGradient(
+                                    gradient: const LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [Colors.white, Color(0xFFDCEBD5)],
@@ -388,7 +381,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  // Menu Tukar Poin Reward
                   ProfileMenuTile(
                     icon: Icons.card_giftcard_rounded,
                     title: 'Tukar Poin Reward',
@@ -410,7 +402,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ProfileMenuTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Akun Bank',
-                    subtitle: 'Kelola rekening pencairan dan pembayaran',
+                    subtitle: 'Tambahkan akun bank Anda',
                     onTap: () => context.push('/payment-method'),
                   ),
                   ProfileMenuTile(
@@ -419,25 +411,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     subtitle: 'Kelola alamat pengiriman',
                     onTap: () => context.push('/address'),
                   ),
-                  // Updated Edit Profile Menu with refresh functionality
                   ProfileMenuTile(
                     icon: Icons.edit_rounded,
                     title: 'Edit Profil',
                     subtitle: 'Ubah data profil Anda',
                     onTap: () async {
-                      // Navigate to edit profile and wait for result
                       final shouldRefresh = await context.push<bool>(
                         '/profile-edit',
                       );
                       if (shouldRefresh == true && mounted) {
-                        // Refresh profile data from controller
-                        ref
-                            .read(profileControllerProvider.notifier)
-                            .loadProfile();
-                        // Also reload avatar URL from database
+                        ref.read(profileControllerProvider.notifier).loadProfile();
                         await _loadRemoteAvatar();
                       }
                     },
+                  ),
+                  ProfileMenuTile(
+                    icon: Icons.storefront_outlined,
+                    title: 'Pengajuan Seller',
+                    subtitle: _getSellerSubtitle(statusPengajuan),
+                    onTap: () => context.push('/seller-application-detail'),
+                    trailing: _getSellerStatusBadge(statusPengajuan),
                   ),
                   ProfileMenuTile(
                     icon: Icons.logout_rounded,
@@ -455,6 +448,51 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _getSellerSubtitle(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Menunggu verifikasi admin';
+      case 'aktif':
+        return 'Kelola toko Anda';
+      case 'ditolak':
+        return 'Pengajuan ditolak, ajukan ulang';
+      case 'nonaktif':
+      default:
+        return 'Daftar menjadi seller sekarang';
+    }
+  }
+
+  Widget? _getSellerStatusBadge(String status) {
+    if (status == 'pending') {
+      return _statusBadge('Pending', const Color(0xFFFFA726));
+    }
+    if (status == 'aktif') {
+      return _statusBadge('Aktif', const Color(0xFF4CAF50));
+    }
+    if (status == 'ditolak') {
+      return _statusBadge('Ditolak', const Color(0xFFEF5350));
+    }
+    return null;
+  }
+
+  Widget _statusBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

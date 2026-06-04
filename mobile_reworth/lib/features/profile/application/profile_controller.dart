@@ -1,8 +1,11 @@
 import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../data/profile_repository.dart';
 import '../data/supabase_profile_repository.dart';
+import '../domain/seller_application.dart';
 import 'profile_state.dart';
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
@@ -24,8 +27,6 @@ class ProfileController extends StateNotifier<ProfileState> {
 
   final ProfileRepository _repository;
 
-  // ========== PROFILE METHODS ==========
-
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -36,8 +37,6 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = state.copyWith(isLoading: false);
     }
   }
-
-  // ========== UPDATE PROFILE METHODS (NEW) ==========
 
   Future<String?> uploadProfilePhoto(File imageFile) async {
     try {
@@ -63,7 +62,6 @@ class ProfileController extends StateNotifier<ProfileState> {
       );
 
       state = state.copyWith(isUpdatingProfile: false, user: updatedUser);
-
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -77,8 +75,6 @@ class ProfileController extends StateNotifier<ProfileState> {
   void clearUpdateError() {
     state = state.copyWith(updateErrorMessage: null);
   }
-
-  // ========== REWARD METHODS ==========
 
   Future<void> loadAvailableRewards() async {
     try {
@@ -108,8 +104,6 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = state.copyWith(isRedeeming: false);
     }
   }
-
-  // ========== BANK ACCOUNT METHODS ==========
 
   Future<void> loadBankAccounts() async {
     state = state.copyWith(isLoadingBankAccounts: true);
@@ -227,22 +221,41 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
+  Future<String?> uploadSellerPhoto(File imageFile, String jenis) async {
+    try {
+      return await _repository.uploadSellerPhoto(imageFile, jenis);
+    } catch (e) {
+      print('Error uploadSellerPhoto: $e');
+      return null;
+    }
+  }
+
   Future<bool> submitSellerApplication({
-    required String fullName,
-    required String phone,
-    required String email,
-    required String storeName,
-    required String storeDescription,
-    required String storeAddress,
-    required String category,
-    required String productTypes,
-    required String usernameProposal,
-    required String passwordProposal,
+    String? fullName,
+    String? phone,
+    String? email,
+    String? storeName,
+    String? storeDescription,
+    String? storeAddress,
+    String? category,
+    String? productTypes,
+    String? usernameProposal,
+    String? passwordProposal,
+    String? namaTokoUsulan,
+    String? deskripsiToko,
+    String? alamatToko,
+    String? kategoriJualan,
+    String? jenisProdukJualan,
+    String? usernameUsulan,
+    String? passwordHashUsulan,
+    String? fotoToko,
+    String? fotoProdukContoh,
   }) async {
     state = state.copyWith(
       isSubmittingSellerApplication: true,
       sellerApplicationErrorMessage: null,
     );
+
     try {
       await _repository.submitSellerApplication(
         fullName: fullName,
@@ -255,6 +268,15 @@ class ProfileController extends StateNotifier<ProfileState> {
         productTypes: productTypes,
         usernameProposal: usernameProposal,
         passwordProposal: passwordProposal,
+        namaTokoUsulan: namaTokoUsulan,
+        deskripsiToko: deskripsiToko,
+        alamatToko: alamatToko,
+        kategoriJualan: kategoriJualan,
+        jenisProdukJualan: jenisProdukJualan,
+        usernameUsulan: usernameUsulan,
+        passwordHashUsulan: passwordHashUsulan,
+        fotoToko: fotoToko,
+        fotoProdukContoh: fotoProdukContoh,
       );
       await loadProfile();
       await loadSellerApplication();
@@ -267,6 +289,15 @@ class ProfileController extends StateNotifier<ProfileState> {
       return false;
     } finally {
       state = state.copyWith(isSubmittingSellerApplication: false);
+    }
+  }
+
+  Future<SellerApplication?> getSellerApplicationStatus() async {
+    try {
+      return await _repository.getSellerApplicationStatus();
+    } catch (e) {
+      print('Error getSellerApplicationStatus: $e');
+      return null;
     }
   }
 }
