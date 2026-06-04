@@ -187,7 +187,7 @@ function dlh_illustration_path(): string
 {
     $singleCandidates = ['assets/dlh.png', 'assets/dlh.jpg', 'assets/dlh.jpeg', 'assets/dlh.webp'];
     foreach ($singleCandidates as $path) {
-        if (is_file(__DIR__ . '/../../' . $path)) {
+        if (is_file(__DIR__ . '/../../' . $path)) { 
             return $path;
         }
     }
