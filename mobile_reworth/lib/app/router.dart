@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +26,7 @@ import 'package:mobile_reworth/features/profile/presentation/pages/address_page.
 import 'package:mobile_reworth/features/profile/presentation/pages/payment_method_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_edit_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/rewards_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/seller_application_detail_page.dart'; // IMPORT BARU
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
 
@@ -65,7 +66,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomePage()),
-          // ? MENGGUNAKAN ReportPage (bukan placeholder)
           GoRoute(
             path: '/report',
             builder: (context, state) => const ReportPage(),
@@ -82,8 +82,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ==================== ROUTES DI LUAR BOTTOM NAVIGATION ====================
-
-      // ? MENGGUNAKAN ReportHistoryPage (bukan placeholder)
       GoRoute(
         path: '/report-history',
         builder: (context, state) => const ReportHistoryPage(),
@@ -109,6 +107,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/seller-registration',
         builder: (context, state) => const SellerRegistrationPage(),
+      ),
+      // ROUTE BARU UNTUK DETAIL PENGAJUAN SELLER
+      GoRoute(
+        path: '/seller-application-detail',
+        name: 'seller-application-detail',
+        builder: (context, state) => const SellerApplicationDetailPage(),
       ),
       GoRoute(path: '/cart', builder: (context, state) => const CartPage()),
       GoRoute(

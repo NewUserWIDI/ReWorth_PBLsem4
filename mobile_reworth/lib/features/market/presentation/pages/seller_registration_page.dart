@@ -1,39 +1,77 @@
+// lib/features/market/presentation/pages/seller_registration_page.dart
+
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
-class SellerRegistrationPage extends StatefulWidget {
+import '../../../profile/application/profile_controller.dart';
+import '../../../profile/domain/profile_user.dart';
+import '../../../profile/domain/seller_application.dart';
+
+// ============ THEME COLORS ============
+const Color _primaryColor = Color(0xFF2E7D32);
+const Color _primaryLightColor = Color(0xFF4CAF50);
+const Color _backgroundColor = Color(0xFF001F1A);
+const Color _cardColor = Color(0xFFFFFFFF);
+const Color _surfaceColor = Color(0xFFFAFAFA);
+const Color _textColor = Color(0xFF1A1A1A);
+const Color _textSecondaryColor = Color(0xFF757575);
+const Color _borderColor = Color(0xFFE0E0E0);
+const Color _errorColor = Color(0xFFEF4444);
+const Color _warningColor = Color(0xFFFFA726);
+const Color _successColor = Color(0xFF4CAF50);
+
+class SellerRegistrationPage extends ConsumerStatefulWidget {
   const SellerRegistrationPage({super.key});
 
   @override
-  State<SellerRegistrationPage> createState() => _SellerRegistrationPageState();
+  ConsumerState<SellerRegistrationPage> createState() =>
+      _SellerRegistrationPageState();
 }
 
-class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
+class _SellerRegistrationPageState
+    extends ConsumerState<SellerRegistrationPage> {
   final _formKey = GlobalKey<FormState>();
-  final _namaController = TextEditingController();
-  final _nomorHpController = TextEditingController();
-  final _emailController = TextEditingController();
   final _namaTokoController = TextEditingController();
   final _deskripsiTokoController = TextEditingController();
+  final _alamatTokoController = TextEditingController();
   final _jenisProdukController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _konfirmasiPasswordController = TextEditingController();
 
-  String _kategori = 'Kerajinan Daur Ulang';
+  String _kategoriJualan = 'Kerajinan Daur Ulang';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isSubmitting = false;
+
+  File? _fotoTokoFile;
+  File? _fotoProdukFile;
+
+  final ImagePicker _picker = ImagePicker();
+
+  final List<String> _kategoriOptions = [
+    'Kerajinan Daur Ulang',
+    'Eco Enzyme',
+    'Kompos',
+    'Peralatan Ramah Lingkungan',
+    'Pakaian Bekas',
+    'Elektronik Bekas',
+    'Mainan Bekas',
+    'Buku Bekas',
+    'Lainnya',
+  ];
 
   @override
   void dispose() {
-    _namaController.dispose();
-    _nomorHpController.dispose();
-    _emailController.dispose();
     _namaTokoController.dispose();
     _deskripsiTokoController.dispose();
+    _alamatTokoController.dispose();
     _jenisProdukController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
@@ -41,10 +79,49 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
     super.dispose();
   }
 
+  Future<void> _pickImage({required bool isFotoToko}) async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isFotoToko) {
+          _fotoTokoFile = File(picked.path);
+        } else {
+          _fotoProdukFile = File(picked.path);
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileControllerProvider);
+    final user = profileState.user;
+
+    if (profileState.isLoading) {
+      return const Scaffold(
+        backgroundColor: _backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(color: _primaryLightColor),
+        ),
+      );
+    }
+
+    final statusPengajuan = user?.statusPengajuanSeller ?? 'nonaktif';
+
+    if (statusPengajuan == 'pending') {
+      return _buildPendingPage();
+    }
+
+    if (statusPengajuan == 'aktif') {
+      return _buildAlreadySellerPage();
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFF001F1A),
+      backgroundColor: _backgroundColor,
       body: Stack(
         children: [
           const _Backdrop(),
@@ -57,20 +134,15 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     child: Container(
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: _cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: const Color(
-                            0xFFB5FF77,
-                          ).withValues(alpha: 0.18),
-                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.22),
-                            blurRadius: 24,
-                            offset: const Offset(0, 10),
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
@@ -79,84 +151,18 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Lengkapi data pengajuan seller Anda',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white.withValues(alpha: 0.72),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _label('Nama Lengkap'),
-                            _input(
-                              controller: _namaController,
-                              hint: 'Masukkan nama lengkap',
-                              icon: Icons.person_outline_rounded,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Nama wajib diisi';
-                                }
-                                if (value.trim().length < 3) {
-                                  return 'Nama minimal 3 karakter';
-                                }
-                                return null;
-                              },
-                            ),
-                            _label('Nomor HP'),
-                            _input(
-                              controller: _nomorHpController,
-                              hint: '08xxxxxxxxxx atau +62xxxxxxxxxx',
-                              icon: Icons.phone_outlined,
-                              keyboardType: TextInputType.phone,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Nomor HP wajib diisi';
-                                }
-                                final normalized = value
-                                    .replaceAll(' ', '')
-                                    .replaceAll('-', '');
-                                final startsValid =
-                                    normalized.startsWith('08') ||
-                                    normalized.startsWith('+62');
-                                final digitsOnly = normalized.replaceAll(
-                                  '+',
-                                  '',
-                                );
-                                final digitsValid = RegExp(
-                                  r'^\d+$',
-                                ).hasMatch(digitsOnly);
-                                if (!startsValid ||
-                                    !digitsValid ||
-                                    digitsOnly.length < 10 ||
-                                    digitsOnly.length > 15) {
-                                  return 'Nomor HP tidak valid';
-                                }
-                                return null;
-                              },
-                            ),
-                            _label('Email'),
-                            _input(
-                              controller: _emailController,
-                              hint: 'nama@email.com',
-                              icon: Icons.alternate_email_rounded,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Email wajib diisi';
-                                }
-                                if (!RegExp(
-                                  r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                                ).hasMatch(value.trim())) {
-                                  return 'Format email tidak valid';
-                                }
-                                return null;
-                              },
-                            ),
-                            _label('Nama Toko'),
+                            _infoCard(user),
+                            const SizedBox(height: 24),
+                            const Divider(color: _borderColor, height: 1),
+                            const SizedBox(height: 20),
+
+                            _sectionTitle('Informasi Toko'),
+                            const SizedBox(height: 12),
+
+                            _label('Nama Toko *'),
                             _input(
                               controller: _namaTokoController,
-                              hint: 'Masukkan nama toko',
+                              hint: 'Masukkan nama toko Anda',
                               icon: Icons.storefront_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -165,26 +171,31 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                                 return null;
                               },
                             ),
+
                             _label('Deskripsi Toko'),
                             _input(
                               controller: _deskripsiTokoController,
-                              hint: 'Ceritakan produk/keunggulan toko Anda',
+                              hint: 'Ceritakan produk dan keunggulan toko Anda',
                               icon: Icons.description_outlined,
-                              maxLines: 4,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Deskripsi toko wajib diisi';
-                                }
-                                return null;
-                              },
+                              maxLines: 3,
                             ),
-                            _label('Kategori Produk'),
+
+                            _label('Alamat Toko'),
+                            _input(
+                              controller: _alamatTokoController,
+                              hint:
+                                  'Contoh: Jalan Merdeka No. 10, Kelurahan Sukamaju, Kecamatan Beji, Kota Depok',
+                              icon: Icons.location_on_outlined,
+                              maxLines: 3,
+                            ),
+
+                            _label('Kategori Jualan'),
                             const SizedBox(height: 8),
                             DropdownButtonFormField<String>(
-                              initialValue: _kategori,
+                              value: _kategoriJualan,
                               isExpanded: true,
-                              dropdownColor: const Color(0xFF10261B),
-                              borderRadius: BorderRadius.circular(16),
+                              dropdownColor: _cardColor,
+                              borderRadius: BorderRadius.circular(12),
                               decoration: _decoration(
                                 hint: 'Pilih kategori',
                                 icon: Icons.category_outlined,
@@ -192,61 +203,111 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.white,
+                                color: _textColor,
                               ),
-                              items:
-                                  const [
-                                        'Kerajinan Daur Ulang',
-                                        'Eco Enzyme',
-                                        'Kompos',
-                                        'Peralatan Ramah Lingkungan',
-                                      ]
-                                      .map(
-                                        (value) => DropdownMenuItem(
-                                          value: value,
-                                          child: Text(
-                                            value,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.poppins(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
+                              items: _kategoriOptions.map((value) {
+                                return DropdownMenuItem(
+                                  value: value,
+                                  child: Text(
+                                    value,
+                                    style: GoogleFonts.poppins(
+                                      color: _textColor,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                               onChanged: (value) {
                                 if (value != null) {
-                                  setState(() => _kategori = value);
+                                  setState(() => _kategoriJualan = value);
                                 }
                               },
                             ),
+
                             _label('Jenis Produk yang Dijual'),
                             _input(
                               controller: _jenisProdukController,
-                              hint: 'Contoh: Tas daur ulang, kompos organik',
+                              hint:
+                                  'Contoh: Tas daur ulang, kompos organik, eco enzyme',
                               icon: Icons.inventory_2_outlined,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Jenis produk wajib diisi';
-                                }
-                                return null;
-                              },
                             ),
-                            _label('Username Dashboard'),
+
+                            const SizedBox(height: 20),
+                            const Divider(color: _borderColor, height: 1),
+                            const SizedBox(height: 20),
+
+                            _sectionTitle('Dokumen Pendukung'),
+                            const SizedBox(height: 12),
+
+                            _label('Foto Toko (Opsional)'),
+                            _buildImagePicker(
+                              imageFile: _fotoTokoFile,
+                              onTap: () => _pickImage(isFotoToko: true),
+                              title: 'Upload Foto Toko',
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            _label('Foto Produk Contoh (Opsional)'),
+                            _buildImagePicker(
+                              imageFile: _fotoProdukFile,
+                              onTap: () => _pickImage(isFotoToko: false),
+                              title: 'Upload Contoh Produk',
+                            ),
+
+                            const SizedBox(height: 20),
+                            const Divider(color: _borderColor, height: 1),
+                            const SizedBox(height: 20),
+
+                            _sectionTitle('Akun Dashboard Seller'),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.blue.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.info_outline,
+                                    color: Colors.blue,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Username dan password ini akan digunakan untuk login ke dashboard seller',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.blue.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            _label('Username Dashboard *'),
                             _input(
                               controller: _usernameController,
-                              hint: 'Buat username seller',
+                              hint: 'Buat username untuk login dashboard',
                               icon: Icons.account_circle_outlined,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Username wajib diisi';
                                 }
+                                if (value.length < 4) {
+                                  return 'Username minimal 4 karakter';
+                                }
                                 return null;
                               },
                             ),
-                            _label('Kata Sandi Dashboard'),
+
+                            _label('Password Dashboard *'),
                             _input(
                               controller: _passwordController,
                               hint: 'Minimal 8 karakter',
@@ -257,7 +318,7 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                                   _obscurePassword
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: Colors.white.withValues(alpha: 0.72),
+                                  color: _textSecondaryColor,
                                   size: 21,
                                 ),
                                 onPressed: () => setState(
@@ -274,10 +335,11 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                                 return null;
                               },
                             ),
-                            _label('Konfirmasi Kata Sandi'),
+
+                            _label('Konfirmasi Password *'),
                             _input(
                               controller: _konfirmasiPasswordController,
-                              hint: 'Ulangi kata sandi',
+                              hint: 'Ulangi password',
                               icon: Icons.verified_user_outlined,
                               obscureText: _obscureConfirmPassword,
                               suffixIcon: IconButton(
@@ -285,7 +347,7 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                                   _obscureConfirmPassword
                                       ? Icons.visibility_off_outlined
                                       : Icons.visibility_outlined,
-                                  color: Colors.white.withValues(alpha: 0.72),
+                                  color: _textSecondaryColor,
                                   size: 21,
                                 ),
                                 onPressed: () => setState(
@@ -298,47 +360,45 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
                                   return 'Konfirmasi password wajib diisi';
                                 }
                                 if (value != _passwordController.text) {
-                                  return 'Konfirmasi password tidak sesuai';
+                                  return 'Password tidak sesuai';
                                 }
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 24),
+
+                            const SizedBox(height: 28),
+
                             SizedBox(
                               width: double.infinity,
-                              height: 58,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF94FF38,
-                                      ).withValues(alpha: 0.24),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      Color(0xFFB5FF77),
-                                      Color(0xFF5BE22F),
-                                    ],
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: _isSubmitting
+                                    ? null
+                                    : () => _submit(),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
+                                  elevation: 2,
                                 ),
-                                child: TextButton(
-                                  onPressed: _submit,
-                                  child: Text(
-                                    'Kirim Pengajuan Seller',
-                                    style: GoogleFonts.poppins(
-                                      color: const Color(0xFF0A1A12),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(
+                                        'Ajukan Menjadi Seller',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                               ),
                             ),
                           ],
@@ -355,15 +415,182 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
     );
   }
 
+  Widget _buildImagePicker({
+    required File? imageFile,
+    required VoidCallback onTap,
+    required String title,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 120,
+        decoration: BoxDecoration(
+          color: _surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _borderColor, width: 1),
+        ),
+        child: imageFile != null
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(imageFile, fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        onPressed: onTap,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: _primaryColor.withValues(alpha: 0.6),
+                    size: 40,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: _primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _infoCard(ProfileUser? user) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _primaryLightColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _primaryLightColor.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: _primaryLightColor.withValues(alpha: 0.15),
+            child: Text(
+              user?.nama.isNotEmpty == true ? user!.nama[0].toUpperCase() : '?',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: _primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user?.nama ?? 'Memuat...',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _textColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  user?.email ?? '-',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: _textSecondaryColor,
+                  ),
+                ),
+                Text(
+                  user?.noTelp ?? '-',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: _textSecondaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _primaryLightColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _getStatusText(user?.statusPengajuanSeller),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: _primaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getStatusText(String? status) {
+    switch (status) {
+      case 'pending':
+        return 'Pengajuan Diproses';
+      case 'aktif':
+        return 'Seller Aktif';
+      case 'ditolak':
+        return 'Ditolak';
+      case 'nonaktif':
+        return 'Belum Daftar';
+      default:
+        return 'Belum Daftar';
+    }
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: _primaryColor,
+      ),
+    );
+  }
+
   Widget _label(String text) {
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      padding: const EdgeInsets.only(top: 12, bottom: 6),
       child: Text(
         text,
         style: GoogleFonts.poppins(
-          fontSize: 14.5,
+          fontSize: 13.5,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFFB5FF77),
+          color: _textColor.withValues(alpha: 0.85),
         ),
       ),
     );
@@ -387,10 +614,10 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
       maxLines: obscureText ? 1 : maxLines,
       style: GoogleFonts.poppins(
         fontSize: 15,
-        color: Colors.white,
+        color: _textColor,
         fontWeight: FontWeight.w500,
       ),
-      cursorColor: const Color(0xFFB5FF77),
+      cursorColor: _primaryColor,
       decoration: _decoration(hint: hint, icon: icon, suffixIcon: suffixIcon),
     );
   }
@@ -403,66 +630,291 @@ class _SellerRegistrationPageState extends State<SellerRegistrationPage> {
     return InputDecoration(
       hintText: hint,
       hintStyle: GoogleFonts.poppins(
-        color: Colors.white.withValues(alpha: 0.46),
-        fontSize: 14.5,
-        fontWeight: FontWeight.w500,
+        color: _textSecondaryColor.withValues(alpha: 0.7),
+        fontSize: 14,
       ),
       prefixIcon: Icon(
         icon,
-        color: const Color(0xFFB5FF77).withValues(alpha: 0.88),
+        color: _primaryColor.withValues(alpha: 0.7),
         size: 21,
       ),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: _surfaceColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      constraints: const BoxConstraints(minHeight: 56),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: const Color(0xFFB5FF77).withValues(alpha: 0.22),
-          width: 1.4,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _borderColor, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: const Color(0xFFB5FF77).withValues(alpha: 0.22),
-          width: 1.4,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _borderColor, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF94FF38), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _primaryColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.4),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _errorColor, width: 1),
       ),
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    print('🔵 SUBMIT: Form divalidasi...');
+
     if (!_formKey.currentState!.validate()) {
+      print('❌ SUBMIT: Form tidak valid');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF173A2C),
-        content: Text(
-          'Pengajuan seller berhasil dikirim. Menunggu persetujuan admin.',
-          style: GoogleFonts.poppins(),
+    print('✅ SUBMIT: Form valid');
+    print('📝 Data:');
+    print('   - Nama Toko: ${_namaTokoController.text.trim()}');
+    print('   - Username: ${_usernameController.text.trim()}');
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final profileController = ref.read(profileControllerProvider.notifier);
+
+      String? fotoTokoUrl;
+      String? fotoProdukUrl;
+
+      if (_fotoTokoFile != null) {
+        print('🟡 Upload foto toko...');
+        fotoTokoUrl = await profileController.uploadSellerPhoto(
+          _fotoTokoFile!,
+          'foto_toko',
+        );
+        print('   Foto Toko URL: $fotoTokoUrl');
+      }
+
+      if (_fotoProdukFile != null) {
+        print('🟡 Upload foto produk...');
+        fotoProdukUrl = await profileController.uploadSellerPhoto(
+          _fotoProdukFile!,
+          'foto_produk',
+        );
+        print('   Foto Produk URL: $fotoProdukUrl');
+      }
+
+      print('🟡 Memanggil submitSellerApplication...');
+
+      final success = await profileController.submitSellerApplication(
+        namaTokoUsulan: _namaTokoController.text.trim(),
+        deskripsiToko: _deskripsiTokoController.text.trim().isEmpty
+            ? null
+            : _deskripsiTokoController.text.trim(),
+        alamatToko: _alamatTokoController.text.trim().isEmpty
+            ? null
+            : _alamatTokoController.text.trim(),
+        kategoriJualan: _kategoriJualan,
+        jenisProdukJualan: _jenisProdukController.text.trim().isEmpty
+            ? null
+            : _jenisProdukController.text.trim(),
+        usernameUsulan: _usernameController.text.trim(),
+        passwordHashUsulan: _passwordController.text,
+        fotoToko: fotoTokoUrl,
+        fotoProdukContoh: fotoProdukUrl,
+      );
+
+      print('📊 Hasil success = $success');
+
+      if (success && mounted) {
+        print('✅ Berhasil!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: _primaryColor,
+            content: Text(
+              'Pengajuan seller berhasil dikirim! Menunggu persetujuan admin.',
+              style: GoogleFonts.poppins(color: Colors.white),
+            ),
+          ),
+        );
+        context.pop();
+      } else if (mounted) {
+        print('❌ Gagal, success = false');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: _errorColor,
+            content: Text('Gagal mengirim pengajuan. Silakan coba lagi.'),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('❌ ERROR: $e');
+      print('📚 Stack trace: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: _errorColor,
+            content: Text('Error: ${e.toString().substring(0, 100)}'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+      print('🏁 Submit selesai');
+    }
+  }
+
+  Widget _buildPendingPage() {
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _Header(onBack: () => context.pop()),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: _warningColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.pending_actions,
+                          size: 64,
+                          color: _warningColor,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Menunggu Verifikasi',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Pengajuan seller Anda sedang dalam proses verifikasi oleh admin',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // HANYA TOMBOL KEMBALI (tanpa tombol batalkan)
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () => context.pop(),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text(
+                            'Kembali',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
-    context.pop();
+  }
+
+  Widget _buildAlreadySellerPage() {
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _Header(onBack: () => context.pop()),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: _successColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_circle,
+                          size: 64,
+                          color: _successColor,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Anda Sudah Menjadi Seller!',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Selamat! Akun seller Anda sudah aktif.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () => context.pop(),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text(
+                            'Kembali',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
+
+// ============ HELPER WIDGETS ============
 
 class _Backdrop extends StatelessWidget {
   const _Backdrop();

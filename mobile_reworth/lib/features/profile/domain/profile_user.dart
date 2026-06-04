@@ -1,4 +1,5 @@
 // lib/features/profile/domain/profile_user.dart
+
 class ProfileUser {
   final String id;
   final String nama;
@@ -44,8 +45,9 @@ class ProfileUser {
           0,
       setorSampahKg: (json['setor_sampah_kg'] as num?)?.toInt() ?? 0,
       role: json['role'] as String? ?? 'user',
+      // Nilai valid: 'nonaktif', 'pending', 'aktif', 'ditolak'
       statusPengajuanSeller:
-          json['status_pengajuan_seller'] as String? ?? 'pending',
+          json['status_pengajuan_seller'] as String? ?? 'nonaktif',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -80,4 +82,10 @@ class ProfileUser {
       createdAt: createdAt ?? this.createdAt,
     );
   }
+
+  // Helper method to check status
+  bool get isSeller => statusPengajuanSeller == 'aktif';
+  bool get isPending => statusPengajuanSeller == 'pending';
+  bool get isRejected => statusPengajuanSeller == 'ditolak';
+  bool get isNotSeller => statusPengajuanSeller == 'nonaktif';
 }

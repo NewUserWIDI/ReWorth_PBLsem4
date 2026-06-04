@@ -1,3 +1,5 @@
+// lib/features/profile/presentation/pages/profile_page.dart
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -110,7 +112,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           context,
         ).showSnackBar(const SnackBar(content: Text('Foto profil diperbarui')));
 
-        // Refresh profile data from controller
         ref.read(profileControllerProvider.notifier).loadProfile();
       }
     } catch (e) {
@@ -144,6 +145,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final totalLaporan =
         profileUser?.totalLaporanValid ?? authUser?.jumlahLaporanValid ?? 0;
     final avatarUrl = _remoteAvatarUrl ?? fotoProfil;
+    final statusPengajuan = profileUser?.statusPengajuanSeller ?? 'nonaktif';
 
     if (state.isLoading) {
       return const Scaffold(
@@ -312,7 +314,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   height: 30,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: LinearGradient(
+                                    gradient: const LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [Colors.white, Color(0xFFDCEBD5)],
@@ -389,51 +391,70 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  // Menu Tukar Poin Reward
+
+                  // ========== MENU 1: TUKAR POIN REWARD ==========
                   ProfileMenuTile(
                     icon: Icons.card_giftcard_rounded,
                     title: 'Tukar Poin Reward',
                     subtitle: '$totalPoin poin tersedia',
                     onTap: () => context.push('/rewards'),
                   ),
+
+                  // ========== MENU 2: RIWAYAT LAPOR SAMPAH ==========
                   ProfileMenuTile(
                     icon: Icons.history_rounded,
                     title: 'Riwayat Lapor Sampah',
                     subtitle: 'Lihat riwayat laporan Anda',
                     onTap: () => context.push('/report-history'),
                   ),
+
+                  // ========== MENU 3: AKUN BANK ==========
                   ProfileMenuTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Akun Bank',
                     subtitle: 'Tambahkan akun bank Anda',
                     onTap: () => context.push('/payment-method'),
                   ),
+
+                  // ========== MENU 4: ALAMAT SAYA ==========
                   ProfileMenuTile(
                     icon: Icons.location_on_outlined,
                     title: 'Alamat Saya',
                     subtitle: 'Kelola alamat pengiriman',
                     onTap: () => context.push('/address'),
                   ),
-                  // Updated Edit Profile Menu with refresh functionality
+
+                  // ========== MENU 5: EDIT PROFIL ==========
                   ProfileMenuTile(
                     icon: Icons.edit_rounded,
                     title: 'Edit Profil',
                     subtitle: 'Ubah data profil Anda',
                     onTap: () async {
-                      // Navigate to edit profile and wait for result
                       final shouldRefresh = await context.push<bool>(
                         '/profile-edit',
                       );
                       if (shouldRefresh == true && mounted) {
-                        // Refresh profile data from controller
                         ref
                             .read(profileControllerProvider.notifier)
                             .loadProfile();
-                        // Also reload avatar URL from database
                         await _loadRemoteAvatar();
                       }
                     },
                   ),
+
+                  // ========== MENU 6: PENGAJUAN SELLER (SETELAH EDIT PROFIL) ==========
+                  ProfileMenuTile(
+                    icon: Icons.storefront_outlined,
+                    title: 'Pengajuan Seller',
+                    subtitle: _getSellerSubtitle(statusPengajuan),
+                    onTap: () {
+                      // Navigasi ke halaman DETAIL
+                      context.push('/seller-application-detail');
+                    },
+                    trailing: _getSellerStatusBadge(statusPengajuan),
+                  ),
+
+                  // ========== MENU 7: KELUAR ==========
                   ProfileMenuTile(
                     icon: Icons.logout_rounded,
                     title: 'Keluar',
@@ -452,6 +473,81 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ],
       ),
     );
+  }
+
+  // ========== HELPER METHODS UNTUK SELLER MENU ==========
+
+  String _getSellerSubtitle(String status) {
+    switch (status) {
+      case 'pending':
+        return 'Menunggu verifikasi admin';
+      case 'aktif':
+        return 'Kelola toko Anda';
+      case 'ditolak':
+        return 'Pengajuan ditolak, ajukan ulang';
+      case 'nonaktif':
+        return 'Daftar menjadi seller sekarang';
+      default:
+        return 'Daftar menjadi seller sekarang';
+    }
+  }
+
+  Widget? _getSellerStatusBadge(String status) {
+    if (status == 'pending') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFA726).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'Pending',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFFFA726),
+          ),
+        ),
+      );
+    }
+
+    if (status == 'aktif') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'Aktif',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF4CAF50),
+          ),
+        ),
+      );
+    }
+
+    if (status == 'ditolak') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF5350).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'Ditolak',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFEF5350),
+          ),
+        ),
+      );
+    }
+
+    return null;
   }
 }
 

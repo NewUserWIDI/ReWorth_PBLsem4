@@ -1,9 +1,12 @@
+// lib/features/profile/application/profile_controller.dart
+
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/profile_repository.dart';
 import '../data/supabase_profile_repository.dart';
 import 'profile_state.dart';
+import '../domain/seller_application.dart';
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return SupabaseProfileRepository(Supabase.instance.client);
@@ -36,8 +39,6 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
-  // ========== UPDATE PROFILE METHODS (NEW) ==========
-
   Future<String?> uploadProfilePhoto(File imageFile) async {
     try {
       return await _repository.uploadProfilePhoto(imageFile);
@@ -62,7 +63,6 @@ class ProfileController extends StateNotifier<ProfileState> {
       );
 
       state = state.copyWith(isUpdatingProfile: false, user: updatedUser);
-
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -205,4 +205,63 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = state.copyWith(isSettingPrimaryBank: false);
     }
   }
+
+  // ========== SELLER APPLICATION METHODS ==========
+
+  Future<String?> uploadSellerPhoto(File imageFile, String jenis) async {
+    try {
+      return await _repository.uploadSellerPhoto(imageFile, jenis);
+    } catch (e) {
+      print('Error uploadSellerPhoto: $e');
+      return null;
+    }
+  }
+
+  Future<bool> submitSellerApplication({
+    required String namaTokoUsulan,
+    String? deskripsiToko,
+    String? alamatToko,
+    String? kategoriJualan,
+    String? jenisProdukJualan,
+    required String usernameUsulan,
+    required String passwordHashUsulan,
+    String? fotoToko,
+    String? fotoProdukContoh,
+  }) async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      await _repository.submitSellerApplication(
+        namaTokoUsulan: namaTokoUsulan,
+        deskripsiToko: deskripsiToko,
+        alamatToko: alamatToko,
+        kategoriJualan: kategoriJualan,
+        jenisProdukJualan: jenisProdukJualan,
+        usernameUsulan: usernameUsulan,
+        passwordHashUsulan: passwordHashUsulan,
+        fotoToko: fotoToko,
+        fotoProdukContoh: fotoProdukContoh,
+      );
+
+      await loadProfile();
+      return true;
+    } catch (e) {
+      print('Error submitSellerApplication: $e');
+      state = state.copyWith(updateErrorMessage: e.toString());
+      return false;
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<SellerApplication?> getSellerApplicationStatus() async {
+    try {
+      return await _repository.getSellerApplicationStatus();
+    } catch (e) {
+      print('Error getSellerApplicationStatus: $e');
+      return null;
+    }
+  }
+
+  // HAPUS: Future<bool> cancelSellerApplication() ... (tidak ada)
 }

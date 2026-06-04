@@ -1,6 +1,7 @@
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
+import '../domain/seller_application.dart';
 
 class ProfileState {
   final bool isLoading;
@@ -13,6 +14,7 @@ class ProfileState {
   final bool isUpdatingBankAccount;
   final bool isDeletingBankAccount;
   final bool isSettingPrimaryBank;
+  final SellerApplication? sellerApplication;
 
   // fields for edit profile
   final bool isUpdatingProfile;
@@ -31,6 +33,7 @@ class ProfileState {
     this.isSettingPrimaryBank = false,
     this.isUpdatingProfile = false,
     this.updateErrorMessage,
+    this.sellerApplication,
   });
 
   ProfileState copyWith({
@@ -46,6 +49,7 @@ class ProfileState {
     bool? isSettingPrimaryBank,
     bool? isUpdatingProfile,
     String? updateErrorMessage,
+    SellerApplication? sellerApplication,
   }) {
     return ProfileState(
       isLoading: isLoading ?? this.isLoading,
@@ -63,6 +67,7 @@ class ProfileState {
       isSettingPrimaryBank: isSettingPrimaryBank ?? this.isSettingPrimaryBank,
       isUpdatingProfile: isUpdatingProfile ?? this.isUpdatingProfile,
       updateErrorMessage: updateErrorMessage ?? this.updateErrorMessage,
+      sellerApplication: sellerApplication ?? this.sellerApplication,
     );
   }
 }

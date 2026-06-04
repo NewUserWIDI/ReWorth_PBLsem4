@@ -1,21 +1,24 @@
+// lib/features/profile/data/profile_repository.dart
+
 import 'dart:io';
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
+import '../domain/seller_application.dart';
 
 abstract class ProfileRepository {
   // Profile methods
   Future<ProfileUser> getProfile();
   Future<ProfileUser?> getProfileById(String userId);
 
-  // Update profile methods (NEW)
+  // Update profile methods
   Future<ProfileUser> updateProfile({
     required String namaLengkap,
     required String noTelp,
     String? fotoProfil,
   });
 
-  // Upload profile photo (NEW)
+  // Upload profile photo
   Future<String?> uploadProfilePhoto(File imageFile);
 
   // Reward methods
@@ -41,4 +44,22 @@ abstract class ProfileRepository {
   });
   Future<void> deleteBankAccount(String cardId);
   Future<void> setPrimaryBankAccount(String cardId);
+
+  // Seller photo upload
+  Future<String?> uploadSellerPhoto(File imageFile, String jenis);
+
+  // Seller application methods
+  Future<void> submitSellerApplication({
+    required String namaTokoUsulan,
+    String? deskripsiToko,
+    String? alamatToko,
+    String? kategoriJualan,
+    String? jenisProdukJualan,
+    required String usernameUsulan,
+    required String passwordHashUsulan,
+    String? fotoToko,
+    String? fotoProdukContoh,
+  });
+
+  Future<SellerApplication?> getSellerApplicationStatus();
 }
