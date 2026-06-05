@@ -80,21 +80,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final bytes = await picked.readAsBytes();
-      final path = 'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path =
+          'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
       const bucket = 'avatars';
 
-      await client.storage.from(bucket).uploadBinary(
-        path,
-        bytes,
-        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
-      );
+      await client.storage
+          .from(bucket)
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
 
       final publicUrl = client.storage.from(bucket).getPublicUrl(path);
 
-      await client.from('profiles').update({'foto_profil': publicUrl}).eq(
-        'id',
-        userId,
-      );
+      await client
+          .from('profiles')
+          .update({'foto_profil': publicUrl})
+          .eq('id', userId);
 
       if (mounted) {
         setState(() {
@@ -155,7 +161,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             children: [
               Text(
                 'Data profil belum tersedia',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                style: TextStyle(color: Colors.white.withOpacity(0.9)),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -165,7 +171,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      ref.read(profileControllerProvider.notifier).loadProfile();
+                      ref
+                          .read(profileControllerProvider.notifier)
+                          .loadProfile();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -176,9 +184,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   OutlinedButton(
                     onPressed: () => context.go('/login'),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.4),
-                      ),
+                      side: BorderSide(color: Colors.white.withOpacity(0.4)),
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Login ulang'),
@@ -219,8 +225,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF8FCF8B).withValues(alpha: 0.24),
-                      const Color(0xFF4D8E63).withValues(alpha: 0.12),
+                      const Color(0xFF8FCF8B).withOpacity(0.24),
+                      const Color(0xFF4D8E63).withOpacity(0.12),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.48, 1.0],
@@ -245,17 +251,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withValues(alpha: 0.14),
-                          Colors.white.withValues(alpha: 0.06),
+                          Colors.white.withOpacity(0.14),
+                          Colors.white.withOpacity(0.06),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.12)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
+                          color: Colors.black.withOpacity(0.22),
                           blurRadius: 24,
                           offset: const Offset(0, 10),
                         ),
@@ -273,13 +277,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.76),
+                                    color: Colors.white.withOpacity(0.76),
                                     width: 2.4,
                                   ),
                                 ),
                                 child: CircleAvatar(
-                                  backgroundColor: Colors.white.withValues(
-                                    alpha: 0.12,
+                                  backgroundColor: Colors.white.withOpacity(
+                                    0.12,
                                   ),
                                   backgroundImage: _localAvatar != null
                                       ? FileImage(File(_localAvatar!.path))
@@ -347,7 +351,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           email,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.72),
+                            color: Colors.white.withOpacity(0.72),
                             fontSize: 14,
                           ),
                         ),
@@ -357,7 +361,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             'Data lengkap profil sedang disinkronkan.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.84),
+                              color: Colors.white.withOpacity(0.84),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -393,12 +397,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     subtitle: 'Pantau status belanja mini market Anda',
                     onTap: () => context.push('/order-history'),
                   ),
+                  // ========== PERBAIKAN DI SINI ==========
                   ProfileMenuTile(
                     icon: Icons.history_rounded,
                     title: 'Riwayat Lapor Sampah',
                     subtitle: 'Lihat riwayat laporan Anda',
                     onTap: () => context.push('/report-history'),
                   ),
+                  // ======================================
                   ProfileMenuTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Akun Bank',
@@ -420,7 +426,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         '/profile-edit',
                       );
                       if (shouldRefresh == true && mounted) {
-                        ref.read(profileControllerProvider.notifier).loadProfile();
+                        ref
+                            .read(profileControllerProvider.notifier)
+                            .loadProfile();
                         await _loadRemoteAvatar();
                       }
                     },
@@ -483,7 +491,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -510,8 +518,8 @@ class _ProfileHeader extends StatelessWidget {
           height: 46,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.08),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            color: Colors.white.withOpacity(0.08),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
           ),
           child: IconButton(
             onPressed: () => context.go('/home'),

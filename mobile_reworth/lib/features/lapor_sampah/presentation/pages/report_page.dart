@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'report_history_page.dart'; // IMPORT UNTUK NAVIGASI
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -334,7 +335,7 @@ class _ReportPageState extends State<ReportPage> {
   Future<void> _showSuccessDialog() async {
     await showDialog<void>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.65),
+      barrierColor: Colors.black.withOpacity(0.65),
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -343,10 +344,10 @@ class _ReportPageState extends State<ReportPage> {
             decoration: BoxDecoration(
               color: const Color(0xFF0C221A),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              border: Border.all(color: Colors.white.withOpacity(0.10)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 30,
                   offset: const Offset(0, 14),
                 ),
@@ -360,7 +361,7 @@ class _ReportPageState extends State<ReportPage> {
                   height: 66,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _softAccent.withValues(alpha: 0.22),
+                    color: _softAccent.withOpacity(0.22),
                   ),
                   child: const Icon(
                     Icons.check_rounded,
@@ -384,7 +385,7 @@ class _ReportPageState extends State<ReportPage> {
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.45,
-                    color: Colors.white.withValues(alpha: 0.78),
+                    color: Colors.white.withOpacity(0.78),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -392,8 +393,14 @@ class _ReportPageState extends State<ReportPage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
-                      context.go('/report-history');
+                      Navigator.of(context).pop(); // Tutup dialog
+                      // ✅ PERBAIKAN: push ke ReportHistoryPage
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportHistoryPage(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _softAccent,
@@ -414,13 +421,13 @@ class _ReportPageState extends State<ReportPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
-                    context.go('/home');
+                    Navigator.of(context).pop(); // Tutup dialog
+                    Navigator.pop(context); // Kembali ke ReportPage
                   },
                   child: Text(
                     'Nanti saja',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.84),
+                      color: Colors.white.withOpacity(0.84),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -478,8 +485,8 @@ class _ReportPageState extends State<ReportPage> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        _softAccentGlow.withValues(alpha: 0.28),
-                        _softAccentStrong.withValues(alpha: 0.14),
+                        _softAccentGlow.withOpacity(0.28),
+                        _softAccentStrong.withOpacity(0.14),
                         Colors.transparent,
                       ],
                       stops: const [0.0, 0.42, 1.0],
@@ -534,8 +541,8 @@ class _ReportPageState extends State<ReportPage> {
               height: 46,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                color: Colors.white.withOpacity(0.08),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
               ),
               child: const Icon(
                 Icons.arrow_back_rounded,
@@ -572,7 +579,7 @@ class _ReportPageState extends State<ReportPage> {
                 child: Container(
                   height: 3,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
+                    color: Colors.white.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -588,7 +595,7 @@ class _ReportPageState extends State<ReportPage> {
                       shape: BoxShape.circle,
                       color: isActive
                           ? _softAccent
-                          : Colors.white.withValues(alpha: 0.10),
+                          : Colors.white.withOpacity(0.10),
                     ),
                     child: Center(
                       child: Text(
@@ -598,7 +605,7 @@ class _ReportPageState extends State<ReportPage> {
                           fontWeight: FontWeight.w700,
                           color: isActive
                               ? const Color(0xFF0B2116)
-                              : Colors.white.withValues(alpha: 0.8),
+                              : Colors.white.withOpacity(0.8),
                         ),
                       ),
                     ),
@@ -623,7 +630,7 @@ class _ReportPageState extends State<ReportPage> {
                   fontWeight: FontWeight.w600,
                   color: isActive
                       ? _softAccent
-                      : Colors.white.withValues(alpha: 0.52),
+                      : Colors.white.withOpacity(0.52),
                 ),
               ),
             );
@@ -678,7 +685,7 @@ class _ReportPageState extends State<ReportPage> {
           style: TextStyle(
             fontSize: 16,
             height: 1.6,
-            color: Colors.white.withValues(alpha: 0.72),
+            color: Colors.white.withOpacity(0.72),
           ),
         ),
         const SizedBox(height: 20),
@@ -714,16 +721,16 @@ class _ReportPageState extends State<ReportPage> {
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D2B21).withValues(alpha: 0.72),
+            color: const Color(0xFF0D2B21).withOpacity(0.72),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _softAccent.withValues(alpha: 0.30)),
+            border: Border.all(color: _softAccent.withOpacity(0.30)),
           ),
           child: RichText(
             text: TextSpan(
               style: TextStyle(
                 fontSize: 16,
                 height: 1.5,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Colors.white.withOpacity(0.85),
               ),
               children: const [
                 TextSpan(
@@ -755,9 +762,9 @@ class _ReportPageState extends State<ReportPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: Colors.white.withOpacity(0.06),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -778,7 +785,7 @@ class _ReportPageState extends State<ReportPage> {
               style: TextStyle(
                 fontSize: 16,
                 height: 1.45,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Colors.white.withOpacity(0.85),
               ),
             ),
           ),
@@ -826,14 +833,14 @@ class _ReportPageState extends State<ReportPage> {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: Colors.white.withValues(alpha: 0.06),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          color: Colors.white.withOpacity(0.06),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
         ),
         child: Center(
           child: Text(
             'Lokasi belum tersedia',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.74),
+              color: Colors.white.withOpacity(0.74),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -892,9 +899,9 @@ class _ReportPageState extends State<ReportPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A1E19).withValues(alpha: 0.78),
+        color: const Color(0xFF0A1E19).withOpacity(0.78),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -906,7 +913,7 @@ class _ReportPageState extends State<ReportPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: _softAccent.withValues(alpha: 0.18),
+                  color: _softAccent.withOpacity(0.18),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -938,7 +945,7 @@ class _ReportPageState extends State<ReportPage> {
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: Colors.white.withValues(alpha: 0.74),
+                        color: Colors.white.withOpacity(0.74),
                       ),
                     ),
                   ],
@@ -993,10 +1000,7 @@ class _ReportPageState extends State<ReportPage> {
         const SizedBox(height: 6),
         Text(
           'Ambil foto sampah yang ingin dilaporkan',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withValues(alpha: 0.68),
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.68)),
         ),
         const SizedBox(height: 10),
         Text(
@@ -1004,7 +1008,7 @@ class _ReportPageState extends State<ReportPage> {
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.64),
+            color: Colors.white.withOpacity(0.64),
           ),
         ),
         const SizedBox(height: 10),
@@ -1134,9 +1138,9 @@ class _ReportPageState extends State<ReportPage> {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withOpacity(0.25),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+            border: Border.all(color: Colors.white.withOpacity(0.14)),
           ),
           child: TextField(
             controller: _deskripsiController,
@@ -1148,7 +1152,7 @@ class _ReportPageState extends State<ReportPage> {
               fillColor: Colors.transparent,
               hintText: 'Tuliskan deskripsi kondisi sampah...',
               hintStyle: TextStyle(
-                color: Colors.white.withValues(alpha: 0.45),
+                color: Colors.white.withOpacity(0.45),
                 fontSize: 15,
               ),
               border: InputBorder.none,
@@ -1158,7 +1162,7 @@ class _ReportPageState extends State<ReportPage> {
               errorBorder: InputBorder.none,
               focusedErrorBorder: InputBorder.none,
               counterStyle: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: Colors.white.withOpacity(0.6),
                 fontSize: 13,
               ),
               contentPadding: const EdgeInsets.all(16),
@@ -1188,9 +1192,9 @@ class _ReportPageState extends State<ReportPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: Colors.white.withOpacity(0.06),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1217,7 +1221,7 @@ class _ReportPageState extends State<ReportPage> {
             style: TextStyle(
               fontSize: 13,
               height: 1.5,
-              color: Colors.white.withValues(alpha: 0.72),
+              color: Colors.white.withOpacity(0.72),
             ),
           ),
         ],
@@ -1236,7 +1240,7 @@ class _ReportPageState extends State<ReportPage> {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: Colors.white.withOpacity(0.65),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -1264,8 +1268,8 @@ class _ReportPageState extends State<ReportPage> {
       height: 94,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        color: Colors.white.withOpacity(0.05),
       ),
       child: Stack(
         children: [
@@ -1284,7 +1288,7 @@ class _ReportPageState extends State<ReportPage> {
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.58),
+                  color: Colors.black.withOpacity(0.58),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -1312,21 +1316,18 @@ class _ReportPageState extends State<ReportPage> {
         height: 94,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withValues(alpha: 0.05),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.22),
-            width: 1.4,
-          ),
+          color: Colors.white.withOpacity(0.05),
+          border: Border.all(color: Colors.white.withOpacity(0.22), width: 1.4),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white.withValues(alpha: 0.78), size: 24),
+            Icon(icon, color: Colors.white.withOpacity(0.78), size: 24),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: Colors.white.withOpacity(0.72),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -1353,11 +1354,11 @@ class _ReportPageState extends State<ReportPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: selected ? gradient : null,
-          color: selected ? null : Colors.white.withValues(alpha: 0.06),
+          color: selected ? null : Colors.white.withOpacity(0.06),
           border: Border.all(
             color: selected
-                ? Colors.white.withValues(alpha: 0.24)
-                : Colors.white.withValues(alpha: 0.12),
+                ? Colors.white.withOpacity(0.24)
+                : Colors.white.withOpacity(0.12),
           ),
         ),
         child: Text(
@@ -1365,9 +1366,7 @@ class _ReportPageState extends State<ReportPage> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: selected
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.82),
+            color: selected ? Colors.white : Colors.white.withOpacity(0.82),
           ),
         ),
       ),
@@ -1385,14 +1384,14 @@ class _ReportPageState extends State<ReportPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withValues(alpha: 0.12),
-            Colors.white.withValues(alpha: 0.04),
+            Colors.white.withOpacity(0.12),
+            Colors.white.withOpacity(0.04),
           ],
         ),
-        border: Border.all(color: _softAccent.withValues(alpha: 0.28)),
+        border: Border.all(color: _softAccent.withOpacity(0.28)),
         boxShadow: [
           BoxShadow(
-            color: _softAccentStrong.withValues(alpha: 0.10),
+            color: _softAccentStrong.withOpacity(0.10),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1410,7 +1409,7 @@ class _ReportPageState extends State<ReportPage> {
           fillColor: Colors.transparent,
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
+            color: Colors.white.withOpacity(0.5),
             fontSize: 14,
           ),
           border: InputBorder.none,
@@ -1522,7 +1521,7 @@ class _ReportPageState extends State<ReportPage> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: item.color),
                     ),
@@ -1541,7 +1540,7 @@ class _ReportPageState extends State<ReportPage> {
                         Text(
                           item.text,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.88),
+                            color: Colors.white.withOpacity(0.88),
                             fontSize: 13.5,
                             height: 1.4,
                             fontWeight: FontWeight.w500,
@@ -1607,7 +1606,7 @@ class _ReportPageState extends State<ReportPage> {
         content: Text(
           body,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: Colors.white.withOpacity(0.9),
             fontSize: 14,
             height: 1.4,
           ),
@@ -1674,7 +1673,7 @@ class _ReportPageState extends State<ReportPage> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
+                      color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: item.color),
                     ),
@@ -1693,7 +1692,7 @@ class _ReportPageState extends State<ReportPage> {
                         Text(
                           item.text,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.88),
+                            color: Colors.white.withOpacity(0.88),
                             fontSize: 13.5,
                             height: 1.4,
                             fontWeight: FontWeight.w500,
@@ -1753,7 +1752,7 @@ class _ReportPageState extends State<ReportPage> {
         content: Text(
           config.body,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: Colors.white.withOpacity(0.9),
             fontSize: 14,
             height: 1.4,
           ),
@@ -1797,14 +1796,12 @@ class _ReportPageState extends State<ReportPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: _softAccent,
           foregroundColor: const Color(0xFF0A1A12),
-          disabledBackgroundColor: const Color(
-            0xFFA9E58B,
-          ).withValues(alpha: 0.6),
+          disabledBackgroundColor: const Color(0xFFA9E58B).withOpacity(0.6),
           minimumSize: const Size.fromHeight(60),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          shadowColor: _softAccentStrong.withValues(alpha: 0.22),
+          shadowColor: _softAccentStrong.withOpacity(0.22),
           elevation: 10,
         ),
         child: Text(

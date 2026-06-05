@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/report.dart';
 import '../domain/waste_type.dart';
 import '../domain/severity_level.dart';
 import '../data/report_repository.dart';
-import '../data/mock_report_repository.dart';
+import '../data/supabase_report_repository.dart';
 
 // Provider untuk ReportController
-final reportControllerProvider = StateNotifierProvider<ReportController, ReportState>((ref) {
-  return ReportController();
-});
+final reportControllerProvider =
+    StateNotifierProvider<ReportController, ReportState>((ref) {
+      return ReportController();
+    });
 
 // State untuk Report
 class ReportState {
@@ -58,9 +60,9 @@ class ReportState {
 }
 
 class ReportController extends StateNotifier<ReportState> {
-  final ReportRepository _repository = MockReportRepository();
+  late final ReportRepository _repository;
   final ImagePicker _picker = ImagePicker();
-  
+
   // TextEditingControllers
   final streetController = TextEditingController();
   final villageController = TextEditingController();
@@ -68,7 +70,9 @@ class ReportController extends StateNotifier<ReportState> {
   final postalCodeController = TextEditingController();
   final descriptionController = TextEditingController();
 
-  ReportController() : super(const ReportState());
+  ReportController() : super(const ReportState()) {
+    _repository = SupabaseReportRepository();
+  }
 
   // Getters untuk nilai form
   String get street => streetController.text;
@@ -97,14 +101,13 @@ class ReportController extends StateNotifier<ReportState> {
     super.dispose();
   }
 
-  // Fungsi untuk mengambil foto dari kamera
   Future<void> pickImageFromCamera() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         state = state.copyWith(
           imageFile: image,
@@ -116,15 +119,14 @@ class ReportController extends StateNotifier<ReportState> {
       // Handle error
     }
   }
-  
-  // Fungsi untuk memilih foto dari galeri
+
   Future<void> pickImageFromGallery() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         state = state.copyWith(
           imageFile: image,
@@ -136,8 +138,7 @@ class ReportController extends StateNotifier<ReportState> {
       // Handle error
     }
   }
-  
-  // Menampilkan dialog pilihan kamera atau galeri
+
   void showImagePickerDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -167,53 +168,55 @@ class ReportController extends StateNotifier<ReportState> {
       ),
     );
   }
-  
+
   bool validateForm() {
     final newErrors = <String, String>{};
-    
+
     if (state.imagePath.isEmpty && state.imageFile == null) {
       newErrors['image'] = 'Foto wajib diambil/diunggah';
     }
-    
+
     if (streetController.text.trim().isEmpty) {
       newErrors['street'] = 'Jalan wajib diisi';
     }
-    
+
     if (villageController.text.trim().isEmpty) {
       newErrors['village'] = 'Desa/Kelurahan wajib diisi';
     }
-    
+
     if (districtController.text.trim().isEmpty) {
       newErrors['district'] = 'Kecamatan wajib diisi';
     }
-    
+
     if (postalCodeController.text.trim().isEmpty) {
       newErrors['postalCode'] = 'Kode Pos wajib diisi';
     } else if (postalCodeController.text.length < 5) {
       newErrors['postalCode'] = 'Kode Pos minimal 5 digit';
     }
-    
+
     if (descriptionController.text.trim().isEmpty) {
       newErrors['description'] = 'Deskripsi wajib diisi';
     }
-    
+
     if (state.selectedWasteType == null) {
       newErrors['wasteType'] = 'Pilih jenis sampah';
     }
-    
+
     if (state.selectedSeverity == null) {
       newErrors['severity'] = 'Pilih tingkat keparahan';
     }
-    
+
     state = state.copyWith(errors: newErrors);
     return newErrors.isEmpty;
   }
-  
+
   Future<void> submitReport(BuildContext context) async {
     if (!validateForm()) return;
-    
+
     state = state.copyWith(isSubmitting: true);
-    
+
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
+
     final report = Report(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       imagePath: state.imagePath,
@@ -225,35 +228,41 @@ class ReportController extends StateNotifier<ReportState> {
       wasteType: state.selectedWasteType!,
       severityLevel: state.selectedSeverity!,
       createdAt: DateTime.now(),
-      userId: 'current_user_id',
+      userId: currentUserId,
       status: 'pending',
     );
-    
+
     final result = await _repository.submitReport(report);
-    
+
     state = state.copyWith(isSubmitting: false);
-    
+
     if (result.success) {
-      // Tambahkan ke history
-      final newReports = [report, ...state.allReports];
-      state = state.copyWith(allReports: newReports);
-      
+      await loadReportHistory();
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Laporan berhasil dikirim'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Laporan berhasil dikirim'),
+            backgroundColor: Colors.green,
+          ),
         );
         clearForm();
-        Navigator.pop(context);
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
       }
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.message ?? 'Gagal mengirim laporan'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(result.message ?? 'Gagal mengirim laporan'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
-  
+
   void clearForm() {
     streetController.clear();
     villageController.clear();
@@ -268,32 +277,31 @@ class ReportController extends StateNotifier<ReportState> {
       errors: {},
     );
   }
-  
+
   void setWasteType(WasteType? type) {
     state = state.copyWith(
       selectedWasteType: type,
       errors: {...state.errors}..remove('wasteType'),
     );
   }
-  
+
   void setSeverity(SeverityLevel? level) {
     state = state.copyWith(
       selectedSeverity: level,
       errors: {...state.errors}..remove('severity'),
     );
   }
-  
+
   String getSeverityDescription() {
     return state.selectedSeverity?.description ?? '';
   }
-  
-  // Fungsi untuk history
+
   List<Report> getReportsByStatus(String status) {
     switch (status) {
       case 'aktif':
-        return state.allReports.where((r) => 
-          r.status == 'pending' || r.status == 'processing'
-        ).toList();
+        return state.allReports
+            .where((r) => r.status == 'pending' || r.status == 'processing')
+            .toList();
       case 'selesai':
         return state.allReports.where((r) => r.status == 'completed').toList();
       case 'ditolak':
@@ -302,11 +310,22 @@ class ReportController extends StateNotifier<ReportState> {
         return [];
     }
   }
-  
+
   Future<void> loadReportHistory() async {
     state = state.copyWith(isLoading: true);
-    final userId = 'current_user_id';
+
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+
+    if (userId == null) {
+      state = state.copyWith(allReports: [], isLoading: false);
+      return;
+    }
+
     final reports = await _repository.getUserReports(userId);
     state = state.copyWith(allReports: reports, isLoading: false);
+  }
+
+  Future<void> refreshHistory() async {
+    await loadReportHistory();
   }
 }

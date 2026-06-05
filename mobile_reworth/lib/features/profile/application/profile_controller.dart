@@ -231,23 +231,13 @@ class ProfileController extends StateNotifier<ProfileState> {
   }
 
   Future<bool> submitSellerApplication({
-    String? fullName,
-    String? phone,
-    String? email,
-    String? storeName,
-    String? storeDescription,
-    String? storeAddress,
-    String? category,
-    String? productTypes,
-    String? usernameProposal,
-    String? passwordProposal,
-    String? namaTokoUsulan,
+    required String namaTokoUsulan,
     String? deskripsiToko,
     String? alamatToko,
     String? kategoriJualan,
     String? jenisProdukJualan,
-    String? usernameUsulan,
-    String? passwordHashUsulan,
+    required String usernameUsulan,
+    required String passwordHashUsulan,
     String? fotoToko,
     String? fotoProdukContoh,
   }) async {
@@ -258,16 +248,6 @@ class ProfileController extends StateNotifier<ProfileState> {
 
     try {
       await _repository.submitSellerApplication(
-        fullName: fullName,
-        phone: phone,
-        email: email,
-        storeName: storeName,
-        storeDescription: storeDescription,
-        storeAddress: storeAddress,
-        category: category,
-        productTypes: productTypes,
-        usernameProposal: usernameProposal,
-        passwordProposal: passwordProposal,
         namaTokoUsulan: namaTokoUsulan,
         deskripsiToko: deskripsiToko,
         alamatToko: alamatToko,

@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/report_controller.dart';
 import '../../domain/report.dart';
 import '../../domain/waste_type.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_radius.dart';
-import '../../../../core/constants/app_typography.dart';
+
+// Enum untuk tab status
+enum _ReportTab { active, completed, rejected }
 
 class ReportHistoryPage extends ConsumerStatefulWidget {
   const ReportHistoryPage({super.key});
@@ -16,104 +15,178 @@ class ReportHistoryPage extends ConsumerStatefulWidget {
 }
 
 class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
+  _ReportTab _selectedTab = _ReportTab.active;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(reportControllerProvider.notifier).loadReportHistory();
+      if (mounted) {
+        ref.read(reportControllerProvider.notifier).loadReportHistory();
+      }
     });
   }
 
- @override
-Widget build(BuildContext context) {
-  final reportState = ref.watch(reportControllerProvider);
-  final reportController = ref.read(reportControllerProvider.notifier);
+  void _goBack() {
+    if (!mounted) return;
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+  }
 
-  return DefaultTabController(
-    length: 3,
-    child: Scaffold(
-      backgroundColor: AppColors.background,
+  @override
+  Widget build(BuildContext context) {
+    final reportState = ref.watch(reportControllerProvider);
+    final reportController = ref.read(reportControllerProvider.notifier);
+
+    final reports = _getFilteredReports(reportController);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF003B2F), // SAMA DENGAN APP BAR
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Riwayat Lapor Sampah',
-          style: AppTypography.h2.copyWith(
-            color: Colors.white,
+          style: TextStyle(
             fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        centerTitle: true,
+        backgroundColor: const Color(0xFF003B2F),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          onPressed: _goBack,
+        ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.s24,
-            ),
-            child: const TabBar(
-              tabs: [
-                Tab(text: 'Aktif'),
-                Tab(text: 'Selesai'),
-                Tab(text: 'Ditolak'),
-              ],
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-            ),
+          preferredSize: const Size.fromHeight(70),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: _buildCustomTabBar(),
           ),
         ),
       ),
       body: reportState.isLoading
           ? const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(color: Color(0xFF8EEA5B)),
             )
-          : TabBarView(
-              children: [
-                _buildReportList(
-                  
-                  reportController,
-                  'aktif',
-                ),
-                _buildReportList(
-                  reportController,
-                  'selesai',
-                ),
-                _buildReportList(
-                  reportController,
-                  'ditolak',
-                ),
-              ],
+          : _buildReportList(reportController, reports),
+    );
+  }
+
+  Widget _buildCustomTabBar() {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Row(
+        children: [
+          _buildTabButton(label: 'Aktif', tab: _ReportTab.active),
+          _buildTabButton(label: 'Selesai', tab: _ReportTab.completed),
+          _buildTabButton(label: 'Ditolak', tab: _ReportTab.rejected),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabButton({required String label, required _ReportTab tab}) {
+    final isSelected = _selectedTab == tab;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedTab = tab;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isSelected
+                  ? const Color(0xFF082018)
+                  : Colors.white.withOpacity(0.72),
             ),
-    ),
-  );
-}
-  Widget _buildReportList(ReportController controller, String status) {
-    final reports = controller.getReportsByStatus(status);
-    
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Report> _getFilteredReports(ReportController controller) {
+    switch (_selectedTab) {
+      case _ReportTab.active:
+        return controller.getReportsByStatus('aktif');
+      case _ReportTab.completed:
+        return controller.getReportsByStatus('selesai');
+      case _ReportTab.rejected:
+        return controller.getReportsByStatus('ditolak');
+    }
+  }
+
+  Widget _buildReportList(ReportController controller, List<Report> reports) {
     if (reports.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.history, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: AppSpacing.s16),
-            Text(
-              'Belum ada laporan $status',
-              style: AppTypography.body.copyWith(
-                color: AppColors.textSecondary,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.history,
+                size: 40,
+                color: Colors.white.withOpacity(0.3),
               ),
             ),
-            const SizedBox(height: AppSpacing.s16),
+            const SizedBox(height: 16),
+            Text(
+              _getEmptyMessage(),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
             TextButton.icon(
-              onPressed: () => controller.loadReportHistory(),
-              icon: const Icon(Icons.refresh, size: 16, color: Colors.green),
-              label: Text(
+              onPressed: () {
+                if (mounted) {
+                  controller.loadReportHistory();
+                }
+              },
+              icon: const Icon(
+                Icons.refresh,
+                size: 18,
+                color: Color(0xFF8EEA5B),
+              ),
+              label: const Text(
                 'Refresh',
-                style: AppTypography.button.copyWith(
-                  color: Colors.green,
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF8EEA5B),
                 ),
               ),
             ),
@@ -121,140 +194,267 @@ Widget build(BuildContext context) {
         ),
       );
     }
-    
+
     return RefreshIndicator(
-      onRefresh: () => controller.loadReportHistory(),
-      color: Colors.green,
+      onRefresh: () async {
+        if (mounted) {
+          await controller.loadReportHistory();
+        }
+      },
+      color: const Color(0xFF8EEA5B),
+      backgroundColor: const Color(0xFF003B2F),
       child: ListView.builder(
-        padding: const EdgeInsets.all(AppSpacing.s16),
+        padding: const EdgeInsets.all(16),
         itemCount: reports.length,
         itemBuilder: (context, index) {
           final report = reports[index];
-          return _buildReportCard(report, status);
+          return _buildReportCard(report);
         },
       ),
     );
   }
 
-  Widget _buildReportCard(Report report, String status) {
-    final isRejected = status == 'ditolak';
-    final isCompleted = status == 'selesai';
-    
+  String _getEmptyMessage() {
+    switch (_selectedTab) {
+      case _ReportTab.active:
+        return 'Belum ada laporan aktif\nLaporan yang sedang diproses akan muncul di sini';
+      case _ReportTab.completed:
+        return 'Belum ada laporan selesai\nLaporan yang sudah selesai akan muncul di sini';
+      case _ReportTab.rejected:
+        return 'Belum ada laporan ditolak\nLaporan yang ditolak akan muncul di sini';
+    }
+  }
+
+  // ========== CARD LAPORAN ==========
+  Widget _buildReportCard(Report report) {
+    final isRejected = report.status == 'rejected';
+    final isActive =
+        report.status == 'pending' || report.status == 'processing';
+
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.s16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.r16),
+        color: const Color(
+          0xFF0A1E19,
+        ).withOpacity(0.92), // SAMA PERSIS DENGAN ORDER HISTORY
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withOpacity(0.10)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Header Card
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            decoration: BoxDecoration(
-              color: _getStatusColor(status).withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppRadius.r16),
-                topRight: Radius.circular(AppRadius.r16),
-              ),
-            ),
+          // HEADER CARD
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _getWasteTypeColor(
+                      report.wasteType,
+                    ).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _getWasteTypeIcon(report.wasteType),
+                    color: _getWasteTypeColor(report.wasteType),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${report.wasteType.label}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${report.street}, ${report.village}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                // Status Badge
+                Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.s8,
+                    horizontal: 10,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: _getWasteTypeColor(report.wasteType),
-                    borderRadius: BorderRadius.circular(AppRadius.r12),
+                    color: report.statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: report.statusColor.withOpacity(0.3),
+                    ),
                   ),
                   child: Text(
-                    'Laporan Sampah - ${report.wasteType.label}',
-                    style: AppTypography.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                    report.statusDisplayName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: report.statusColor,
                     ),
                   ),
                 ),
-                const Spacer(),
-                _buildStatusBadge(status),
               ],
             ),
           ),
-          
-          // Body Card
+          // DIVIDER
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            color: Colors.white.withOpacity(0.05),
+          ),
+          // BODY CARD
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.s16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: AppSpacing.s4),
-                    Expanded(
-                      child: Text(
-                        report.street,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: Colors.white.withOpacity(0.4),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.s4),
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: AppSpacing.s4),
+                    const SizedBox(width: 6),
                     Text(
-                      _getTimeAgo(report.createdAt),
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textSecondary,
+                      _formatDate(report.createdAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.5),
                       ),
                     ),
+                    const Spacer(),
+                    if (report.poinDiberikan > 0)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 14,
+                            color: const Color(0xFF8EEA5B).withOpacity(0.8),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '+${report.poinDiberikan} Poin',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF8EEA5B),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.s16),
-                
-                // Progress Steps (4 langkah)
-                _buildProgressSteps(report, isCompleted: isCompleted, isRejected: isRejected),
-                
-                const SizedBox(height: AppSpacing.s16),
-                
-                // Alasan Penolakan (khusus status ditolak)
-                if (isRejected && report.rejectionReason != null)
-                  _buildRejectionReason(report.rejectionReason!),
-                
-                const SizedBox(height: AppSpacing.s8),
-                
-                // Tombol Lihat Detail
-                TextButton(
-                  onPressed: () {
-                    _showDetailDialog(report, status);
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.green,
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                const SizedBox(height: 12),
+                if (report.description.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      report.description,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  child: Text(
-                    'Lihat Detail →',
-                    style: AppTypography.button.copyWith(
-                      color: Colors.green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                if (isRejected && report.alasanDitolak != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 16,
+                          color: Colors.red.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            report.alasanDitolak!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (isActive)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildProgressIndicator(report),
+                  ),
+                // TOMBOL LIHAT DETAIL LENGKAP - SAMA SEPERTI ORDER HISTORY
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: TextButton(
+                    onPressed: () => _showDetailDialog(report),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Lihat Detail Lengkap',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF082018),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: Color(0xFF082018),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -266,331 +466,558 @@ Widget build(BuildContext context) {
     );
   }
 
-  // Progress Steps dengan 4 langkah
-  Widget _buildProgressSteps(Report report, {required bool isCompleted, required bool isRejected}) {
-    final steps = [
-      {'label': 'Lapor', 'subtitle': 'Laporan Berhasil Dikirim', 'icon': Icons.send},
-      {'label': 'Tunggu', 'subtitle': 'Menunggu Penanganan', 'icon': Icons.hourglass_empty},
-      {'label': 'Verifikasi', 'subtitle': 'Selesai Diperiksa', 'icon': Icons.verified},
-      {'label': isRejected ? 'Ditolak' : '+10 Poin', 
-       'subtitle': isRejected ? 'Laporan Ditolak' : 'Laporan Valid', 
-       'icon': isRejected ? Icons.cancel : Icons.star},
-    ];
-
+  Widget _buildProgressIndicator(Report report) {
     int currentStep;
-    if (isRejected) {
-      currentStep = 4;
-    } else if (isCompleted) {
-      currentStep = 4;
-    } else {
-      currentStep = 2;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(AppRadius.r12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(steps.length, (index) {
-          final step = steps[index];
-          final stepNumber = index + 1;
-          final isActive = stepNumber <= currentStep;
-          final isRejectedStep = isRejected && step['label'] == 'Ditolak';
-          
-          return Expanded(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: isActive 
-                        ? (isRejectedStep ? Colors.red : Colors.green)
-                        : AppColors.border,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    step['icon'] as IconData,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  step['label'] as String,
-                  style: AppTypography.caption.copyWith(
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                    color: isActive 
-                        ? (isRejectedStep ? Colors.red : Colors.green)
-                        : AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  step['subtitle'] as String,
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 9,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  // Widget untuk menampilkan alasan penolakan
-  Widget _buildRejectionReason(String reason) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(AppRadius.r12),
-        border: Border.all(color: Colors.red.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 16),
-              const SizedBox(width: AppSpacing.s4),
-              Text(
-                'Alasan ditolak oleh petugas :',
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red.shade700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            reason,
-            style: AppTypography.body.copyWith(
-              fontSize: 12,
-              color: Colors.red.shade900,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    String text;
-    
-    switch (status) {
-      case 'aktif':
-        color = Colors.blue;
-        text = 'Diproses';
+    switch (report.status) {
+      case 'pending':
+        currentStep = 1;
         break;
-      case 'selesai':
-        color = Colors.green;
-        text = 'Selesai';
+      case 'processing':
+        currentStep = 2;
         break;
-      case 'ditolak':
-        color = Colors.red;
-        text = 'Ditolak';
+      case 'completed':
+        currentStep = 3;
         break;
       default:
-        color = Colors.grey;
-        text = status;
+        currentStep = 1;
     }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppRadius.r12),
-      ),
-      child: Text(
-        text,
-        style: AppTypography.caption.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+
+    final steps = [
+      {'label': 'Lapor', 'icon': Icons.send},
+      {'label': 'Proses', 'icon': Icons.hourglass_empty},
+      {'label': 'Selesai', 'icon': Icons.verified},
+    ];
+
+    return Row(
+      children: List.generate(steps.length, (index) {
+        final isActive = index < currentStep;
+        final isLast = index == steps.length - 1;
+
+        return Expanded(
+          child: Row(
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isActive
+                          ? const Color(0xFF8DCB94) // Hijau jika aktif
+                          : Colors.white.withOpacity(
+                              0.1,
+                            ), // Abu-abu jika tidak aktif
+                    ),
+                    child: Icon(
+                      steps[index]['icon']
+                          as IconData, // TETAP PAKAI ICON ASLI (send, hourglass, verified)
+                      size: 14,
+                      color: isActive
+                          ? const Color(
+                              0xFF082018,
+                            ) // Text hijau gelap jika aktif
+                          : Colors.white.withOpacity(
+                              0.4,
+                            ), // Putih transparan jika tidak aktif
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    steps[index]['label'] as String,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: isActive
+                          ? Colors
+                                .white // Putih jika aktif
+                          : Colors.white.withOpacity(
+                              0.4,
+                            ), // Putih transparan jika tidak aktif
+                    ),
+                  ),
+                ],
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    color: (index + 1) < currentStep
+                        ? const Color(0xFF8DCB94) // Garis hijau jika aktif
+                        : Colors.white.withOpacity(
+                            0.1,
+                          ), // Garis abu-abu jika tidak aktif
+                  ),
+                ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  Color _getStatusColor(String status) {
+  Widget _buildStep(IconData icon, String label, bool isActive) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive
+                ? const Color(0xFF8DCB94)
+                : Colors.white.withOpacity(0.1),
+          ),
+          child: Icon(
+            icon,
+            size: 14,
+            color: isActive
+                ? const Color(0xFF082018)
+                : Colors.white.withOpacity(0.4),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: isActive ? Colors.white : Colors.white.withOpacity(0.4),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getProgressText(String? status) {
     switch (status) {
-      case 'aktif': return Colors.blue;
-      case 'selesai': return Colors.green;
-      case 'ditolak': return Colors.red;
-      default: return Colors.grey;
+      case 'pending':
+        return 'Menunggu verifikasi petugas';
+      case 'processing':
+        return 'Sedang diproses oleh petugas';
+      case 'completed':
+        return 'Laporan telah selesai diproses';
+      default:
+        return 'Status tidak diketahui';
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    if (difference.inDays > 7) {
+      return '${date.day}/${date.month}/${date.year} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} hari yang lalu';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} jam yang lalu';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} menit yang lalu';
+    } else {
+      return 'Baru saja';
+    }
+  }
+
+  IconData _getWasteTypeIcon(WasteType type) {
+    switch (type) {
+      case WasteType.organic:
+        return Icons.eco;
+      case WasteType.inorganic:
+        return Icons.production_quantity_limits;
+      case WasteType.b3:
+        return Icons.warning_amber_rounded;
+      case WasteType.mixed:
+        return Icons.delete_sweep;
     }
   }
 
   Color _getWasteTypeColor(WasteType type) {
     switch (type) {
       case WasteType.organic:
-        return Colors.green;
+        return const Color(0xFF4CAF50);
       case WasteType.inorganic:
-        return Colors.blue;
+        return const Color(0xFF2196F3);
+      case WasteType.b3:
+        return const Color(0xFFF44336);
       case WasteType.mixed:
-        return Colors.orange;
+        return const Color(0xFFFF9800);
     }
   }
 
-  String _getTimeAgo(DateTime dateTime) {
-    final difference = DateTime.now().difference(dateTime);
-    
-    if (difference.inDays > 0) {
-      return '${difference.inDays} hari lalu';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} jam lalu';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} menit lalu';
-    } else {
-      return 'Baru saja';
-    }
-  }
+  void _showDetailDialog(Report report) {
+    if (!mounted) return;
 
-  void _showDetailDialog(Report report, String status) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.r16)),
+      barrierDismissible: true,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: const Color(0xFF001F1A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          padding: const EdgeInsets.all(AppSpacing.s24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.s8),
-                    decoration: BoxDecoration(
-                      color: _getWasteTypeColor(report.wasteType),
-                      borderRadius: BorderRadius.circular(AppRadius.r12),
+          padding: const EdgeInsets.all(20),
+          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 650),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: report.imagePath.isNotEmpty
+                          ? () =>
+                                _showFullImage(report.imagePath, dialogContext)
+                          : null,
+                      child: Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          image: report.imagePath.isNotEmpty
+                              ? DecorationImage(
+                                  image: NetworkImage(report.imagePath),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: report.imagePath.isEmpty
+                            ? Icon(
+                                Icons.image_not_supported,
+                                color: Colors.white.withOpacity(0.5),
+                                size: 30,
+                              )
+                            : null,
+                      ),
                     ),
-                    child: const Icon(Icons.delete, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Laporan ${report.wasteType.label}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: report.statusColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        report.statusDisplayName,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: report.statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24, color: Colors.white12),
+
+                if (report.imagePath.isNotEmpty) ...[
+                  const Text(
+                    'Foto Sampah',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white54,
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.s8),
-                  Expanded(
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () =>
+                        _showFullImage(report.imagePath, dialogContext),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        report.imagePath,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            color: Colors.white.withOpacity(0.05),
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.white54,
+                                size: 40,
+                              ),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 200,
+                            color: Colors.white.withOpacity(0.05),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF8EEA5B),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                _buildDetailRow(
+                  Icons.location_on,
+                  'Alamat Lengkap',
+                  '${report.street}, ${report.village}, ${report.district}',
+                ),
+                const SizedBox(height: 12),
+                _buildDetailRow(
+                  Icons.description,
+                  'Deskripsi',
+                  report.description.isEmpty
+                      ? 'Tidak ada deskripsi'
+                      : report.description,
+                ),
+                const SizedBox(height: 12),
+                _buildDetailRow(
+                  Icons.category,
+                  'Jenis Sampah',
+                  report.wasteType.label,
+                ),
+                const SizedBox(height: 12),
+                _buildDetailRow(
+                  Icons.warning,
+                  'Tingkat Keparahan',
+                  report.severityLevel.label,
+                ),
+                const SizedBox(height: 12),
+                _buildDetailRow(
+                  Icons.access_time,
+                  'Waktu Lapor',
+                  '${report.createdAt.day}/${report.createdAt.month}/${report.createdAt.year} ${report.createdAt.hour.toString().padLeft(2, '0')}:${report.createdAt.minute.toString().padLeft(2, '0')}',
+                ),
+
+                if (report.poinDiberikan > 0) ...[
+                  const SizedBox(height: 12),
+                  _buildDetailRow(
+                    Icons.star,
+                    'Poin Diberikan',
+                    '+${report.poinDiberikan} Poin',
+                    valueColor: const Color(0xFF8EEA5B),
+                  ),
+                ],
+
+                if (report.alasanDitolak != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Laporan ${report.wasteType.label}',
-                          style: AppTypography.title.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 16,
+                              color: Colors.red.withOpacity(0.7),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Alasan Ditolak',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 8),
                         Text(
-                          report.id ?? 'ID: -',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textSecondary,
+                          report.alasanDitolak!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.7),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-              ),
-              const Divider(height: AppSpacing.s16),
-              _buildDetailRow(Icons.location_on, 'Alamat', report.street),
-              const SizedBox(height: AppSpacing.s8),
-              _buildDetailRow(Icons.location_city, 'Desa/Kelurahan', report.village),
-              const SizedBox(height: AppSpacing.s8),
-              _buildDetailRow(Icons.map, 'Kecamatan', report.district),
-              const SizedBox(height: AppSpacing.s8),
-              _buildDetailRow(Icons.local_post_office_outlined, 'Kode Pos', report.postalCode),
-              const SizedBox(height: AppSpacing.s8),
-              _buildDetailRow(Icons.description, 'Deskripsi', report.description),
-              const SizedBox(height: AppSpacing.s8),
-              _buildDetailRow(Icons.category, 'Jenis Sampah', report.wasteType.label),
-              const SizedBox(height: AppSpacing.s8),
-              _buildDetailRow(Icons.warning, 'Tingkat Keparahan', report.severityLevel.label),
-              
-              if (status == 'ditolak' && report.rejectionReason != null) ...[
-                const SizedBox(height: AppSpacing.s16),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.s16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(AppRadius.r12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Alasan Ditolak',
-                        style: AppTypography.caption.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade700,
+
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          side: BorderSide(
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Tutup',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.s4),
-                      Text(
-                        report.rejectionReason!,
-                        style: AppTypography.body.copyWith(
-                          fontSize: 12,
-                          color: Colors.red.shade900,
+                    ),
+                    if (report.imagePath.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () =>
+                                _showFullImage(report.imagePath, dialogContext),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: const Color(0xFF082018),
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Full Foto',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF082018),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ],
-              
-              const SizedBox(height: AppSpacing.s24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.r12),
-                    ),
-                  ),
-                  child: Text(
-                    'Tutup',
-                    style: AppTypography.button.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  void _showFullImage(String imageUrl, BuildContext dialogContext) {
+    if (!mounted) return;
+
+    showDialog(
+      context: dialogContext,
+      barrierDismissible: true,
+      builder: (fullImageContext) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          color: Colors.white54,
+                          size: 60,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Gagal memuat gambar',
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                onPressed: () => Navigator.pop(fullImageContext),
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.textSecondary),
-        const SizedBox(width: AppSpacing.s8),
+        Icon(icon, size: 18, color: Colors.white.withOpacity(0.4)),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.4),
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
                 value,
-                style: AppTypography.body,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: valueColor ?? Colors.white.withOpacity(0.9),
+                ),
               ),
             ],
           ),

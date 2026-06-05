@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,6 +62,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
+      // ==================== SHELL ROUTE (BOTTOM NAVIGATION) ====================
       ShellRoute(
         builder: (context, state, child) => _MainShell(child: child),
         routes: [
@@ -80,6 +81,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      // ========================================
       GoRoute(
         path: '/report-history',
         builder: (context, state) => const ReportHistoryPage(),
@@ -175,87 +177,124 @@ class _MainShell extends StatelessWidget {
 
   static const _tabs = ['/home', '/report', '/market', '/profile'];
 
+  // Daftar route yang TIDAK boleh menampilkan bottom navigation bar
+  static const _noNavRoutes = [
+    '/report-history',
+    '/rewards',
+    '/address',
+    '/payment-method',
+    '/profile-edit',
+    '/order-history',
+    '/wishlist',
+    '/cart',
+    '/checkout',
+    '/notifications',
+    '/seller-application',
+    '/seller-application-detail',
+    '/seller-registration',
+    '/history',
+    '/reward',
+  ];
+
   int _indexFromLocation(String location) {
     final idx = _tabs.indexWhere((route) => location.startsWith(route));
     return idx == -1 ? 0 : idx;
+  }
+
+  bool _shouldShowNav(String location) {
+    for (final route in _noNavRoutes) {
+      if (location.startsWith(route)) {
+        return false;
+      }
+    }
+    // Juga sembunyikan jika bukan di tab utama
+    final isMainTab = _tabs.any((route) => location.startsWith(route));
+    return isMainTab;
   }
 
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     final index = _indexFromLocation(location);
+    final showNav = _shouldShowNav(location);
 
     return Scaffold(
       extendBody: true,
       body: child,
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1F12).withValues(alpha: 0.94),
+      bottomNavigationBar: showNav
+          ? SafeArea(
+              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    blurRadius: 28,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: BottomNavigationBar(
-                currentIndex: index,
-                onTap: (value) => context.go(_tabs[value]),
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                selectedItemColor: const Color(0xFF8EEA5B),
-                unselectedItemColor: Colors.white.withValues(alpha: 0.55),
-                iconSize: 24,
-                selectedLabelStyle: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-                type: BottomNavigationBarType.fixed,
-                items: [
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.home_outlined),
-                    activeIcon: _ActiveNavIcon(child: const Icon(Icons.home)),
-                    label: 'Beranda',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.report_gmailerrorred_outlined),
-                    activeIcon: _ActiveNavIcon(
-                      child: const Icon(Icons.report_gmailerrorred),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Container(
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0B1F12).withOpacity(0.94),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.28),
+                          blurRadius: 28,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
                     ),
-                    label: 'Lapor',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.storefront_outlined),
-                    activeIcon: _ActiveNavIcon(
-                      child: const Icon(Icons.storefront),
+                    child: BottomNavigationBar(
+                      currentIndex: index,
+                      onTap: (value) => context.go(_tabs[value]),
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      selectedItemColor: const Color(0xFF8EEA5B),
+                      unselectedItemColor: Colors.white.withOpacity(0.55),
+                      iconSize: 24,
+                      selectedLabelStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      type: BottomNavigationBarType.fixed,
+                      items: [
+                        BottomNavigationBarItem(
+                          icon: const Icon(Icons.home_outlined),
+                          activeIcon: _ActiveNavIcon(
+                            child: const Icon(Icons.home),
+                          ),
+                          label: 'Beranda',
+                        ),
+                        BottomNavigationBarItem(
+                          icon: const Icon(Icons.report_gmailerrorred_outlined),
+                          activeIcon: _ActiveNavIcon(
+                            child: const Icon(Icons.report_gmailerrorred),
+                          ),
+                          label: 'Lapor',
+                        ),
+                        BottomNavigationBarItem(
+                          icon: const Icon(Icons.storefront_outlined),
+                          activeIcon: _ActiveNavIcon(
+                            child: const Icon(Icons.storefront),
+                          ),
+                          label: 'Market',
+                        ),
+                        BottomNavigationBarItem(
+                          icon: const Icon(Icons.person_outline),
+                          activeIcon: _ActiveNavIcon(
+                            child: const Icon(Icons.person),
+                          ),
+                          label: 'Profile',
+                        ),
+                      ],
                     ),
-                    label: 'Market',
                   ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.person_outline),
-                    activeIcon: _ActiveNavIcon(child: const Icon(Icons.person)),
-                    label: 'Profile',
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
+            )
+          : null,
     );
   }
 }
@@ -270,11 +309,11 @@ class _ActiveNavIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF8EEA5B).withValues(alpha: 0.12),
+        color: const Color(0xFF8EEA5B).withOpacity(0.12),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8EEA5B).withValues(alpha: 0.18),
+            color: const Color(0xFF8EEA5B).withOpacity(0.18),
             blurRadius: 18,
           ),
         ],

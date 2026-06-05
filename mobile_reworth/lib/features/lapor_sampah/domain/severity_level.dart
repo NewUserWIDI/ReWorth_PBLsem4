@@ -1,7 +1,7 @@
 enum SeverityLevel {
-  mild('Ringan', 'Tumpukan sampah kecil'),
-  moderate('Sedang', 'Tumpukan sampah sedang'),
-  severe('Parah', 'Tumpukan sampah besar');
+  mild('Ringan', 'Sampah sedikit, mudah ditangani'),
+  moderate('Sedang', 'Sampah menumpuk, perlu penanganan'),
+  severe('Berat', 'Sampah sangat banyak, kondisi darurat');
 
   final String label;
   final String description;

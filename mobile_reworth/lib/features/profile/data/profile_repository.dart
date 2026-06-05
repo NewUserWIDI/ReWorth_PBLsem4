@@ -6,6 +6,7 @@ import '../domain/reward_item.dart';
 import '../domain/seller_application.dart';
 
 abstract class ProfileRepository {
+  // ========== PROFILE METHODS ==========
   Future<ProfileUser> getProfile();
   Future<ProfileUser?> getProfileById(String userId);
 
@@ -17,9 +18,11 @@ abstract class ProfileRepository {
 
   Future<String?> uploadProfilePhoto(File imageFile);
 
+  // ========== REWARD METHODS ==========
   Future<List<RewardItem>> getAvailableRewards();
   Future<bool> redeemReward(int rewardId);
 
+  // ========== BANK ACCOUNT METHODS ==========
   Future<List<BankAccount>> getBankAccounts();
   Future<void> addBankAccount({
     required String bankName,
@@ -39,28 +42,20 @@ abstract class ProfileRepository {
   Future<void> deleteBankAccount(String cardId);
   Future<void> setPrimaryBankAccount(String cardId);
 
+  // ========== SELLER METHODS ==========
   Future<String?> uploadSellerPhoto(File imageFile, String jenis);
   Future<SellerApplication?> getLatestSellerApplication();
   Future<SellerApplication?> getSellerApplicationStatus();
 
+  // ========== SELLER APPLICATION METHODS ==========
   Future<void> submitSellerApplication({
-    String? fullName,
-    String? phone,
-    String? email,
-    String? storeName,
-    String? storeDescription,
-    String? storeAddress,
-    String? category,
-    String? productTypes,
-    String? usernameProposal,
-    String? passwordProposal,
-    String? namaTokoUsulan,
+    required String namaTokoUsulan,
     String? deskripsiToko,
     String? alamatToko,
     String? kategoriJualan,
     String? jenisProdukJualan,
-    String? usernameUsulan,
-    String? passwordHashUsulan,
+    required String usernameUsulan,
+    required String passwordHashUsulan,
     String? fotoToko,
     String? fotoProdukContoh,
   });
