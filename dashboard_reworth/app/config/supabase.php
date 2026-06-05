@@ -69,7 +69,6 @@ function supabase_request(string $method, string $path, array $query = [], ?arra
     }
 
     $raw = curl_exec($ch);
-       echo "<h3>URL</h3>";
     $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     curl_close($ch);
