@@ -8,27 +8,7 @@ const SELLER_PRODUCT_BUCKET = 'product-images';
 
 function seller_supabase_access_issue(): ?string
 {
-    static $checked = false;
-    static $message = null;
-
-    if ($checked) {
-        return $message;
-    }
-
-    $checked = true;
-    if (supabase_uses_service_role()) {
-        return null;
-    }
-
-    $productProbe = supabase_fetch('produk', 'id_produk', ['limit' => '1']);
-    $sellerProbe = supabase_fetch('seller', 'id_seller', ['limit' => '1']);
-    $categoryProbe = supabase_fetch('kategori_produk', 'id_kategori', ['limit' => '1']);
-
-    if ($productProbe !== [] && $sellerProbe === [] && $categoryProbe === []) {
-        $message = 'Dashboard seller belum bisa mengakses tabel seller dan kategori_produk dengan API key saat ini. Tambahkan service role key di dashboard atau buka policy RLS khusus backend.';
-    }
-
-    return $message;
+    return null;
 }
 
 function seller_authenticate_dashboard_user(string $identifier, string $password): array
