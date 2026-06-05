@@ -9,6 +9,7 @@ require_once __DIR__ . '/../config/supabase.php';
  */
 function dlh_reports(array $filters = []): array
 {
+    
     $result = supabase_fetch(
         'laporan_sampah?select=*,profiles(*)'
     );
