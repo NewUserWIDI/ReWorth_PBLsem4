@@ -659,7 +659,7 @@ class _PaymentSuccessOverlayState extends State<_PaymentSuccessOverlay>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Bukti pembayaran Anda sudah masuk. Status pesanan sekarang menunggu verifikasi admin sebelum diteruskan ke seller.',
+                  'Pesanan telah terbayar dan menunggu verifikasi admin.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,
@@ -692,7 +692,7 @@ class _PaymentSuccessOverlayState extends State<_PaymentSuccessOverlay>
                 TextButton(
                   onPressed: widget.onOrderHistory,
                   child: Text(
-                    'Lihat Riwayat Pesanan',
+                    'Lihat Pesanan',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF1F5E23),

@@ -5,8 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../features/auth/application/auth_controller.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/loading_view.dart';
@@ -14,6 +12,7 @@ import '../../application/cart_controller.dart';
 import '../../application/market_controller.dart';
 import '../../application/wishlist_controller.dart';
 import '../../domain/market_product.dart';
+import '../widgets/market_catalog_card.dart';
 
 class MarketPage extends ConsumerStatefulWidget {
   const MarketPage({super.key});
@@ -123,7 +122,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                         LayoutBuilder(
                           builder: (context, constraints) {
                             final isNarrow = constraints.maxWidth < 380;
-                            final aspectRatio = isNarrow ? 0.70 : 0.78;
+                            final aspectRatio = isNarrow ? 0.62 : 0.68;
                             return GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
@@ -137,7 +136,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                                   ),
                               itemBuilder: (context, index) {
                                 final product = filteredProducts[index];
-                                return _ProductCard(
+                                return MarketCatalogCard(
                                   product: product,
                                   isFavorite: wishlistIds.contains(
                                     product.idProduk,
@@ -238,16 +237,16 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       height: 54,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: Colors.white.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: _searchController.text.isEmpty
-              ? Colors.transparent
-              : Colors.white.withValues(alpha: 0.32),
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.white.withValues(alpha: 0.22),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
+            color: Colors.black.withValues(alpha: 0.16),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -255,7 +254,11 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search_rounded, size: 20, color: Color(0xFF8A8A8A)),
+          Icon(
+            Icons.search_rounded,
+            size: 20,
+            color: Colors.white.withValues(alpha: 0.76),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -264,9 +267,9 @@ class _MarketPageState extends ConsumerState<MarketPage> {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
-                color: const Color(0xFF111111),
+                color: Colors.white,
               ),
-              cursorColor: const Color(0xFF2E7D32),
+              cursorColor: const Color(0xFFD8F0C8),
               decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
@@ -280,7 +283,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: const Color.fromRGBO(17, 17, 17, 0.45),
+                  color: Colors.white.withValues(alpha: 0.46),
                 ),
               ),
             ),
@@ -329,65 +332,115 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   }
 
   Widget _buildCategoryChips(List<String> categories) {
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final isActive = category == _selectedCategory;
-          return InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: () {
-              setState(() {
-                _selectedCategory = category;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              height: 42,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                gradient: isActive
-                    ? const LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [Colors.white, Color(0xFFDCEBD5)],
-                      )
-                    : null,
-                color: isActive ? null : Colors.white.withValues(alpha: 0.04),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: isActive ? 0.18 : 0.22),
-                ),
-                boxShadow: isActive
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.18),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Text(
-                category,
-                style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: isActive
-                      ? const Color(0xFF082018)
-                      : Colors.white.withValues(alpha: 0.78),
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 12),
+          child: Text(
+            'Kategori',
+            style: GoogleFonts.poppins(
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
-          );
-        },
-      ),
+          ),
+        ),
+        SizedBox(
+          height: 98,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              final isActive = category == _selectedCategory;
+              return InkWell(
+                borderRadius: BorderRadius.circular(28),
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = category;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  width: 84,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    gradient: isActive
+                        ? const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFFF5FAEE), Color(0xFFDDEFD1)],
+                          )
+                        : null,
+                    color: isActive
+                        ? null
+                        : Colors.white.withValues(alpha: 0.05),
+                    border: Border.all(
+                      color: Colors.white.withValues(
+                        alpha: isActive ? 0.16 : 0.12,
+                      ),
+                    ),
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.16),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isActive
+                              ? const Color(0xFFEAF4E2)
+                              : Colors.white.withValues(alpha: 0.08),
+                        ),
+                        child: Icon(
+                          _categoryIcon(category),
+                          size: 22,
+                          color: isActive
+                              ? const Color(0xFF163127)
+                              : Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        category,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11.8,
+                          fontWeight: isActive
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                          color: isActive
+                              ? const Color(0xFF082018)
+                              : Colors.white.withValues(alpha: 0.78),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -532,6 +585,22 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           product.kategori.toLowerCase().contains(query);
     }).toList();
   }
+
+  IconData _categoryIcon(String category) {
+    final key = category.toLowerCase();
+    if (key.contains('semua')) return Icons.apps_rounded;
+    if (key.contains('kompos') || key.contains('organik')) {
+      return Icons.spa_rounded;
+    }
+    if (key.contains('kerajinan') || key.contains('aksesoris')) {
+      return Icons.chair_rounded;
+    }
+    if (key.contains('eco') || key.contains('living')) {
+      return Icons.lightbulb_outline_rounded;
+    }
+    if (key.contains('daur')) return Icons.recycling_rounded;
+    return Icons.category_rounded;
+  }
 }
 
 class _AmbientGlow extends StatelessWidget {
@@ -605,7 +674,7 @@ class _MarketError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.s16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0A1E19).withValues(alpha: 0.84),
         borderRadius: BorderRadius.circular(16),
@@ -618,257 +687,6 @@ class _MarketError extends StatelessWidget {
           color: const Color(0xFFFFD4D4),
           fontWeight: FontWeight.w500,
         ),
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatefulWidget {
-  const _ProductCard({
-    required this.product,
-    required this.isFavorite,
-    required this.onTapFavorite,
-    required this.onTapAdd,
-    required this.onTapCard,
-  });
-
-  final MarketProduct product;
-  final bool isFavorite;
-  final VoidCallback onTapFavorite;
-  final VoidCallback onTapAdd;
-  final VoidCallback onTapCard;
-
-  @override
-  State<_ProductCard> createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<_ProductCard> {
-  bool _pressedFavorite = false;
-  bool _pressedAdd = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = widget.product;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: widget.onTapCard,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFFFFF),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color.fromRGBO(0, 0, 0, 0.04)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      height: 112,
-                      width: double.infinity,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF2F5EF),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(18),
-                          child: _ProductImage(url: p.gambarUrl),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTapDown: (_) => setState(() => _pressedAdd = true),
-                          onTapCancel: () =>
-                              setState(() => _pressedAdd = false),
-                          onTapUp: (_) => setState(() => _pressedAdd = false),
-                          onTap: widget.onTapAdd,
-                          child: AnimatedScale(
-                            duration: const Duration(milliseconds: 140),
-                            scale: _pressedAdd ? 0.94 : 1,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 140),
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Colors.white, Color(0xFFDCEBD5)],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(
-                                      alpha: _pressedAdd ? 0.12 : 0.20,
-                                    ),
-                                    blurRadius: _pressedAdd ? 12 : 18,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.add_rounded,
-                                color: Color(0xFF082018),
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                p.namaProduk,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.32,
-                                  color: const Color(0xFF0B2E20),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _rupiah(p.harga),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15.5,
-                                  height: 1.24,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF061F17),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 20,
-                right: 20,
-                child: GestureDetector(
-                  onTapDown: (_) => setState(() => _pressedFavorite = true),
-                  onTapCancel: () => setState(() => _pressedFavorite = false),
-                  onTapUp: (_) => setState(() => _pressedFavorite = false),
-                  onTap: widget.onTapFavorite,
-                  child: AnimatedScale(
-                    duration: const Duration(milliseconds: 170),
-                    scale: _pressedFavorite ? 0.92 : 1,
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.14),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        widget.isFavorite
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: widget.isFavorite
-                            ? const Color(0xFFEF3D3D)
-                            : const Color(0xFF5C6B60),
-                        size: 18,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _rupiah(double value) {
-    final asInt = value.toInt();
-    final chars = asInt.toString().split('').reversed.toList();
-    final buffer = StringBuffer();
-    for (var i = 0; i < chars.length; i++) {
-      if (i > 0 && i % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(chars[i]);
-    }
-    final formatted = buffer.toString().split('').reversed.join();
-    return 'Rp $formatted';
-  }
-}
-
-class _ProductImage extends StatelessWidget {
-  const _ProductImage({required this.url});
-
-  final String? url;
-
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return _fallback();
-    }
-
-    return Image.network(
-      url!,
-      fit: BoxFit.contain,
-      width: double.infinity,
-      height: double.infinity,
-      errorBuilder: (context, error, stackTrace) => _fallback(),
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
-        return const Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primary,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _fallback() {
-    return Container(
-      color: const Color(0xFFEEF6E8),
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.image_not_supported_outlined,
-        color: Color(0xFF2E7D32),
-        size: 30,
       ),
     );
   }

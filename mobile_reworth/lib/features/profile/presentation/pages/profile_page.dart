@@ -1,5 +1,3 @@
-// lib/features/profile/presentation/pages/profile_page.dart
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -82,27 +80,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final bytes = await picked.readAsBytes();
-      final path =
-          'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final bucket = 'avatars';
+      final path = 'avatar/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      const bucket = 'avatars';
 
-      await client.storage
-          .from(bucket)
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
-          );
+      await client.storage.from(bucket).uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
 
       final publicUrl = client.storage.from(bucket).getPublicUrl(path);
 
-      await client
-          .from('profiles')
-          .update({'foto_profil': publicUrl})
-          .eq('id', userId);
+      await client.from('profiles').update({'foto_profil': publicUrl}).eq(
+        'id',
+        userId,
+      );
 
       if (mounted) {
         setState(() {
@@ -173,9 +165,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      ref
-                          .read(profileControllerProvider.notifier)
-                          .loadProfile();
+                      ref.read(profileControllerProvider.notifier).loadProfile();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -229,8 +219,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFB5FF77).withValues(alpha: 0.30),
-                      const Color(0xFF5BE22F).withValues(alpha: 0.14),
+                      const Color(0xFF8FCF8B).withValues(alpha: 0.24),
+                      const Color(0xFF4D8E63).withValues(alpha: 0.12),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.48, 1.0],
@@ -391,40 +381,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 18),
-
-                  // ========== MENU 1: TUKAR POIN REWARD ==========
                   ProfileMenuTile(
                     icon: Icons.card_giftcard_rounded,
                     title: 'Tukar Poin Reward',
                     subtitle: '$totalPoin poin tersedia',
                     onTap: () => context.push('/rewards'),
                   ),
-
-                  // ========== MENU 2: RIWAYAT LAPOR SAMPAH ==========
+                  ProfileMenuTile(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'Riwayat Pesanan',
+                    subtitle: 'Pantau status belanja mini market Anda',
+                    onTap: () => context.push('/order-history'),
+                  ),
                   ProfileMenuTile(
                     icon: Icons.history_rounded,
                     title: 'Riwayat Lapor Sampah',
                     subtitle: 'Lihat riwayat laporan Anda',
                     onTap: () => context.push('/report-history'),
                   ),
-
-                  // ========== MENU 3: AKUN BANK ==========
                   ProfileMenuTile(
                     icon: Icons.account_balance_wallet_rounded,
                     title: 'Akun Bank',
                     subtitle: 'Tambahkan akun bank Anda',
                     onTap: () => context.push('/payment-method'),
                   ),
-
-                  // ========== MENU 4: ALAMAT SAYA ==========
                   ProfileMenuTile(
                     icon: Icons.location_on_outlined,
                     title: 'Alamat Saya',
                     subtitle: 'Kelola alamat pengiriman',
                     onTap: () => context.push('/address'),
                   ),
-
-                  // ========== MENU 5: EDIT PROFIL ==========
                   ProfileMenuTile(
                     icon: Icons.edit_rounded,
                     title: 'Edit Profil',
@@ -434,27 +420,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         '/profile-edit',
                       );
                       if (shouldRefresh == true && mounted) {
-                        ref
-                            .read(profileControllerProvider.notifier)
-                            .loadProfile();
+                        ref.read(profileControllerProvider.notifier).loadProfile();
                         await _loadRemoteAvatar();
                       }
                     },
                   ),
-
-                  // ========== MENU 6: PENGAJUAN SELLER (SETELAH EDIT PROFIL) ==========
                   ProfileMenuTile(
                     icon: Icons.storefront_outlined,
                     title: 'Pengajuan Seller',
                     subtitle: _getSellerSubtitle(statusPengajuan),
-                    onTap: () {
-                      // Navigasi ke halaman DETAIL
-                      context.push('/seller-application-detail');
-                    },
+                    onTap: () => context.push('/seller-application-detail'),
                     trailing: _getSellerStatusBadge(statusPengajuan),
                   ),
-
-                  // ========== MENU 7: KELUAR ==========
                   ProfileMenuTile(
                     icon: Icons.logout_rounded,
                     title: 'Keluar',
@@ -475,8 +452,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  // ========== HELPER METHODS UNTUK SELLER MENU ==========
-
   String _getSellerSubtitle(String status) {
     switch (status) {
       case 'pending':
@@ -486,7 +461,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       case 'ditolak':
         return 'Pengajuan ditolak, ajukan ulang';
       case 'nonaktif':
-        return 'Daftar menjadi seller sekarang';
       default:
         return 'Daftar menjadi seller sekarang';
     }
@@ -494,60 +468,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Widget? _getSellerStatusBadge(String status) {
     if (status == 'pending') {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFA726).withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Text(
-          'Pending',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFFFFA726),
-          ),
-        ),
-      );
+      return _statusBadge('Pending', const Color(0xFFFFA726));
     }
-
     if (status == 'aktif') {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Text(
-          'Aktif',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF4CAF50),
-          ),
-        ),
-      );
+      return _statusBadge('Aktif', const Color(0xFF4CAF50));
     }
-
     if (status == 'ditolak') {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEF5350).withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Text(
-          'Ditolak',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFFEF5350),
-          ),
-        ),
-      );
+      return _statusBadge('Ditolak', const Color(0xFFEF5350));
     }
-
     return null;
+  }
+
+  Widget _statusBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
   }
 }
 

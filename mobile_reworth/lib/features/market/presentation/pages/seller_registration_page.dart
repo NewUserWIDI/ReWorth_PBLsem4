@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../profile/application/profile_controller.dart';
 import '../../../profile/domain/profile_user.dart';
-import '../../../profile/domain/seller_application.dart';
 
 // ============ THEME COLORS ============
 const Color _primaryColor = Color(0xFF4CAF50); // Hijau terang untuk tombol

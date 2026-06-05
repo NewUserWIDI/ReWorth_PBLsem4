@@ -39,11 +39,14 @@ class AuthController extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
+      print('🔵 Login attempt for: $email');
+
       final user = await _repository
           .login(email: email.trim(), password: password)
           .timeout(const Duration(seconds: 20));
 
       if (user == null) {
+        print('❌ Login failed: user null');
         return const AuthActionResult(
           success: false,
           message: 'Email atau kata sandi salah',
@@ -52,13 +55,16 @@ class AuthController extends ChangeNotifier {
 
       _currentUser = user;
       notifyListeners();
+      print('✅ Login success for: $email');
       return const AuthActionResult(success: true, message: 'Login berhasil');
     } on AuthException catch (error) {
+      print('❌ AuthException: ${error.message}');
       return AuthActionResult(
         success: false,
         message: _authErrorMessage(error.message),
       );
-    } catch (_) {
+    } catch (e) {
+      print('❌ Login error: $e');
       return const AuthActionResult(
         success: false,
         message: 'Login gagal. Periksa koneksi dan data akun Anda.',
@@ -76,6 +82,11 @@ class AuthController extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
+      print('🔵 ===== STARTING REGISTRATION =====');
+      print('🔵 Nama: $nama');
+      print('🔵 Email: $email');
+      print('🔵 No HP: $nomorHp');
+
       final user = await _repository
           .register(
             RegisterRequest(
@@ -88,31 +99,41 @@ class AuthController extends ChangeNotifier {
           .timeout(const Duration(seconds: 20));
 
       if (user == null) {
+        print('❌ Registration failed: user returned null');
         return const AuthActionResult(
           success: false,
           message: 'Email sudah terdaftar',
         );
       }
 
+      print('✅ Registration user object received');
       _currentUser = user;
 
       // Delay singkat untuk memastikan profile sudah tersimpan di database
+      print('🔵 Waiting 500ms for profile to be saved...');
       await Future.delayed(const Duration(milliseconds: 500));
 
       // Refresh untuk memastikan data dari tabel profiles terbaca
+      print('🔵 Refreshing current user...');
       await refreshCurrentUser();
 
       notifyListeners();
+      print('✅ ===== REGISTRATION COMPLETE =====');
+      print('✅ User: ${user.nama}, Email: ${user.email}');
+
       return const AuthActionResult(
         success: true,
         message: 'Registrasi berhasil',
       );
     } on AuthException catch (error) {
+      print('❌ AuthException: ${error.message}');
       return AuthActionResult(
         success: false,
         message: _authErrorMessage(error.message),
       );
-    } catch (_) {
+    } catch (e) {
+      print('❌ Registration error: $e');
+      print('❌ Error stack: ${StackTrace.current}');
       return const AuthActionResult(
         success: false,
         message: 'Registrasi gagal. Periksa koneksi dan coba lagi.',
@@ -132,6 +153,9 @@ class AuthController extends ChangeNotifier {
         success: true,
         message: 'Anda berhasil keluar',
       );
+    } catch (e) {
+      print('❌ Logout error: $e');
+      return const AuthActionResult(success: false, message: 'Gagal keluar');
     } finally {
       _setLoading(false);
     }

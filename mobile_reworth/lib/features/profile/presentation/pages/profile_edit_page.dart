@@ -1,4 +1,3 @@
-// lib/features/profile/presentation/pages/profile_edit_page.dart
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -187,11 +186,12 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       return;
     }
 
+    // ✅ Perbaikan: Update sesuai skema database
     final Map<String, dynamic> updateData = {
-      'nama_lengkap': currentNama,
-      'nama': currentNama,
-      'no_telp': currentNoTelp,
-      'nomor_hp': currentNoTelp,
+      'nama_lengkap': currentNama, // Kolom utama
+      'no_telp': currentNoTelp, // Kolom utama
+      'nama': currentNama, // Kolom opsional untuk kompatibilitas
+      'nomor_hp': currentNoTelp, // Kolom opsional untuk kompatibilitas
       'updated_at': DateTime.now().toIso8601String(),
     };
 
@@ -200,6 +200,9 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     }
 
     try {
+      print('🔵 Updating profile for user: $userId');
+      print('   Data: $updateData');
+
       await client.from('profiles').update(updateData).eq('id', userId);
 
       setState(() => _isUploadingImage = false);
@@ -228,7 +231,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     }
   }
 
-  String _getStatusPengajuanDisplay(String status) {
+  // ✅ Perbaikan: Sesuai dengan nilai yang valid di database
+  String _getStatusPengajuanDisplay(String? status) {
+    if (status == null) return '📝 Belum Daftar';
+
     switch (status) {
       case 'pending':
         return '⏳ Menunggu Verifikasi';
@@ -236,10 +242,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         return '✅ Aktif';
       case 'ditolak':
         return '❌ Ditolak';
-      case 'Belum Daftar':
-        return '📝 Belum Daftar';
+      case 'nonaktif':
+        return '⚫ Nonaktif';
       default:
-        return status;
+        return '📝 Belum Daftar';
     }
   }
 
