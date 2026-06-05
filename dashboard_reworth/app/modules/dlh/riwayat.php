@@ -19,13 +19,23 @@ $filters = [
 
 $status = $filters['status'];
 if ($status === '') {
-    $reports = array_values(array_filter(dlh_reports($filters), fn (array $item): bool => in_array((string) ($item['status_laporan'] ?? ''), ['selesai', 'ditolak'], true)));
+    $reports = array_values(array_filter(
+        dlh_reports($filters),
+        fn (array $item): bool =>
+            in_array(
+                (string) ($item['status_laporan'] ?? ''),
+                ['completed', 'rejected'],
+                true
+            )
+    ));
 } else {
     $reports = dlh_reports($filters);
 }
 
 $page = max(1, (int) ($_GET['page'] ?? 1));
+
 $perPage = 5;
+
 $totalPages = max(1, (int) ceil(count($reports) / $perPage));
 $reportsPage = array_slice($reports, ($page - 1) * $perPage, $perPage);
 
@@ -43,8 +53,8 @@ render_layout('Riwayat', function () use ($filters, $reportsPage, $page, $totalP
                 <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari laporan...">
                 <select class="select" name="status">
                     <option value="">Selesai + Ditolak</option>
-                    <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="ditolak" <?= $filters['status'] === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                    <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Selesai</option>
+                    <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
                 </select>
                 <input class="input" type="date" name="date_from" value="<?= e((string) $filters['date_from']) ?>">
                 <input class="input" type="date" name="date_to" value="<?= e((string) $filters['date_to']) ?>">
@@ -78,7 +88,7 @@ render_layout('Riwayat', function () use ($filters, $reportsPage, $page, $totalP
                                 <td><?php severity_badge((string) $report['tingkat_keparahan']); ?></td>
                                 <td><?php badge_status((string) $report['status_laporan']); ?></td>
                                 <td><?= e((string) ($report['alasan_ditolak'] ?: '-')) ?></td>
-                                <td><?= e((string) $report['updated_at']) ?></td>
+                                <td><?= e((string) $report['waktu_lapor']) ?></td>
                                 <td><a class="btn btn-secondary" href="<?= e(url('app/modules/dlh/laporan_detail.php?id=' . urlencode((string) $report['id_laporan']))) ?>">Detail</a></td>
                             </tr>
                         <?php endforeach; ?>
