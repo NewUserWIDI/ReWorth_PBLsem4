@@ -1,20 +1,16 @@
-// lib/features/profile/data/supabase_profile_repository.dart
-
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../domain/bank_account.dart';
 import '../domain/profile_user.dart';
 import '../domain/reward_item.dart';
-import 'profile_repository.dart';
 import '../domain/seller_application.dart';
+import 'profile_repository.dart';
 
 class SupabaseProfileRepository implements ProfileRepository {
   SupabaseProfileRepository(this._client);
 
   final SupabaseClient _client;
-
-  // ========== PROFILE METHODS ==========
 
   @override
   Future<ProfileUser> getProfile() async {
@@ -110,7 +106,7 @@ class SupabaseProfileRepository implements ProfileRepository {
     }
 
     try {
-      final updateData = {
+      final updateData = <String, dynamic>{
         'nama_lengkap': namaLengkap,
         'nama': namaLengkap,
         'no_telp': noTelp,
@@ -123,7 +119,6 @@ class SupabaseProfileRepository implements ProfileRepository {
       }
 
       await _client.from('profiles').update(updateData).eq('id', authUser.id);
-
       return await getProfile();
     } catch (e) {
       print('Error updateProfile: $e');
@@ -137,42 +132,28 @@ class SupabaseProfileRepository implements ProfileRepository {
     if (authUser == null) return null;
 
     try {
-      final Uint8List fileBytes = await imageFile.readAsBytes();
-
+      final fileBytes = await imageFile.readAsBytes();
       if (fileBytes.isEmpty || fileBytes.length < 100) {
-        print('❌ File terlalu kecil atau kosong');
+        print('File terlalu kecil atau kosong');
         return null;
       }
 
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String fileName = '${authUser.id}_$timestamp.jpg';
-      const String bucket = 'profil';
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final fileName = '${authUser.id}_$timestamp.jpg';
+      const bucket = 'profil';
 
-      print(
-        '📤 Uploading $fileName (${fileBytes.length} bytes) to bucket: $bucket',
+      await _client.storage.from(bucket).uploadBinary(
+        fileName,
+        fileBytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
       );
 
-      await _client.storage
-          .from(bucket)
-          .uploadBinary(
-            fileName,
-            fileBytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
-          );
-
-      final publicUrl = _client.storage.from(bucket).getPublicUrl(fileName);
-      print('✅ Upload success: $publicUrl');
-      return publicUrl;
+      return _client.storage.from(bucket).getPublicUrl(fileName);
     } catch (e) {
-      print('❌ Error uploadProfilePhoto: $e');
+      print('Error uploadProfilePhoto: $e');
       return null;
     }
   }
-
-  // ========== REWARD METHODS ==========
 
   @override
   Future<List<RewardItem>> getAvailableRewards() async {
@@ -215,17 +196,10 @@ class SupabaseProfileRepository implements ProfileRepository {
 
       final currentPoints =
           (profileResponse['total_poin'] as num?)?.toInt() ?? 0;
-
-      if (currentPoints < pointsRequired) {
-        return false;
-      }
+      if (currentPoints < pointsRequired) return false;
 
       final userPhone = (profileResponse['no_telp'] as String?) ?? '';
-
-      if (userPhone.isEmpty) {
-        print('User phone number is required for redemption');
-        return false;
-      }
+      if (userPhone.isEmpty) return false;
 
       final now = DateTime.now();
       final kodeReferensi = _generateReferenceCode();
@@ -266,12 +240,6 @@ class SupabaseProfileRepository implements ProfileRepository {
     }
   }
 
-  String _generateReferenceCode() {
-    return 'RWD-${DateTime.now().millisecondsSinceEpoch}';
-  }
-
-  // ========== BANK ACCOUNT METHODS ==========
-
   @override
   Future<List<BankAccount>> getBankAccounts() async {
     final authUser = _client.auth.currentUser;
@@ -288,7 +256,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           .timeout(const Duration(seconds: 8));
 
       final rows = List<Map<String, dynamic>>.from(response);
-      return rows.map((row) => BankAccount.fromJson(row)).toList();
+      return rows.map(BankAccount.fromJson).toList();
     } catch (e) {
       print('Error getBankAccounts: $e');
       return [];
@@ -310,13 +278,12 @@ class SupabaseProfileRepository implements ProfileRepository {
 
     final existingAccounts = await getBankAccounts();
     final isPrimary = existingAccounts.isEmpty;
-
     final cleanNumber = accountNumber.replaceAll(RegExp(r'\s+'), '');
     final last4 = cleanNumber.length >= 4
         ? cleanNumber.substring(cleanNumber.length - 4)
         : cleanNumber.padLeft(4, '0');
 
-    final payload = {
+    await _client.from('kartu_pembayaran').insert({
       'id_masyarakat': authUser.id,
       'nama_bank': bankName,
       'jenis_kartu': cardType ?? 'Debit',
@@ -327,9 +294,7 @@ class SupabaseProfileRepository implements ProfileRepository {
       'status_aktif': true,
       'created_at': DateTime.now().toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
-    };
-
-    await _client.from('kartu_pembayaran').insert(payload);
+    });
   }
 
   @override
@@ -349,18 +314,16 @@ class SupabaseProfileRepository implements ProfileRepository {
         ? cleanNumber.substring(cleanNumber.length - 4)
         : cleanNumber.padLeft(4, '0');
 
-    final payload = {
-      'nama_bank': bankName,
-      'jenis_kartu': cardType ?? 'Debit',
-      'nama_pemilik': ownerName,
-      'last4_digit': last4,
-      'expiry_date': expiryDate,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
-
     await _client
         .from('kartu_pembayaran')
-        .update(payload)
+        .update({
+          'nama_bank': bankName,
+          'jenis_kartu': cardType ?? 'Debit',
+          'nama_pemilik': ownerName,
+          'last4_digit': last4,
+          'expiry_date': expiryDate,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
         .eq('id_kartu', int.parse(cardId))
         .eq('id_masyarakat', authUser.id);
   }
@@ -403,7 +366,173 @@ class SupabaseProfileRepository implements ProfileRepository {
         .eq('id_masyarakat', authUser.id);
   }
 
-  // ========== HELPER METHODS ==========
+  @override
+  Future<String?> uploadSellerPhoto(File imageFile, String jenis) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return null;
+
+    try {
+      final fileBytes = await imageFile.readAsBytes();
+      if (fileBytes.isEmpty || fileBytes.length < 100) {
+        print('File terlalu kecil atau kosong');
+        return null;
+      }
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final fileName = 'seller_${authUser.id}_${jenis}_$timestamp.jpg';
+      const bucket = 'seller_documents';
+
+      await _client.storage.from(bucket).uploadBinary(
+        fileName,
+        fileBytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
+
+      return _client.storage.from(bucket).getPublicUrl(fileName);
+    } catch (e) {
+      print('Error uploadSellerPhoto: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<SellerApplication?> getLatestSellerApplication() async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) return null;
+
+    try {
+      final row = await _client
+          .from('pengajuan_seller')
+          .select()
+          .eq('id_masyarakat', authUser.id)
+          .order('tanggal_pengajuan', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (row == null) return null;
+      return SellerApplication.fromJson(row);
+    } catch (e) {
+      print('Error getLatestSellerApplication: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SellerApplication?> getSellerApplicationStatus() async {
+    try {
+      return await getLatestSellerApplication();
+    } catch (e) {
+      print('Error getSellerApplicationStatus: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> submitSellerApplication({
+    String? fullName,
+    String? phone,
+    String? email,
+    String? storeName,
+    String? storeDescription,
+    String? storeAddress,
+    String? category,
+    String? productTypes,
+    String? usernameProposal,
+    String? passwordProposal,
+    String? namaTokoUsulan,
+    String? deskripsiToko,
+    String? alamatToko,
+    String? kategoriJualan,
+    String? jenisProdukJualan,
+    String? usernameUsulan,
+    String? passwordHashUsulan,
+    String? fotoToko,
+    String? fotoProdukContoh,
+  }) async {
+    final authUser = _client.auth.currentUser;
+    if (authUser == null) {
+      throw Exception('User belum login');
+    }
+
+    final existing = await getLatestSellerApplication();
+    if (existing != null && (existing.isPending || existing.isApproved)) {
+      throw Exception(
+        'Pengajuan seller Anda masih aktif. Silakan cek detail pengajuan di profil.',
+      );
+    }
+
+    final bankAccounts = await getBankAccounts();
+    if (bankAccounts.isEmpty) {
+      throw Exception(
+        'Tambahkan akun bank terlebih dahulu untuk rekening pencairan seller.',
+      );
+    }
+
+    final resolvedFullName =
+        fullName ??
+        authUser.userMetadata?['nama_lengkap'] as String? ??
+        authUser.userMetadata?['nama'] as String?;
+    final resolvedPhone =
+        phone ?? authUser.userMetadata?['no_telp'] as String?;
+    final resolvedEmail = email ?? authUser.email ?? '';
+    final resolvedStoreName = storeName ?? namaTokoUsulan;
+    final resolvedStoreDescription = storeDescription ?? deskripsiToko ?? '';
+    final resolvedStoreAddress = storeAddress ?? alamatToko ?? '';
+    final resolvedCategory = category ?? kategoriJualan ?? '';
+    final resolvedProductTypes = productTypes ?? jenisProdukJualan ?? '';
+    final resolvedUsername = usernameProposal ?? usernameUsulan;
+    final resolvedPassword = passwordProposal ?? passwordHashUsulan;
+
+    if (resolvedStoreName == null || resolvedStoreName.trim().isEmpty) {
+      throw Exception('Nama toko wajib diisi.');
+    }
+    if (resolvedUsername == null || resolvedUsername.trim().isEmpty) {
+      throw Exception('Username dashboard wajib diisi.');
+    }
+    if (resolvedPassword == null || resolvedPassword.trim().isEmpty) {
+      throw Exception('Password dashboard wajib diisi.');
+    }
+
+    await _ensureProfileExists(authUser.id, resolvedEmail);
+
+    final now = DateTime.now().toIso8601String();
+    await _client.from('pengajuan_seller').insert({
+      'id_masyarakat': authUser.id,
+      'nama_toko_usulan': resolvedStoreName,
+      'deskripsi_toko': resolvedStoreDescription,
+      'alamat_toko': resolvedStoreAddress,
+      'kategori_jualan': resolvedCategory,
+      'jenis_produk_jualan': resolvedProductTypes,
+      'foto_toko': fotoToko ?? '',
+      'foto_produk_contoh': fotoProdukContoh ?? '',
+      'username_usulan': resolvedUsername,
+      'password_hash_usulan': resolvedPassword,
+      'status_pengajuan': 'Pending',
+      'alasan_penolakan': '',
+      'tanggal_pengajuan': now,
+      'created_at': now,
+      'updated_at': now,
+    });
+
+    try {
+      await _client
+          .from('profiles')
+          .update({
+            if (resolvedFullName != null && resolvedFullName.isNotEmpty)
+              'nama_lengkap': resolvedFullName,
+            if (resolvedFullName != null && resolvedFullName.isNotEmpty)
+              'nama': resolvedFullName,
+            if (resolvedEmail.isNotEmpty) 'email': resolvedEmail,
+            if (resolvedPhone != null) 'no_telp': resolvedPhone,
+            if (resolvedPhone != null) 'nomor_hp': resolvedPhone,
+            'status_pengajuan_seller': 'Pending',
+            'updated_at': now,
+          })
+          .eq('id', authUser.id);
+    } catch (e) {
+      print('Error update profile after seller application: $e');
+    }
+  }
 
   Future<void> _ensureProfileExists(String userId, String email) async {
     try {
@@ -414,8 +543,6 @@ class SupabaseProfileRepository implements ProfileRepository {
           .maybeSingle();
 
       if (existing == null) {
-        print('🔵 Profile not found for user: $userId, creating now...');
-
         await _client.from('profiles').insert({
           'id': userId,
           'nama_lengkap': 'Pengguna ReWorth',
@@ -434,141 +561,13 @@ class SupabaseProfileRepository implements ProfileRepository {
           'created_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
         });
-
-        print('✅ Profile created successfully for user: $userId');
       }
     } catch (e) {
-      print('⚠️ Error in _ensureProfileExists: $e');
+      print('Error in _ensureProfileExists: $e');
     }
   }
 
-  // ========== UPLOAD SELLER PHOTO ==========
-
-  @override
-  Future<String?> uploadSellerPhoto(File imageFile, String jenis) async {
-    final authUser = _client.auth.currentUser;
-    if (authUser == null) return null;
-
-    try {
-      final Uint8List fileBytes = await imageFile.readAsBytes();
-
-      if (fileBytes.isEmpty || fileBytes.length < 100) {
-        print('❌ File terlalu kecil atau kosong');
-        return null;
-      }
-
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String fileName = 'seller_${authUser.id}_${jenis}_$timestamp.jpg';
-      const String bucket = 'seller_documents';
-
-      await _client.storage
-          .from(bucket)
-          .uploadBinary(
-            fileName,
-            fileBytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
-          );
-
-      final publicUrl = _client.storage.from(bucket).getPublicUrl(fileName);
-      print('✅ Upload seller photo success: $publicUrl');
-      return publicUrl;
-    } catch (e) {
-      print('❌ Error uploadSellerPhoto: $e');
-      return null;
-    }
-  }
-
-  // ========== SELLER APPLICATION METHODS ==========
-
-  @override
-  Future<void> submitSellerApplication({
-    required String namaTokoUsulan,
-    String? deskripsiToko,
-    String? alamatToko,
-    String? kategoriJualan,
-    String? jenisProdukJualan,
-    required String usernameUsulan,
-    required String passwordHashUsulan,
-    String? fotoToko,
-    String? fotoProdukContoh,
-  }) async {
-    final authUser = _client.auth.currentUser;
-    if (authUser == null) {
-      throw Exception('User belum login');
-    }
-
-    print('🔵 SUBMIT: Untuk user ${authUser.id}');
-    print('   Nama Toko: $namaTokoUsulan');
-    print('   Username: $usernameUsulan');
-    print('   Foto Toko: $fotoToko');
-    print('   Foto Produk: $fotoProdukContoh');
-
-    // Cek apakah sudah ada pengajuan Pending
-    final existingApplication = await getSellerApplicationStatus();
-    if (existingApplication != null &&
-        existingApplication.statusPengajuan == 'Pending') {
-      print(
-        '❌ Ada pengajuan Pending sebelumnya: ${existingApplication.idPengajuan}',
-      );
-      throw Exception('Anda sudah memiliki pengajuan yang sedang diproses');
-    }
-
-    final now = DateTime.now();
-
-    // Update status_pengajuan_seller di profiles menjadi 'pending'
-    print('🟡 Mengupdate profile status ke pending...');
-    await _client
-        .from('profiles')
-        .update({
-          'status_pengajuan_seller': 'pending',
-          'updated_at': now.toIso8601String(),
-        })
-        .eq('id', authUser.id);
-
-    // Insert pengajuan
-    print('🟡 Insert ke pengajuan_seller...');
-    await _client.from('pengajuan_seller').insert({
-      'id_masyarakat': authUser.id,
-      'nama_toko_usulan': namaTokoUsulan,
-      'deskripsi_toko': deskripsiToko,
-      'alamat_toko': alamatToko,
-      'kategori_jualan': kategoriJualan,
-      'jenis_produk_jualan': jenisProdukJualan,
-      'username_usulan': usernameUsulan,
-      'password_hash_usulan': passwordHashUsulan,
-      'foto_toko': fotoToko,
-      'foto_produk_contoh': fotoProdukContoh,
-      'status_pengajuan': 'Pending',
-      'tanggal_pengajuan': now.toIso8601String(),
-      'created_at': now.toIso8601String(),
-      'updated_at': now.toIso8601String(),
-    });
-
-    print('✅ SUBMIT: Berhasil!');
-  }
-
-  @override
-  Future<SellerApplication?> getSellerApplicationStatus() async {
-    final authUser = _client.auth.currentUser;
-    if (authUser == null) return null;
-
-    try {
-      final result = await _client
-          .from('pengajuan_seller')
-          .select()
-          .eq('id_masyarakat', authUser.id)
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (result == null) return null;
-      return SellerApplication.fromJson(result);
-    } catch (e) {
-      print('Error getSellerApplicationStatus: $e');
-      return null;
-    }
+  String _generateReferenceCode() {
+    return 'RWD-${DateTime.now().millisecondsSinceEpoch}';
   }
 }

@@ -1,12 +1,12 @@
-// lib/features/profile/application/profile_controller.dart
-
 import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../data/profile_repository.dart';
 import '../data/supabase_profile_repository.dart';
-import 'profile_state.dart';
 import '../domain/seller_application.dart';
+import 'profile_state.dart';
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return SupabaseProfileRepository(Supabase.instance.client);
@@ -22,11 +22,10 @@ class ProfileController extends StateNotifier<ProfileState> {
     loadProfile();
     loadAvailableRewards();
     loadBankAccounts();
+    loadSellerApplication();
   }
 
   final ProfileRepository _repository;
-
-  // ========== PROFILE METHODS ==========
 
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true);
@@ -77,8 +76,6 @@ class ProfileController extends StateNotifier<ProfileState> {
     state = state.copyWith(updateErrorMessage: null);
   }
 
-  // ========== REWARD METHODS ==========
-
   Future<void> loadAvailableRewards() async {
     try {
       final rewards = await _repository.getAvailableRewards();
@@ -107,8 +104,6 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = state.copyWith(isRedeeming: false);
     }
   }
-
-  // ========== BANK ACCOUNT METHODS ==========
 
   Future<void> loadBankAccounts() async {
     state = state.copyWith(isLoadingBankAccounts: true);
@@ -206,7 +201,25 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
-  // ========== SELLER APPLICATION METHODS ==========
+  Future<void> loadSellerApplication() async {
+    state = state.copyWith(
+      isLoadingSellerApplication: true,
+      sellerApplicationErrorMessage: null,
+    );
+    try {
+      final application = await _repository.getLatestSellerApplication();
+      state = state.copyWith(
+        isLoadingSellerApplication: false,
+        sellerApplication: application,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingSellerApplication: false,
+        sellerApplication: null,
+        sellerApplicationErrorMessage: e.toString(),
+      );
+    }
+  }
 
   Future<String?> uploadSellerPhoto(File imageFile, String jenis) async {
     try {
@@ -218,20 +231,43 @@ class ProfileController extends StateNotifier<ProfileState> {
   }
 
   Future<bool> submitSellerApplication({
-    required String namaTokoUsulan,
+    String? fullName,
+    String? phone,
+    String? email,
+    String? storeName,
+    String? storeDescription,
+    String? storeAddress,
+    String? category,
+    String? productTypes,
+    String? usernameProposal,
+    String? passwordProposal,
+    String? namaTokoUsulan,
     String? deskripsiToko,
     String? alamatToko,
     String? kategoriJualan,
     String? jenisProdukJualan,
-    required String usernameUsulan,
-    required String passwordHashUsulan,
+    String? usernameUsulan,
+    String? passwordHashUsulan,
     String? fotoToko,
     String? fotoProdukContoh,
   }) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(
+      isSubmittingSellerApplication: true,
+      sellerApplicationErrorMessage: null,
+    );
 
     try {
       await _repository.submitSellerApplication(
+        fullName: fullName,
+        phone: phone,
+        email: email,
+        storeName: storeName,
+        storeDescription: storeDescription,
+        storeAddress: storeAddress,
+        category: category,
+        productTypes: productTypes,
+        usernameProposal: usernameProposal,
+        passwordProposal: passwordProposal,
         namaTokoUsulan: namaTokoUsulan,
         deskripsiToko: deskripsiToko,
         alamatToko: alamatToko,
@@ -242,15 +278,17 @@ class ProfileController extends StateNotifier<ProfileState> {
         fotoToko: fotoToko,
         fotoProdukContoh: fotoProdukContoh,
       );
-
       await loadProfile();
+      await loadSellerApplication();
       return true;
     } catch (e) {
-      print('Error submitSellerApplication: $e');
-      state = state.copyWith(updateErrorMessage: e.toString());
+      state = state.copyWith(
+        isSubmittingSellerApplication: false,
+        sellerApplicationErrorMessage: e.toString(),
+      );
       return false;
     } finally {
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isSubmittingSellerApplication: false);
     }
   }
 
@@ -262,6 +300,4 @@ class ProfileController extends StateNotifier<ProfileState> {
       return null;
     }
   }
-
-  // HAPUS: Future<bool> cancelSellerApplication() ... (tidak ada)
 }

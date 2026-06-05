@@ -1,5 +1,4 @@
 // lib/features/profile/presentation/pages/payment_method_page.dart
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -233,8 +232,8 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFB5FF77).withValues(alpha: 0.30),
-                      const Color(0xFF5BE22F).withValues(alpha: 0.14),
+                      const Color(0xFF8FCF8B).withValues(alpha: 0.24),
+                      const Color(0xFF4D8E63).withValues(alpha: 0.12),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.48, 1.0],
@@ -252,7 +251,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                   child: isLoading
                       ? const Center(
                           child: CircularProgressIndicator(
-                            color: Color(0xFF94FF38),
+                            color: Color(0xFF7CB78A),
                           ),
                         )
                       : _buildBody(accounts),
@@ -267,12 +266,12 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
           : Container(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF94FF38), Color(0xFF5BE22F)],
+                  colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
                 ),
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF94FF38).withValues(alpha: 0.4),
+                    color: const Color(0xFF4D8E63).withValues(alpha: 0.32),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -308,13 +307,13 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF94FF38).withValues(alpha: 0.1),
+                  color: const Color(0xFF8DCB94).withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_outlined,
                   size: 40,
-                  color: Color(0xFF94FF38),
+                  color: Color(0xFF8DCB94),
                 ),
               ),
               const SizedBox(height: 20),
@@ -339,7 +338,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
               Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF94FF38), Color(0xFF5BE22F)],
+                    colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
                   ),
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -372,7 +371,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(profileControllerProvider.notifier).loadBankAccounts(),
-      color: const Color(0xFF94FF38),
+      color: const Color(0xFF8DCB94),
       backgroundColor: const Color(0xFF0A1E19),
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -406,7 +405,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                 color: const Color(0xFF0A1E19).withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF94FF38).withValues(alpha: 0.22),
+                  color: const Color(0xFF8DCB94).withValues(alpha: 0.18),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -424,13 +423,13 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: account.isPrimary
-                          ? const Color(0xFF94FF38).withValues(alpha: 0.2)
+                          ? const Color(0xFF8DCB94).withValues(alpha: 0.18)
                           : Colors.white.withValues(alpha: 0.05),
                     ),
                     child: Icon(
                       _getBankIcon(account.bankName),
                       color: account.isPrimary
-                          ? const Color(0xFF94FF38)
+                          ? const Color(0xFF8DCB94)
                           : Colors.white.withValues(alpha: 0.6),
                       size: 28,
                     ),
@@ -479,12 +478,12 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: const Color(
-                                    0xFF94FF38,
+                                    0xFF8DCB94,
                                   ).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(999),
                                   border: Border.all(
                                     color: const Color(
-                                      0xFF94FF38,
+                                      0xFF8DCB94,
                                     ).withValues(alpha: 0.3),
                                   ),
                                 ),
@@ -493,7 +492,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF94FF38),
+                                    color: const Color(0xFF8DCB94),
                                   ),
                                 ),
                               ),
@@ -535,7 +534,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: const Color(0xFF94FF38).withValues(alpha: 0.4),
+                        color: const Color(0xFF8DCB94).withValues(alpha: 0.28),
                         width: 0.8,
                       ),
                     ),
@@ -561,7 +560,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                               Icon(
                                 Icons.star_outline,
                                 size: 18,
-                                color: Color(0xFF94FF38),
+                                color: Color(0xFF8DCB94),
                               ),
                               SizedBox(width: 10),
                               Text(
@@ -580,7 +579,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                             Icon(
                               Icons.edit_outlined,
                               size: 18,
-                              color: Color(0xFF94FF38),
+                              color: Color(0xFF8DCB94),
                             ),
                             SizedBox(width: 10),
                             Text(
@@ -815,7 +814,7 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
                   height: 52,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF94FF38), Color(0xFF5BE22F)],
+                      colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -891,19 +890,19 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+                color: const Color(0xFF8DCB94).withValues(alpha: 0.24),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+                color: const Color(0xFF8DCB94).withValues(alpha: 0.16),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFF94FF38),
+                color: Color(0xFF7CB78A),
                 width: 1.5,
               ),
             ),
@@ -977,19 +976,19 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+                      color: const Color(0xFF8DCB94).withValues(alpha: 0.24),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+                      color: const Color(0xFF8DCB94).withValues(alpha: 0.16),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF94FF38),
+                      color: Color(0xFF7CB78A),
                       width: 1.5,
                     ),
                   ),
@@ -1027,19 +1026,19 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+                      color: const Color(0xFF8DCB94).withValues(alpha: 0.24),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+                      color: const Color(0xFF8DCB94).withValues(alpha: 0.16),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF94FF38),
+                      color: Color(0xFF7CB78A),
                       width: 1.5,
                     ),
                   ),
@@ -1090,19 +1089,19 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF94FF38).withValues(alpha: 0.3),
+                color: const Color(0xFF8DCB94).withValues(alpha: 0.24),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+                color: const Color(0xFF8DCB94).withValues(alpha: 0.16),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: Color(0xFF94FF38),
+                color: Color(0xFF7CB78A),
                 width: 1.5,
               ),
             ),
@@ -1147,7 +1146,7 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
             color: const Color(0xFF1A2A25),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFF94FF38).withValues(alpha: 0.2),
+              color: const Color(0xFF8DCB94).withValues(alpha: 0.16),
             ),
           ),
           child: DropdownButtonHideUnderline(
