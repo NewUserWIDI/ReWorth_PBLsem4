@@ -11,12 +11,8 @@ import '../../../profile/domain/profile_user.dart';
 // ============ THEME COLORS ============
 const Color _primaryColor = Color(0xFF4CAF50); // Hijau terang untuk tombol
 const Color _primaryDarkColor = Color(0xFF2E7D32); // Hijau tua
-const Color _backgroundColor = Color(
-  0xFF001F1A,
-); // Background gelap kehijauan (original)
-const Color _cardColor = Color(
-  0xFF0D2A22,
-); // Card gelap kehijauan (lebih terang dari bg)
+const Color _backgroundColor = Color(0xFF001F1A); // Background
+const Color _cardColor = Color(0xFF0D2A22); // Card
 const Color _surfaceColor = Color(0xFF1A3A30); // Surface input field
 const Color _textColor = Color(0xFFFFFFFF); // PUTIH untuk text utama
 const Color _textSecondaryColor = Color(0xFFB0C4B0); // Abu-abu kehijauan terang
