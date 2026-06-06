@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:ui';
 
 import '../../application/profile_controller.dart';
 import '../../domain/reward_item.dart';
@@ -22,8 +23,8 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
   static const Color primaryLight = Color(0xFF4CAF50);
   static const Color primarySoft = Color(0xFF81C784);
   static const Color accentGold = Color(0xFFD4A056);
-  static const Color bgDark = Color(0xFF1A2E22);
-  static const Color bgCard = Color(0xFF243B2A);
+  static const Color bgDark = Color(0xFF0A1E19);
+  static const Color bgCard = Color(0xFF1A2E22);
   static const Color textWhite = Color(0xFFF5F5F5);
   static const Color textGrey = Color(0xFFB8C9B2);
 
@@ -84,7 +85,7 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
         ),
         title: Row(
           children: [
-            Icon(Icons.card_giftcard, color: primaryLight),
+            Icon(Icons.card_giftcard, color: accentGold), // Ubah jadi emas
             const SizedBox(width: 8),
             const Text(
               'Tukar Reward',
@@ -240,7 +241,7 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -258,17 +259,20 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icon dan badge poin
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(rewardIcon, color: primaryLight, size: 28),
+                      child: Icon(
+                        rewardIcon,
+                        color: Colors.white,
+                        size: 28,
+                      ), // Ubah jadi putih
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -276,21 +280,17 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.star_rounded,
-                            size: 12,
-                            color: primaryLight,
-                          ),
+                          Icon(Icons.star_rounded, size: 12, color: accentGold),
                           const SizedBox(width: 4),
                           Text(
                             '${reward.poinDibutuhkan}',
                             style: TextStyle(
-                              color: primaryLight,
+                              color: accentGold,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -302,7 +302,6 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Nama Reward
                 Text(
                   reward.namaReward,
                   style: const TextStyle(
@@ -315,7 +314,6 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
                 ),
                 const SizedBox(height: 4),
 
-                // Provider & Nominal (lebih informatif)
                 Text(
                   reward.description,
                   style: TextStyle(color: textGrey, fontSize: 11),
@@ -326,14 +324,13 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
                 const Spacer(),
                 const SizedBox(height: 10),
 
-                // Tombol Tukar
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: canRedeem
                         ? primaryGreen
-                        : Colors.white.withValues(alpha: 0.05),
+                        : Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -366,261 +363,360 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
     final filteredRewards = _getFilteredRewards(allRewards);
 
     return Scaffold(
-      backgroundColor: bgDark,
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-        ),
-        title: const Text(
-          'Tukar Poin Reward',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header poin card
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: bgCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: primarySoft.withValues(alpha: 0.15)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: primaryGreen.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      Icons.star_rounded,
-                      color: accentGold,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Total Poin',
-                          style: TextStyle(color: textGrey, fontSize: 13),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$totalPoints',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: primaryGreen.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Tersedia',
-                      style: TextStyle(
-                        color: primaryLight,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.black, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Cari reward...',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 14,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: Colors.grey.shade500,
-                    size: 20,
-                  ),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: Colors.grey.shade500,
-                            size: 18,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _searchQuery = '';
-                              _searchController.clear();
-                            });
-                          },
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide(
-                      color: Colors.grey.shade200,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide(color: primaryLight, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-
-            // Category chips
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SizedBox(
-                height: 40,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _categories.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    final isSelected = _selectedCategory == category;
-
-                    return FilterChip(
-                      label: Text(
-                        category,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          fontSize: 13,
-                        ),
-                      ),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          _selectedCategory = selected ? category : 'Semua';
-                        });
-                      },
-                      backgroundColor: isSelected ? primaryGreen : Colors.white,
-                      selectedColor: primaryGreen,
-                      checkmarkColor: Colors.white,
-                      side: BorderSide(
-                        color: isSelected ? primaryGreen : Colors.grey.shade300,
-                        width: 1,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            // Grid Rewards
-            if (isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else if (filteredRewards.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+      body: Stack(
+        children: [
+          const _PremiumBackdrop(),
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Row(
                     children: [
-                      Icon(
-                        Icons.search_off_rounded,
-                        size: 64,
-                        color: textGrey.withValues(alpha: 0.3),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                        child: IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.arrow_back_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        _searchQuery.isNotEmpty
-                            ? 'Reward "$_searchQuery" tidak ditemukan'
-                            : 'Belum ada reward tersedia',
-                        style: TextStyle(
-                          color: textGrey.withValues(alpha: 0.5),
-                          fontSize: 14,
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Tukar Poin Reward',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: filteredRewards.length,
-                itemBuilder: (context, index) {
-                  final reward = filteredRewards[index];
-                  return _buildRewardCard(
-                    reward,
-                    totalPoints,
-                    state.isRedeeming,
-                  );
-                },
-              ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: bgCard,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: primarySoft.withValues(alpha: 0.2),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: primaryGreen.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(
+                                  Icons.star_rounded,
+                                  color: accentGold, // Sudah emas
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Total Poin',
+                                      style: TextStyle(
+                                        color: textGrey,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$totalPoints',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: primaryGreen.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Text(
+                                  'Tersedia',
+                                  style: TextStyle(
+                                    color: primaryLight,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Cari reward...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 14,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: Colors.grey.shade500,
+                                size: 20,
+                              ),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: Icon(
+                                        Icons.close_rounded,
+                                        color: Colors.grey.shade500,
+                                        size: 18,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _searchQuery = '';
+                                          _searchController.clear();
+                                        });
+                                      },
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                    )
+                                  : null,
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide(
+                                  color: primaryLight,
+                                  width: 1.5,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: SizedBox(
+                            height: 40,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _categories.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 10),
+                              itemBuilder: (context, index) {
+                                final category = _categories[index];
+                                final isSelected =
+                                    _selectedCategory == category;
 
-            const SizedBox(height: 80),
-          ],
-        ),
+                                return FilterChip(
+                                  label: Text(
+                                    category,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _selectedCategory = selected
+                                          ? category
+                                          : 'Semua';
+                                    });
+                                  },
+                                  backgroundColor: isSelected
+                                      ? primaryGreen
+                                      : Colors.white,
+                                  selectedColor: primaryGreen,
+                                  checkmarkColor: Colors.white,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? primaryGreen
+                                        : Colors.grey.shade300,
+                                    width: 1,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        if (isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (filteredRewards.isEmpty)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.search_off_rounded,
+                                    size: 64,
+                                    color: textGrey.withValues(alpha: 0.3),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _searchQuery.isNotEmpty
+                                        ? 'Reward "$_searchQuery" tidak ditemukan'
+                                        : 'Belum ada reward tersedia',
+                                    style: TextStyle(
+                                      color: textGrey.withValues(alpha: 0.5),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.75,
+                                ),
+                            itemCount: filteredRewards.length,
+                            itemBuilder: (context, index) {
+                              final reward = filteredRewards[index];
+                              return _buildRewardCard(
+                                reward,
+                                totalPoints,
+                                state.isRedeeming,
+                              );
+                            },
+                          ),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _PremiumBackdrop extends StatelessWidget {
+  const _PremiumBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
+              stops: [0, 0.52, 1],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -40,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

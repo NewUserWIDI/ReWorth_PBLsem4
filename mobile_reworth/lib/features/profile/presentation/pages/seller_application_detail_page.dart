@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -49,51 +51,56 @@ class _SellerApplicationDetailPageState
     final status = user?.statusPengajuanSeller ?? 'nonaktif';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF001F1A),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(onBack: () => context.pop()),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildStatusCard(status, user),
-                    const SizedBox(height: 20),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          const _ApplicationDetailBackdrop(),
+          SafeArea(
+            child: Column(
+              children: [
+                _Header(onBack: () => context.pop()),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildStatusCard(status, user),
+                        const SizedBox(height: 20),
 
-                    // Data Pengajuan
-                    if (status == 'pending' && _application == null)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Column(
-                            children: [
-                              CircularProgressIndicator(
-                                color: Color(0xFFB5FF77),
+                        // Data Pengajuan
+                        if (status == 'pending' && _application == null)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: Column(
+                                children: [
+                                  CircularProgressIndicator(
+                                    color: Color(0xFFB5FF77),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Memuat data pengajuan...',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ],
                               ),
-                              SizedBox(height: 12),
-                              Text(
-                                'Memuat data pengajuan...',
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
 
-                    if (_application != null)
-                      _buildApplicationDataCard(_application!),
+                        if (_application != null)
+                          _buildApplicationDataCard(_application!),
 
-                    const SizedBox(height: 24),
-                    _buildActionButton(status, user?.id),
-                  ],
+                        const SizedBox(height: 24),
+                        _buildActionButton(status, user?.id),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -217,7 +224,7 @@ class _SellerApplicationDetailPageState
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: const Color(0xFF0A1E19).withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
@@ -320,20 +327,33 @@ class _SellerApplicationDetailPageState
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          context.push('/seller-registration');
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4CAF50),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
           ),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          'Ajukan Menjadi Seller',
-          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+        child: ElevatedButton(
+          onPressed: () {
+            context.push('/seller-registration');
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: const Color(0xFF082018),
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: Text(
+            'Ajukan Menjadi Seller',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF082018),
+            ),
+          ),
         ),
       ),
     );
@@ -366,24 +386,37 @@ class _SellerApplicationDetailPageState
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fitur dashboard seller segera hadir'),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4CAF50),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
           ),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          'Kelola Toko',
-          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+        child: ElevatedButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Fitur dashboard seller segera hadir'),
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: const Color(0xFF082018),
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: Text(
+            'Kelola Toko',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF082018),
+            ),
+          ),
         ),
       ),
     );
@@ -393,20 +426,33 @@ class _SellerApplicationDetailPageState
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          context.push('/seller-registration');
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4CAF50),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8DCB94), Color(0xFF4D8E63)],
           ),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          'Ajukan Ulang',
-          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700),
+        child: ElevatedButton(
+          onPressed: () {
+            context.push('/seller-registration');
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: const Color(0xFF082018),
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: Text(
+            'Ajukan Ulang',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF082018),
+            ),
+          ),
         ),
       ),
     );
@@ -414,6 +460,50 @@ class _SellerApplicationDetailPageState
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+// ============ BACKDROP WIDGET ============
+
+class _ApplicationDetailBackdrop extends StatelessWidget {
+  const _ApplicationDetailBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Gradien utama background
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
+              stops: [0, 0.52, 1],
+            ),
+          ),
+        ),
+        // Efek blur / glow tambahan
+        Positioned(
+          top: -40,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -428,37 +518,34 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: onBack,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.10),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.08),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
               ),
             ),
           ),
-          Text(
-            'Pengajuan Seller',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Pengajuan Seller',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
           ),
         ],

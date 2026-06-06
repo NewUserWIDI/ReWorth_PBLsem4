@@ -36,7 +36,7 @@ class _SellerApplicationPageState extends ConsumerState<SellerApplicationPage> {
         state.isLoadingSellerApplication || state.isLoadingBankAccounts;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF001F1A),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           const _ApplicationBackdrop(),
@@ -123,35 +123,31 @@ class _ApplicationBackdrop extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // Gradien utama background
         Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
+              stops: [0, 0.52, 1],
             ),
           ),
         ),
+        // Efek blur / glow tambahan
         Positioned(
-          top: -150,
+          top: -40,
           left: 0,
           right: 0,
-          child: IgnorePointer(
+          child: Center(
             child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 130, sigmaY: 130),
+              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
               child: Container(
-                width: 360,
-                height: 360,
+                width: 320,
+                height: 320,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF8FCF8B).withValues(alpha: 0.22),
-                      const Color(0xFF4A8F5C).withValues(alpha: 0.12),
-                      Colors.transparent,
-                    ],
-                    stops: const [0, 0.45, 1],
-                  ),
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
                 ),
               ),
             ),

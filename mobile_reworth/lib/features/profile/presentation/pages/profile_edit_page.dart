@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -186,12 +188,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       return;
     }
 
-    // ✅ Perbaikan: Update sesuai skema database
     final Map<String, dynamic> updateData = {
-      'nama_lengkap': currentNama, // Kolom utama
-      'no_telp': currentNoTelp, // Kolom utama
-      'nama': currentNama, // Kolom opsional untuk kompatibilitas
-      'nomor_hp': currentNoTelp, // Kolom opsional untuk kompatibilitas
+      'nama_lengkap': currentNama,
+      'no_telp': currentNoTelp,
+      'nama': currentNama,
+      'nomor_hp': currentNoTelp,
       'updated_at': DateTime.now().toIso8601String(),
     };
 
@@ -231,7 +232,6 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     }
   }
 
-  // ✅ Perbaikan: Sesuai dengan nilai yang valid di database
   String _getStatusPengajuanDisplay(String? status) {
     if (status == null) return '📝 Belum Daftar';
 
@@ -256,190 +256,190 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     final isUpdating = profileState.isUpdatingProfile || _isUploadingImage;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF001F1A),
-      appBar: AppBar(
-        title: const Text(
-          'Edit Profil',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: const Color(0xFF003B2F),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.pop(false),
-        ),
-      ),
-      body: user == null
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF94FF38)),
-            )
-          : Stack(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          const _ProfileBackdrop(),
+          SafeArea(
+            child: Column(
               children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF003B2F),
-                        Color(0xFF002D24),
-                        Color(0xFF001F1A),
-                      ],
-                    ),
-                  ),
-                ),
-                SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        // Profile Photo Section
-                        _buildProfilePhotoSection(),
-                        const SizedBox(height: 24),
-
-                        // Form Container
-                        Container(
+                _ProfileHeader(onBack: () => context.pop(false)),
+                Expanded(
+                  child: user == null
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF94FF38),
+                          ),
+                        )
+                      : SingleChildScrollView(
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF0A1E19,
-                            ).withValues(alpha: 0.78),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF94FF38,
-                              ).withValues(alpha: 0.22),
-                            ),
-                          ),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                _buildTextField(
-                                  controller: _namaController,
-                                  label: 'Nama Lengkap',
-                                  icon: Icons.person_outline,
-                                  hintText: 'Masukkan nama lengkap Anda',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Nama harus diisi';
-                                    }
-                                    if (value.length < 3) {
-                                      return 'Minimal 3 karakter';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                _buildTextField(
-                                  controller: _noTelpController,
-                                  label: 'Nomor Telepon',
-                                  icon: Icons.phone,
-                                  keyboardType: TextInputType.phone,
-                                  hintText: 'Contoh: 081234567890',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'No telepon harus diisi';
-                                    }
-                                    final clean = value.replaceAll(
-                                      RegExp(r'[^0-9]'),
-                                      '',
-                                    );
-                                    if (clean.length < 10) {
-                                      return 'Minimal 10 digit';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Info Container (Read-only)
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF0A1E19,
-                            ).withValues(alpha: 0.78),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF94FF38,
-                              ).withValues(alpha: 0.22),
-                            ),
-                          ),
                           child: Column(
                             children: [
-                              _buildInfoRow(
-                                icon: Icons.email_outlined,
-                                label: 'Email',
-                                value: user.email,
-                              ),
-                              const Divider(color: Colors.white10, height: 16),
-                              _buildInfoRow(
-                                icon: Icons.storefront_outlined,
-                                label: 'Status Seller',
-                                value: _getStatusPengajuanDisplay(
-                                  user.statusPengajuanSeller,
+                              // Profile Photo Section - Border putih
+                              _buildProfilePhotoSection(),
+                              const SizedBox(height: 24),
+
+                              // Form Container
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF0A1E19,
+                                  ).withValues(alpha: 0.78),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF94FF38,
+                                    ).withValues(alpha: 0.22),
+                                  ),
+                                ),
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    children: [
+                                      _buildTextField(
+                                        controller: _namaController,
+                                        label: 'Nama Lengkap',
+                                        icon: Icons.person_outline,
+                                        hintText: 'Masukkan nama lengkap Anda',
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Nama harus diisi';
+                                          }
+                                          if (value.length < 3) {
+                                            return 'Minimal 3 karakter';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _buildTextField(
+                                        controller: _noTelpController,
+                                        label: 'Nomor Telepon',
+                                        icon: Icons.phone,
+                                        keyboardType: TextInputType.phone,
+                                        hintText: 'Contoh: 081234567890',
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'No telepon harus diisi';
+                                          }
+                                          final clean = value.replaceAll(
+                                            RegExp(r'[^0-9]'),
+                                            '',
+                                          );
+                                          if (clean.length < 10) {
+                                            return 'Minimal 10 digit';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              const Divider(color: Colors.white10, height: 16),
-                              _buildInfoRow(
-                                icon: Icons.calendar_today_outlined,
-                                label: 'Bergabung Sejak',
-                                value: DateFormat(
-                                  'dd MMMM yyyy',
-                                ).format(user.createdAt),
+                              const SizedBox(height: 16),
+
+                              // Info Container (Read-only)
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF0A1E19,
+                                  ).withValues(alpha: 0.78),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF94FF38,
+                                    ).withValues(alpha: 0.22),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildInfoRow(
+                                      icon: Icons.email_outlined,
+                                      label: 'Email',
+                                      value: user.email,
+                                    ),
+                                    const Divider(
+                                      color: Colors.white10,
+                                      height: 16,
+                                    ),
+                                    _buildInfoRow(
+                                      icon: Icons.storefront_outlined,
+                                      label: 'Status Seller',
+                                      value: _getStatusPengajuanDisplay(
+                                        user.statusPengajuanSeller,
+                                      ),
+                                    ),
+                                    const Divider(
+                                      color: Colors.white10,
+                                      height: 16,
+                                    ),
+                                    _buildInfoRow(
+                                      icon: Icons.calendar_today_outlined,
+                                      label: 'Bergabung Sejak',
+                                      value: DateFormat(
+                                        'dd MMMM yyyy',
+                                      ).format(user.createdAt),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Save Button with Gradient
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF8DCB94),
+                                        Color(0xFF4D8E63),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed: isUpdating ? null : _saveProfile,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: const Color(0xFF082018),
+                                      shadowColor: Colors.transparent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    child: isUpdating
+                                        ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Color(0xFF082018),
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Simpan Perubahan',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF082018),
+                                            ),
+                                          ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-
-                        // Save Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: isUpdating ? null : _saveProfile,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF94FF38),
-                              foregroundColor: const Color(0xFF0A1A12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: isUpdating
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFF0A1A12),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Simpan Perubahan',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -458,10 +458,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF94FF38).withValues(alpha: 0.8),
-                    width: 2.5,
-                  ),
+                  border: Border.all(color: Colors.white, width: 2.5),
                 ),
                 child: CircleAvatar(
                   backgroundColor: Colors.white.withValues(alpha: 0.12),
@@ -469,11 +466,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                       ? FileImage(_selectedImage!)
                       : (avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null),
                   child: avatarUrl.isEmpty && _selectedImage == null
-                      ? const Icon(
-                          Icons.person,
-                          color: Color(0xFF94FF38),
-                          size: 56,
-                        )
+                      ? const Icon(Icons.person, color: Colors.white, size: 56)
                       : null,
                 ),
               ),
@@ -485,16 +478,13 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                   height: 34,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF94FF38),
-                    border: Border.all(
-                      color: const Color(0xFF0A1A12),
-                      width: 1.5,
-                    ),
+                    color: const Color(0xFFA8E6A0),
+                    border: Border.all(color: Colors.white, width: 1.5),
                   ),
                   child: const Icon(
                     Icons.camera_alt,
                     size: 18,
-                    color: Color(0xFF0A1A12),
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -537,11 +527,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         ),
         labelStyle: TextStyle(
           color: enabled
-              ? const Color(0xFF94FF38).withValues(alpha: 0.8)
+              ? const Color(0xFFA8E6A0)
               : Colors.white.withValues(alpha: 0.5),
           fontSize: 14,
         ),
-        prefixIcon: Icon(icon, color: const Color(0xFF94FF38), size: 22),
+        prefixIcon: Icon(icon, color: Colors.white, size: 22),
         filled: true,
         fillColor: enabled
             ? const Color(0xFF0A2A22).withValues(alpha: 0.6)
@@ -579,10 +569,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: const Color(0xFF94FF38).withValues(alpha: 0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: const Color(0xFF94FF38), size: 20),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -609,6 +599,95 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ============ BACKDROP WIDGET ============
+
+class _ProfileBackdrop extends StatelessWidget {
+  const _ProfileBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
+              stops: [0, 0.52, 1],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -40,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============ HEADER WIDGET ============
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.08),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: IconButton(
+              onPressed: onBack,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Edit Profil',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -72,54 +72,6 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
     );
   }
 
-  Future<void> _showEditDialog(BankAccount account) async {
-    final result = await showModalBottomSheet<_BankCardFormResult>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A2A25),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => _BankCardFormSheet(
-        initialBankName: account.bankName,
-        initialCardType: account.cardType,
-        initialOwnerName: account.ownerName,
-        initialAccountNumber: account.last4Digit,
-        initialExpiryDate: account.expiryDate,
-        isEditMode: true,
-      ),
-    );
-
-    if (result == null) return;
-
-    final success = await ref
-        .read(profileControllerProvider.notifier)
-        .updateBankAccount(
-          cardId: account.id,
-          bankName: result.bankName,
-          cardType: result.cardType,
-          ownerName: result.ownerName,
-          accountNumber: result.accountNumber,
-          expiryDate: result.expiryDate,
-        );
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: success
-            ? const Color(0xFF173A2C)
-            : const Color(0xFF732727),
-        content: Text(
-          success
-              ? 'Akun bank berhasil diperbarui.'
-              : 'Gagal memperbarui akun bank.',
-          style: GoogleFonts.poppins(fontSize: 13),
-        ),
-      ),
-    );
-  }
-
   Future<void> _confirmDelete(BankAccount account) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -399,199 +351,101 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
               await _confirmDelete(account);
               return false;
             },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0A1E19).withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF8DCB94).withValues(alpha: 0.18),
+            child: GestureDetector(
+              onTap: () {
+                context.push('/bank-account-detail', extra: account);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A1E19).withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFF8DCB94).withValues(alpha: 0.18),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.22),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.22),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: account.isPrimary
-                          ? const Color(0xFF8DCB94).withValues(alpha: 0.18)
-                          : Colors.white.withValues(alpha: 0.05),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                      child: Icon(
+                        _getBankIcon(account.bankName),
+                        color: account.isPrimary
+                            ? const Color(0xFF8DCB94)
+                            : Colors.white,
+                        size: 28,
+                      ),
                     ),
-                    child: Icon(
-                      _getBankIcon(account.bankName),
-                      color: account.isPrimary
-                          ? const Color(0xFF8DCB94)
-                          : Colors.white.withValues(alpha: 0.6),
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              account.bankName,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (account.cardType != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  account.cardType!,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                  ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                account.bankName,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                 ),
                               ),
-                            if (account.isPrimary) ...[
                               const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF8DCB94,
-                                  ).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(
+                              if (account.isPrimary) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: const Color(
                                       0xFF8DCB94,
-                                    ).withValues(alpha: 0.3),
+                                    ).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF8DCB94,
+                                      ).withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Utama',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF8DCB94),
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  'Utama',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF8DCB94),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          account.maskedNumber,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13.5,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                        if (account.ownerName.isNotEmpty)
-                          Text(
-                            account.ownerName,
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        if (account.expiryDate != null)
-                          Text(
-                            'Kadaluarsa: ${account.expiryDate}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: Colors.white.withValues(alpha: 0.4),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  PopupMenuButton<String>(
-                    color: const Color(0xFF1E2A25),
-                    elevation: 6,
-                    shadowColor: Colors.black87,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: const Color(0xFF8DCB94).withValues(alpha: 0.28),
-                        width: 0.8,
-                      ),
-                    ),
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                    onSelected: (value) async {
-                      if (value == 'edit') {
-                        await _showEditDialog(account);
-                      } else if (value == 'set_primary' && !account.isPrimary) {
-                        await ref
-                            .read(profileControllerProvider.notifier)
-                            .setPrimaryBankAccount(account.id);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (!account.isPrimary)
-                        const PopupMenuItem(
-                          value: 'set_primary',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.star_outline,
-                                size: 18,
-                                color: Color(0xFF8DCB94),
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Jadikan Utama',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                ), // ← PUTIH
-                              ),
+                              ],
                             ],
                           ),
-                        ),
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.edit_outlined,
-                              size: 18,
-                              color: Color(0xFF8DCB94),
+                          const SizedBox(height: 4),
+                          Text(
+                            account.maskedNumber,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.5,
+                              color: Colors.white.withValues(alpha: 0.7),
                             ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Edit',
-                              style: TextStyle(color: Colors.white), // ← PUTIH
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -718,9 +572,8 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
   void initState() {
     super.initState();
     if (widget.initialBankName != null) _bank.text = widget.initialBankName!;
-    if (widget.initialCardType != null) {
+    if (widget.initialCardType != null)
       _selectedCardType = widget.initialCardType;
-    }
     if (widget.initialOwnerName != null) _owner.text = widget.initialOwnerName!;
     if (widget.initialAccountNumber != null) {
       if (widget.isEditMode) {
@@ -912,14 +765,11 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
             ),
           ),
           validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Wajib diisi';
-            }
+            if (value == null || value.trim().isEmpty) return 'Wajib diisi';
             if (!isEditMode) {
               final cleanNumber = value.replaceAll(RegExp(r'\s+'), '');
-              if (cleanNumber.length < 6) {
+              if (cleanNumber.length < 6)
                 return 'Minimal 6 digit nomor rekening';
-              }
             }
             return null;
           },
@@ -996,9 +846,8 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return null;
                   final month = int.tryParse(value);
-                  if (month != null && (month < 1 || month > 12)) {
+                  if (month != null && (month < 1 || month > 12))
                     return 'Bulan 1-12';
-                  }
                   return null;
                 },
               ),
@@ -1046,9 +895,7 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return null;
                   final year = int.tryParse(value);
-                  if (year != null && year < 24) {
-                    return 'Tahun tidak valid';
-                  }
+                  if (year != null && year < 24) return 'Tahun tidak valid';
                   return null;
                 },
               ),
@@ -1111,9 +958,8 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
             ),
           ),
           validator: (value) {
-            if (requiredField && (value == null || value.trim().isEmpty)) {
+            if (requiredField && (value == null || value.trim().isEmpty))
               return 'Wajib diisi';
-            }
             return null;
           },
         ),
@@ -1180,9 +1026,7 @@ class _BankCardFormSheetState extends State<_BankCardFormSheet> {
   }
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     String accountNumber = _number.text.trim();
 

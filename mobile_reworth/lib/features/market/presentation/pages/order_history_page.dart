@@ -261,16 +261,16 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
     final filteredOrders = _filteredOrders();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF001F1A),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          const _HistoryBackdrop(),
+          const _OrderBackdrop(),
           SafeArea(
             child: Column(
               children: [
-                _HistoryHeader(onBack: () => Navigator.of(context).maybePop()),
+                _OrderHeader(onBack: () => Navigator.of(context).maybePop()),
                 const SizedBox(height: 8),
-                _HistoryTabBar(
+                _OrderTabBar(
                   selectedTab: _selectedTab,
                   onChanged: (tab) => setState(() => _selectedTab = tab),
                 ),
@@ -350,43 +350,42 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   }
 }
 
-class _HistoryBackdrop extends StatelessWidget {
-  const _HistoryBackdrop();
+class _OrderBackdrop extends StatelessWidget {
+  const _OrderBackdrop();
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // Gradien utama background
         Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
-              stops: [0.0, 0.48, 1.0],
+              colors: [
+                Color(0xFF003B2F), // hijau tua bagian atas
+                Color(0xFF002D24), // hijau tengah
+                Color(0xFF001F1A), // hijau paling gelap bawah
+              ],
+              stops: [0, 0.52, 1],
             ),
           ),
         ),
+        // Efek blur / glow tambahan
         Positioned(
-          top: -150,
+          top: -40,
           left: 0,
           right: 0,
-          child: IgnorePointer(
+          child: Center(
             child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 130, sigmaY: 130),
+              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
               child: Container(
-                width: 340,
-                height: 340,
+                width: 320,
+                height: 320,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF8FCF8B).withValues(alpha: 0.24),
-                      const Color(0xFF4A8F5C).withValues(alpha: 0.10),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.48, 1.0],
-                  ),
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
                 ),
               ),
             ),
@@ -397,8 +396,8 @@ class _HistoryBackdrop extends StatelessWidget {
   }
 }
 
-class _HistoryHeader extends StatelessWidget {
-  const _HistoryHeader({required this.onBack});
+class _OrderHeader extends StatelessWidget {
+  const _OrderHeader({required this.onBack});
 
   final VoidCallback onBack;
 
@@ -442,8 +441,8 @@ class _HistoryHeader extends StatelessWidget {
   }
 }
 
-class _HistoryTabBar extends StatelessWidget {
-  const _HistoryTabBar({required this.selectedTab, required this.onChanged});
+class _OrderTabBar extends StatelessWidget {
+  const _OrderTabBar({required this.selectedTab, required this.onChanged});
 
   final _OrderTab selectedTab;
   final ValueChanged<_OrderTab> onChanged;

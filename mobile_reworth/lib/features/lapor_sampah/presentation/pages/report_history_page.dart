@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:ui';
 import '../../application/report_controller.dart';
 import '../../domain/report.dart';
 import '../../domain/waste_type.dart';
@@ -42,35 +43,71 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     final reports = _getFilteredReports(reportController);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF003B2F), // SAMA DENGAN APP BAR
-      appBar: AppBar(
-        title: const Text(
-          'Riwayat Lapor Sampah',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Background gradien premium
+          const _PremiumBackdrop(),
+          // Konten utama
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                        child: IconButton(
+                          onPressed: _goBack,
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Riwayat Lapor Sampah',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Custom Tab Bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: _buildCustomTabBar(),
+                ),
+                // Konten utama scrollable
+                Expanded(
+                  child: reportState.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF8EEA5B),
+                          ),
+                        )
+                      : _buildReportList(reportController, reports),
+                ),
+              ],
+            ),
           ),
-        ),
-        backgroundColor: const Color(0xFF003B2F),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-          onPressed: _goBack,
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: _buildCustomTabBar(),
-          ),
-        ),
+        ],
       ),
-      body: reportState.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF8EEA5B)),
-            )
-          : _buildReportList(reportController, reports),
     );
   }
 
@@ -234,9 +271,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(
-          0xFF0A1E19,
-        ).withOpacity(0.92), // SAMA PERSIS DENGAN ORDER HISTORY
+        color: const Color(0xFF0A1E19).withOpacity(0.92),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: Colors.white.withOpacity(0.10)),
         boxShadow: [
@@ -421,7 +456,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _buildProgressIndicator(report),
                   ),
-                // TOMBOL LIHAT DETAIL LENGKAP - SAMA SEPERTI ORDER HISTORY
+                // TOMBOL LIHAT DETAIL LENGKAP
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -505,22 +540,15 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isActive
-                          ? const Color(0xFF8DCB94) // Hijau jika aktif
-                          : Colors.white.withOpacity(
-                              0.1,
-                            ), // Abu-abu jika tidak aktif
+                          ? const Color(0xFF8DCB94)
+                          : Colors.white.withOpacity(0.1),
                     ),
                     child: Icon(
-                      steps[index]['icon']
-                          as IconData, // TETAP PAKAI ICON ASLI (send, hourglass, verified)
+                      steps[index]['icon'] as IconData,
                       size: 14,
                       color: isActive
-                          ? const Color(
-                              0xFF082018,
-                            ) // Text hijau gelap jika aktif
-                          : Colors.white.withOpacity(
-                              0.4,
-                            ), // Putih transparan jika tidak aktif
+                          ? const Color(0xFF082018)
+                          : Colors.white.withOpacity(0.4),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -530,11 +558,8 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: isActive
-                          ? Colors
-                                .white // Putih jika aktif
-                          : Colors.white.withOpacity(
-                              0.4,
-                            ), // Putih transparan jika tidak aktif
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.4),
                     ),
                   ),
                 ],
@@ -545,50 +570,14 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                     height: 2,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     color: (index + 1) < currentStep
-                        ? const Color(0xFF8DCB94) // Garis hijau jika aktif
-                        : Colors.white.withOpacity(
-                            0.1,
-                          ), // Garis abu-abu jika tidak aktif
+                        ? const Color(0xFF8DCB94)
+                        : Colors.white.withOpacity(0.1),
                   ),
                 ),
             ],
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildStep(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isActive
-                ? const Color(0xFF8DCB94)
-                : Colors.white.withOpacity(0.1),
-          ),
-          child: Icon(
-            icon,
-            size: 14,
-            color: isActive
-                ? const Color(0xFF082018)
-                : Colors.white.withOpacity(0.4),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.4),
-          ),
-        ),
-      ],
     );
   }
 
@@ -626,7 +615,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
       case WasteType.organic:
         return Icons.eco;
       case WasteType.inorganic:
-        return Icons.production_quantity_limits;
+        return Icons.recycling;
       case WasteType.b3:
         return Icons.warning_amber_rounded;
       case WasteType.mixed:
@@ -997,7 +986,7 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: Colors.white.withOpacity(0.4)),
+        Icon(icon, size: 18, color: Colors.white),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -1020,6 +1009,47 @@ class _ReportHistoryPageState extends ConsumerState<ReportHistoryPage> {
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Widget PremiumBackdrop
+class _PremiumBackdrop extends StatelessWidget {
+  const _PremiumBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF003B2F), Color(0xFF002D24), Color(0xFF001F1A)],
+              stops: [0, 0.52, 1],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -40,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 135, sigmaY: 135),
+              child: Container(
+                width: 320,
+                height: 320,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFB7F164).withValues(alpha: 0.14),
+                ),
+              ),
+            ),
           ),
         ),
       ],

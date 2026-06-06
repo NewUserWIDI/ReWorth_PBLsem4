@@ -23,12 +23,14 @@ import 'package:mobile_reworth/features/market/presentation/pages/qris_payment_p
 import 'package:mobile_reworth/features/market/presentation/pages/seller_registration_page.dart';
 import 'package:mobile_reworth/features/market/presentation/pages/wishlist_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/address_page.dart';
+import 'package:mobile_reworth/features/profile/presentation/pages/bank_account_detail_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/payment_method_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_edit_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/profile_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/rewards_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/seller_application_detail_page.dart';
 import 'package:mobile_reworth/features/profile/presentation/pages/seller_application_page.dart';
+import 'package:mobile_reworth/features/profile/domain/bank_account.dart';
 import 'package:mobile_reworth/shared/widgets/app_card.dart';
 import 'package:mobile_reworth/shared/widgets/top_curved_header_layout.dart';
 
@@ -157,6 +159,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/payment-method',
         builder: (context, state) => const PaymentMethodPage(),
+      ),
+      GoRoute(
+        path: '/bank-account-detail',
+        name: 'bank-account-detail',
+        builder: (context, state) {
+          final account = state.extra as BankAccount;
+          return BankAccountDetailPage(account: account);
+        },
       ),
       GoRoute(
         path: '/profile-edit',
