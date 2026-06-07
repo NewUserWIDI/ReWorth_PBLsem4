@@ -23,7 +23,7 @@ class MarketPage extends ConsumerStatefulWidget {
 
 class _MarketPageState extends ConsumerState<MarketPage> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategory = 'Semua';
+  _SortOption _selectedSort = _SortOption.terlaris;
 
   @override
   void dispose() {
@@ -92,11 +92,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                 ),
                 data: (products) {
                   final wishlistIds = ref.watch(wishlistControllerProvider);
-                  final categories = _buildCategories(products);
-                  if (!categories.contains(_selectedCategory)) {
-                    _selectedCategory = 'Semua';
-                  }
-
                   final filteredProducts = _filterProducts(products);
                   return ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -108,7 +103,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                       const SizedBox(height: 24),
                       _buildBanner(),
                       const SizedBox(height: 18),
-                      _buildCategoryChips(categories),
+                      _buildSortChips(),
                       const SizedBox(height: 20),
                       if (filteredProducts.isEmpty)
                         Padding(
@@ -122,7 +117,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                         LayoutBuilder(
                           builder: (context, constraints) {
                             final isNarrow = constraints.maxWidth < 380;
-                            final aspectRatio = isNarrow ? 0.62 : 0.68;
                             return GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
@@ -132,7 +126,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                                     crossAxisCount: 2,
                                     mainAxisSpacing: 14,
                                     crossAxisSpacing: 14,
-                                    childAspectRatio: aspectRatio,
+                                    mainAxisExtent: isNarrow ? 286 : 300,
                                   ),
                               itemBuilder: (context, index) {
                                 final product = filteredProducts[index];
@@ -235,7 +229,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
   Widget _buildSearchBar() {
     return Container(
       height: 54,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(18),
@@ -252,93 +245,58 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Icon(
+      child: TextField(
+        controller: _searchController,
+        onChanged: (_) => setState(() {}),
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: Colors.white,
+        ),
+        cursorColor: const Color(0xFFD8F0C8),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.transparent,
+          prefixIcon: Icon(
             Icons.search_rounded,
             size: 20,
             color: Colors.white.withValues(alpha: 0.76),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: Colors.white,
-              ),
-              cursorColor: const Color(0xFFD8F0C8),
-              decoration: InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                hintText: 'Cari produk',
-                hintStyle: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.46),
-                ),
-              ),
-            ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          hintText: 'Cari produk',
+          hintStyle: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: Colors.white.withValues(alpha: 0.46),
           ),
-        ],
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
       ),
     );
   }
 
   Widget _buildBanner() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          left: 24,
-          right: 24,
-          top: -18,
-          child: _AmbientGlow(
-            size: 130,
-            color: Colors.white.withValues(alpha: 0.10),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 26,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: Image.asset(
-              'assets/images/banner_market.png',
-              width: double.infinity,
-              fit: BoxFit.fitWidth,
-            ),
-          ),
-        ),
-      ],
+    return const _MarketHeroBanner(
+      title: 'Mini Market',
+      subtitle: 'Temukan produk daur ulang pilihan dengan kualitas terbaik.',
+      ctaLabel: 'Lihat Detail',
+      imageAsset: 'assets/images/home_banner_mini_market.png',
     );
   }
 
-  Widget _buildCategoryChips(List<String> categories) {
+  Widget _buildSortChips() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 2, bottom: 12),
           child: Text(
-            'Kategori',
+            'Urutkan',
             style: GoogleFonts.poppins(
               fontSize: 19,
               fontWeight: FontWeight.w700,
@@ -347,41 +305,36 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           ),
         ),
         SizedBox(
-          height: 98,
+          height: 52,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
+            itemCount: _SortOption.values.length,
             separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final category = categories[index];
-              final isActive = category == _selectedCategory;
+              final option = _SortOption.values[index];
+              final isActive = option == _selectedSort;
               return InkWell(
-                borderRadius: BorderRadius.circular(28),
-                onTap: () {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
-                },
+                borderRadius: BorderRadius.circular(999),
+                onTap: () => setState(() => _selectedSort = option),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeOut,
-                  width: 84,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 10,
+                    horizontal: 18,
+                    vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(999),
                     gradient: isActive
                         ? const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0xFFF5FAEE), Color(0xFFDDEFD1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFF6FBEF), Color(0xFFD7EDC7)],
                           )
                         : null,
                     color: isActive
                         ? null
-                        : Colors.white.withValues(alpha: 0.05),
+                        : Colors.white.withValues(alpha: 0.06),
                     border: Border.all(
                       color: Colors.white.withValues(
                         alpha: isActive ? 0.16 : 0.12,
@@ -397,40 +350,27 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                           ]
                         : null,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isActive
-                              ? const Color(0xFFEAF4E2)
-                              : Colors.white.withValues(alpha: 0.08),
-                        ),
-                        child: Icon(
-                          _categoryIcon(category),
-                          size: 22,
-                          color: isActive
-                              ? const Color(0xFF163127)
-                              : Colors.white,
-                        ),
+                      Icon(
+                        option.icon,
+                        size: 18,
+                        color: isActive
+                            ? const Color(0xFF082018)
+                            : Colors.white.withValues(alpha: 0.82),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        category,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        option.label,
                         style: GoogleFonts.poppins(
-                          fontSize: 11.8,
+                          fontSize: 13,
                           fontWeight: isActive
                               ? FontWeight.w600
                               : FontWeight.w500,
                           color: isActive
                               ? const Color(0xFF082018)
-                              : Colors.white.withValues(alpha: 0.78),
+                              : Colors.white.withValues(alpha: 0.82),
                         ),
                       ),
                     ],
@@ -452,15 +392,15 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Color(0xFF13372B), Color(0xFF1E4B3A), Color(0xFF315E4C)],
-          stops: [0.0, 0.55, 1.0],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF3FBEA), Color(0xFFD8EDC6), Color(0xFFC1E09A)],
+          stops: [0.0, 0.62, 1.0],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
+            color: Colors.black.withValues(alpha: 0.18),
             blurRadius: 28,
             offset: const Offset(0, 12),
           ),
@@ -476,7 +416,19 @@ class _MarketPageState extends ConsumerState<MarketPage> {
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.10),
+                color: Colors.white.withValues(alpha: 0.30),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 22,
+            bottom: -50,
+            child: Container(
+              width: 180,
+              height: 110,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: Colors.white.withValues(alpha: 0.18),
               ),
             ),
           ),
@@ -497,7 +449,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 19,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: const Color(0xFF173427),
                           height: 1.25,
                         ),
                       ),
@@ -509,7 +461,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
-                          color: Colors.white.withValues(alpha: 0.86),
+                          color: const Color(0xFF4B675A),
                           height: 1.35,
                         ),
                       ),
@@ -529,8 +481,8 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                       ),
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF082018),
+                      backgroundColor: const Color(0xFF184635),
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(999),
@@ -562,44 +514,47 @@ class _MarketPageState extends ConsumerState<MarketPage> {
     );
   }
 
-  List<String> _buildCategories(List<MarketProduct> products) {
-    final fromDb =
-        products
-            .map((p) => p.kategori.trim())
-            .where((v) => v.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort();
-    return ['Semua', ...fromDb];
-  }
-
   List<MarketProduct> _filterProducts(List<MarketProduct> products) {
     final query = _searchController.text.trim().toLowerCase();
-    return products.where((product) {
-      final passCategory =
-          _selectedCategory == 'Semua' || product.kategori == _selectedCategory;
-      if (!passCategory) return false;
+    final filtered = products.where((product) {
       if (query.isEmpty) return true;
       return product.namaProduk.toLowerCase().contains(query) ||
           product.namaToko.toLowerCase().contains(query) ||
           product.kategori.toLowerCase().contains(query);
     }).toList();
+    filtered.sort((a, b) => _selectedSort.compare(a, b));
+    return filtered;
   }
+}
 
-  IconData _categoryIcon(String category) {
-    final key = category.toLowerCase();
-    if (key.contains('semua')) return Icons.apps_rounded;
-    if (key.contains('kompos') || key.contains('organik')) {
-      return Icons.spa_rounded;
+enum _SortOption {
+  terlaris('Terlaris', Icons.local_fire_department_rounded),
+  terbaru('Terbaru', Icons.schedule_rounded),
+  termurah('Termurah', Icons.south_rounded),
+  termahal('Termahal', Icons.north_rounded);
+
+  const _SortOption(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+
+  int compare(MarketProduct a, MarketProduct b) {
+    switch (this) {
+      case _SortOption.terlaris:
+        final bySales = b.totalTerjual.compareTo(a.totalTerjual);
+        return bySales != 0 ? bySales : b.idProduk.compareTo(a.idProduk);
+      case _SortOption.terbaru:
+        final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final byDate = bDate.compareTo(aDate);
+        return byDate != 0 ? byDate : b.idProduk.compareTo(a.idProduk);
+      case _SortOption.termurah:
+        final byPrice = a.harga.compareTo(b.harga);
+        return byPrice != 0 ? byPrice : a.namaProduk.compareTo(b.namaProduk);
+      case _SortOption.termahal:
+        final byPrice = b.harga.compareTo(a.harga);
+        return byPrice != 0 ? byPrice : a.namaProduk.compareTo(b.namaProduk);
     }
-    if (key.contains('kerajinan') || key.contains('aksesoris')) {
-      return Icons.chair_rounded;
-    }
-    if (key.contains('eco') || key.contains('living')) {
-      return Icons.lightbulb_outline_rounded;
-    }
-    if (key.contains('daur')) return Icons.recycling_rounded;
-    return Icons.category_rounded;
   }
 }
 
@@ -618,6 +573,149 @@ class _AmbientGlow extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _MarketHeroBanner extends StatelessWidget {
+  const _MarketHeroBanner({
+    required this.title,
+    required this.subtitle,
+    required this.ctaLabel,
+    required this.imageAsset,
+  });
+
+  final String title;
+  final String subtitle;
+  final String ctaLabel;
+  final String imageAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 214,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              imageAsset,
+              fit: BoxFit.cover,
+              alignment: Alignment.centerRight,
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    const Color(0xFFEAF6DD),
+                    const Color(0xFFEAF6DD).withValues(alpha: 0.98),
+                    const Color(0xFFEAF6DD).withValues(alpha: 0.82),
+                    const Color(0xFFEAF6DD).withValues(alpha: 0.44),
+                    const Color(0xFFEAF6DD).withValues(alpha: 0.10),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.22, 0.42, 0.60, 0.78, 1.0],
+                ),
+              ),
+            ),
+            Positioned(
+              left: -26,
+              top: -30,
+              child: Container(
+                width: 132,
+                height: 132,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.16),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 32,
+              top: 18,
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFCAEB9F).withValues(alpha: 0.20),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 148, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      height: 1.08,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF173427),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    subtitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5,
+                      height: 1.52,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF425F52),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      color: const Color(0xFF184635),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 14,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      ctaLabel,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
