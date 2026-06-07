@@ -18,13 +18,29 @@ $filters = [
 ];
 
 $reports = dlh_reports($filters);
+
 $hasStatusFilter = trim((string) $filters['status']) !== '';
+
 if (!$hasStatusFilter) {
-    $reports = array_values(array_filter($reports, fn (array $item): bool => in_array((string) ($item['status_laporan'] ?? ''), ['menunggu', 'diproses'], true)));
+    $reports = array_values(array_filter(
+        $reports,
+        fn (array $item): bool => in_array(
+            (string) ($item['status_laporan'] ?? ''),
+            ['pending', 'processing'],
+            true
+        )
+    ));
 }
 
-$reports = array_values(array_filter($reports, fn (array $item): bool => is_numeric($item['latitude'] ?? null) && is_numeric($item['longitude'] ?? null)));
+$reports = array_values(array_filter(
+    $reports,
+    fn (array $item): bool =>
+        is_numeric($item['latitude'] ?? null)
+        && is_numeric($item['longitude'] ?? null)
+));
+
 $reports = array_slice($reports, 0, 300);
+
 
 $markers = array_map(fn (array $item): array => [
     'id' => (int) $item['id_laporan'],
@@ -65,10 +81,13 @@ render_layout('Peta Lokasi', function () use ($filters, $kecamatanOptions, $repo
                 </select>
                 <select class="select" name="status">
                     <option value="">Status aktif (default)</option>
-                    <option value="menunggu" <?= $filters['status'] === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
-                    <option value="diproses" <?= $filters['status'] === 'diproses' ? 'selected' : '' ?>>Diproses</option>
-                    <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="ditolak" <?= $filters['status'] === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                   <select class="select" name="status">
+                    <option value="">Status aktif (default)</option>
+                    <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
+                    <option value="processing" <?= $filters['status'] === 'processing' ? 'selected' : '' ?>>Diproses</option>
+                    <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Selesai</option>
+                    <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
+                </select>
                 </select>
             </div>
             <div class="toolbar-right">
@@ -83,9 +102,20 @@ render_layout('Peta Lokasi', function () use ($filters, $kecamatanOptions, $repo
         <div class="map-toolbar">
             <div class="quick-cards">
                 <article class="quick-card"><strong><?= e((string) count($reports)) ?></strong><span>Total Titik Aktif</span></article>
-                <article class="quick-card"><strong><?= e((string) dlh_severity_count($reports, 'ringan')) ?></strong><span>Ringan</span></article>
-                <article class="quick-card"><strong><?= e((string) dlh_severity_count($reports, 'sedang')) ?></strong><span>Sedang</span></article>
-                <article class="quick-card"><strong><?= e((string) dlh_severity_count($reports, 'parah')) ?></strong><span>Parah</span></article>
+                <article class="quick-card">
+                    <strong><?= e((string) dlh_severity_count($reports, 'Ringan')) ?></strong>
+                    <span>Ringan</span>
+                </article>
+
+                <article class="quick-card">
+                    <strong><?= e((string) dlh_severity_count($reports, 'Sedang')) ?></strong>
+                    <span>Sedang</span>
+                </article>
+
+                <article class="quick-card">
+                    <strong><?= e((string) dlh_severity_count($reports, 'Berat')) ?></strong>
+                    <span>Parah</span>
+                </article>
             </div>
             <div class="map-legend" style="margin-top:12px;">
                 <span><i class="dot dot-light"></i> Hijau = Ringan</span>
@@ -98,36 +128,57 @@ render_layout('Peta Lokasi', function () use ($filters, $kecamatanOptions, $repo
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <pre>
     <script>
         (function () {
             const mapNode = document.getElementById('dlh-full-map');
             if (!mapNode || typeof window.L === 'undefined') return;
 
             const points = <?= json_encode($markers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-            const map = L.map(mapNode).setView([-6.92, 107.62], 12);
+            console.log('POINTS = ', points);
+            const map = L.map(mapNode).setView([-7.94, 112.61], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; OpenStreetMap'
             }).addTo(map);
 
             points.forEach((point) => {
-                const color = point.tingkat === 'parah' ? '#EF4444' : (point.tingkat === 'sedang' ? '#F59E0B' : '#2E7D32');
-                const icon = L.divIcon({
+                console.log(point);
+                const tingkat = (point.tingkat || '').toLowerCase();
+                const color =
+                    tingkat === 'berat'
+                        ? '#EF4444'
+                        : tingkat === 'sedang'
+                            ? '#F59E0B'
+                            : '#2E7D32';
+                 const icon = L.divIcon({
                     className: '',
-                    html: `<span style="display:inline-block;width:14px;height:14px;border-radius:999px;background:${color};border:2px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.28)"></span>`,
-                    iconSize: [14, 14]
+                    html: `<div style="
+                        width:18px;
+                        height:18px;
+                        border-radius:50%;
+                        background:${color};
+                        border:3px solid white;
+                        box-shadow:0 0 6px rgba(0,0,0,.5);
+                    "></div>`,
+                    iconSize: [18, 18]
                 });
-                const detailUrl = '<?= e(url('app/modules/dlh/laporan_detail.php?id=')) ?>' + encodeURIComponent(point.id);
-                const popup = `
-                    <strong>#${point.id}</strong><br>
-                    ${point.jalan}<br>
-                    ${point.kecamatan}<br>
-                    Tingkat: ${point.tingkat}<br>
-                    Status: ${point.status}<br>
-                    ${point.waktu}<br>
-                    <a href="${detailUrl}" style="display:inline-block;margin-top:8px;">Lihat Detail</a>
-                `;
-                L.marker([point.lat, point.lng], { icon }).addTo(map).bindPopup(popup);
+
+               const detailUrl = '<?= e(url('app/modules/dlh/laporan_detail.php?id=')) ?>' + encodeURIComponent(point.id);
+
+const popup = `
+    <strong>#${point.id}</strong><br>
+    ${point.jalan}<br>
+    ${point.kecamatan}<br>
+    Tingkat: ${point.tingkat}<br>
+    Status: ${point.status}<br>
+    ${point.waktu}<br>
+    <a href="${detailUrl}" style="display:inline-block;margin-top:8px;">Lihat Detail</a>
+`;
+
+L.marker([point.lat, point.lng], { icon })
+    .addTo(map)
+    .bindPopup(popup);
             });
         })();
     </script>
