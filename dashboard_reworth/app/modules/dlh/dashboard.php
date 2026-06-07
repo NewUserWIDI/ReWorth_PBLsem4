@@ -93,7 +93,9 @@ render_layout('Dashboard DLH', function () use ($allReports, $activeReports, $ma
         <div class="report-list">
             <?php foreach (array_slice($allReports, 0, 5) as $report): ?>
                 <article class="report-item">
-                    <img class="report-thumb" src="<?= e(url((string) $report['foto_sampah'])) ?>" alt="Foto laporan <?= e((string) $report['id_laporan']) ?>">
+                    <img class="report-thumb"
+                        src="<?= e((string) $report['foto_sampah']) ?>"
+                            alt="Foto laporan <?= e((string) $report['id_laporan']) ?>">
                     <div>
                         <h3>#<?= e((string) $report['id_laporan']) ?> - <?= e((string) $report['jalan']) ?></h3>
                         <p><?= e((string) $report['kelurahan']) ?>, <?= e((string) $report['kecamatan']) ?> | <?= e((string) $report['waktu_lapor']) ?></p>
