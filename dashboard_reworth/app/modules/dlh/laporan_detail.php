@@ -55,7 +55,9 @@ render_layout('Detail Laporan', function () use ($report): void {
             <div class="form-stack">
                 <article class="form-card">
                     <div class="panel-header"><h2>Foto Laporan</h2></div>
-                    <img src="<?= e(url((string) $report['foto_sampah'])) ?>" alt="Foto laporan" style="width:100%;border-radius:14px;max-height:260px;object-fit:cover;">
+                    <img src="<?= e((string) $report['foto_sampah']) ?>"
+                    alt="Foto laporan"
+                    style="width:100%;border-radius:14px;max-height:260px;object-fit:cover;">
                 </article>
                 <article class="form-card">
                     <div class="panel-header"><h2>Titik Lokasi</h2></div>

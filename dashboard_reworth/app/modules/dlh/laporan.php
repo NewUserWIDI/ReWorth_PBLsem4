@@ -105,7 +105,12 @@ render_layout('Laporan Sampah', function () use ($reports, $filters, $tab, $keca
                         <?php foreach ($reports as $report): ?>
                             <tr>
                                 <td>#<?= e((string) $report['id_laporan']) ?></td>
-                                <td><img class="report-thumb" src="<?= e(url((string) $report['foto_sampah'])) ?>" alt="foto laporan" style="width:54px;height:54px;"></td>
+                                <td>
+                                <img class="report-thumb"
+                                    src="<?= e((string) $report['foto_sampah']) ?>"
+                                    alt="foto laporan"
+                                    style="width:54px;height:54px;">
+                            </td>
                                 <td><?= e((string) $report['jalan']) ?></td>
                                 <td><?= e((string) $report['kecamatan']) ?></td>
                                 <td><?= e(ucfirst((string) $report['jenis_sampah'])) ?></td>
