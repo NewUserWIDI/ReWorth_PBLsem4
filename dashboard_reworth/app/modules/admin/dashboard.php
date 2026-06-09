@@ -7,10 +7,12 @@ require_once __DIR__ . '/../../layout/main_layout.php';
 require_once __DIR__ . '/../../components/stat_card.php';
 require_once __DIR__ . '/../../components/badge_status.php';
 require_once __DIR__ . '/../../components/admin_helpers.php';
+require_once __DIR__ . '/../../components/dlh_helpers.php';  
 
 require_role('admin');
 
-$overview = mock_admin_overview();
+// Ganti mock dengan fungsi real dari database
+$overview = admin_overview();  // ← SUDAH DARI DATABASE, BUKAN MOCK
 $activities = admin_activities();
 $pendingSellers = array_values(array_filter(admin_sellers(), fn (array $item): bool => ($item['status_verifikasi'] ?? '') === 'menunggu'));
 $illustration = admin_illustration_path();

@@ -2,9 +2,28 @@
 
 declare(strict_types=1);
 
-// Placeholder koneksi database. Untuk V1 awal dashboard memakai mock data dulu.
-function db_connection(): null
+require_once __DIR__ . '/supabase.php';
+
+/**
+ * Mendapatkan koneksi Supabase yang sudah dikonfigurasi
+ */
+function db_connection(): ?object
 {
-    return null;
+    return null; // Supabase menggunakan REST API, bukan koneksi PDO
 }
 
+/**
+ * Cek apakah Supabase terkonfigurasi dengan benar
+ */
+function is_database_connected(): bool
+{
+    return supabase_is_configured();
+}
+
+/**
+ * Mendapatkan error terakhir dari database
+ */
+function db_last_error(): ?string
+{
+    return supabase_last_error();
+}

@@ -12,11 +12,6 @@ function render_topbar(string $title, array $user): void
         'dlh' => 'Dinas Lingkungan Hidup',
         default => '',
     };
-    $searchPlaceholder = match ($role) {
-        'admin' => 'Cari user, seller, laporan, transaksi...',
-        'dlh' => 'Cari laporan, lokasi, petugas...',
-        default => 'Cari produk, pesanan, pelanggan...',
-    };
     $hasNotification = in_array($role, ['admin', 'dlh'], true);
     ?>
     <header class="topbar">
@@ -28,7 +23,7 @@ function render_topbar(string $title, array $user): void
             <?php endif; ?>
         </div>
         <div class="topbar-actions">
-            <input class="dashboard-search" type="search" placeholder="<?= e($searchPlaceholder) ?>" aria-label="Cari dashboard">
+            <!-- SEARCH BOX DIHAPUS -->
             <button class="topbar-icon" type="button" aria-label="Notifikasi">
                 <svg class="topbar-bell-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M14.5 18H5.5a1 1 0 0 1-.8-1.6l1.1-1.5V10a6.2 6.2 0 0 1 5.2-6.1 6 6 0 0 1 6.8 6v5l1.1 1.5a1 1 0 0 1-.8 1.6h-3.6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
@@ -47,4 +42,3 @@ function render_topbar(string $title, array $user): void
     </header>
     <?php
 }
-

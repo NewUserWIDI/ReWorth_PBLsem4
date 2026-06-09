@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <p style="margin-top: 18px; font-size: 13px;">
-            Demo: `admin@reworth.app`, `dlh@reworth.app`, `seller@reworth.app` dengan password `password123`.
+            Akun awal Supabase: `admin1 / admin1` dan `petugasdlh1 / petugasdlh1`.
         </p>
     </main>
 </body>

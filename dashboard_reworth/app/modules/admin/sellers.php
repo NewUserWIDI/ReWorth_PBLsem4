@@ -18,10 +18,8 @@ $filters = [
 $rows = admin_sellers($filters);
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $pagination = admin_paginate($rows, $page, 10);
-$statusVerificationOptions = admin_unique_values(mock_admin_sellers(), 'status_verifikasi');
-$statusTokoOptions = admin_unique_values(mock_admin_sellers(), 'status_toko');
 
-render_layout('Manajemen Seller', function () use ($filters, $pagination, $statusVerificationOptions, $statusTokoOptions): void {
+render_layout('Manajemen Seller', function () use ($filters, $pagination): void {
     ?>
     <section class="panel">
         <div class="panel-header">
@@ -30,23 +28,36 @@ render_layout('Manajemen Seller', function () use ($filters, $pagination, $statu
                 <p>Kelola semua seller dan verifikasi toko.</p>
             </div>
         </div>
-        <form class="toolbar" method="get">
-            <div class="toolbar-left">
-                <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari seller...">
-                <select class="select" name="status_verifikasi">
+        
+        <!-- PERBAIKAN: Form filter dengan flexbox agar tombol tidak kejauhan -->
+        <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px;">
+            <div style="flex: 2; min-width: 200px;">
+                <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari seller..." style="width: 100%;">
+            </div>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="status_verifikasi" style="width: 100%;">
                     <option value="">Semua status verifikasi</option>
-                    <?php foreach ($statusVerificationOptions as $status): ?>
-                        <option value="<?= e($status) ?>" <?= $filters['status_verifikasi'] === $status ? 'selected' : '' ?>><?= e(status_label($status)) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <select class="select" name="status_toko">
-                    <option value="">Semua status toko</option>
-                    <?php foreach ($statusTokoOptions as $status): ?>
-                        <option value="<?= e($status) ?>" <?= $filters['status_toko'] === $status ? 'selected' : '' ?>><?= e(status_label($status)) ?></option>
-                    <?php endforeach; ?>
+                    <option value="menunggu" <?= ($filters['status_verifikasi'] ?? '') === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
+                    <option value="terverifikasi" <?= ($filters['status_verifikasi'] ?? '') === 'terverifikasi' ? 'selected' : '' ?>>Terverifikasi</option>
+                    <option value="ditolak" <?= ($filters['status_verifikasi'] ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                    <option value="nonaktif" <?= ($filters['status_verifikasi'] ?? '') === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
                 </select>
             </div>
-            <button class="btn btn-primary" type="submit">Filter</button>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="status_toko" style="width: 100%;">
+                    <option value="">Semua status toko</option>
+                    <option value="aktif" <?= ($filters['status_toko'] ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="nonaktif" <?= ($filters['status_toko'] ?? '') === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                    <option value="pending" <?= ($filters['status_toko'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
+                </select>
+            </div>
+            
+            <div>
+                <button class="btn btn-primary" type="submit">Filter</button>
+                <a href="<?= e(url('app/modules/admin/sellers.php')) ?>" class="btn btn-secondary" style="margin-left: 8px;">Reset</a>
+            </div>
         </form>
     </section>
 

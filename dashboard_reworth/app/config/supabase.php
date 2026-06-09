@@ -3,8 +3,18 @@
 declare(strict_types=1);
 
 // ========== KONFIGURASI SUPABASE ==========
-define('SUPABASE_URL', 'https://odtbyyhqyprczbfevflf.supabase.co');
-define('SUPABASE_API_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kdGJ5eWhxeXByY3piZmV2ZmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTU4MjksImV4cCI6MjA5MzczMTgyOX0.Yx84RnYTa8h-RLYkxKO2wWY60ZcDSTYYO_vqB7Bqv14');
+$localConfigPath = __DIR__ . '/supabase.local.php';
+$localConfig = is_file($localConfigPath) ? require $localConfigPath : [];
+
+$supabaseUrl = (string) ($localConfig['url'] ?? 'https://odtbyyhqyprczbfevflf.supabase.co');
+$supabaseAnonKey = (string) ($localConfig['anon_key'] ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kdGJ5eWhxeXByY3piZmV2ZmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTU4MjksImV4cCI6MjA5MzczMTgyOX0.Yx84RnYTa8h-RLYkxKO2wWY60ZcDSTYYO_vqB7Bqv14');
+$supabaseServiceRoleKey = (string) ($localConfig['service_role_key'] ?? '');
+$supabaseApiKey = $supabaseServiceRoleKey !== '' ? $supabaseServiceRoleKey : $supabaseAnonKey;
+
+define('SUPABASE_URL', $supabaseUrl);
+define('SUPABASE_ANON_KEY', $supabaseAnonKey);
+define('SUPABASE_SERVICE_ROLE_KEY', $supabaseServiceRoleKey);
+define('SUPABASE_API_KEY', $supabaseApiKey);
 
 $GLOBALS['supabase_last_error'] = null;
 

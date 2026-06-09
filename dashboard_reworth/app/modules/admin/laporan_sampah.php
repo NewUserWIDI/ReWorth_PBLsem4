@@ -34,33 +34,47 @@ render_layout('Laporan Sampah', function () use ($filters, $pagination, $kecamat
                 <p>Monitoring dan audit laporan lintas sistem.</p>
             </div>
         </div>
-        <form class="toolbar" method="get">
-            <div class="toolbar-left">
-                <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari ID/pelapor/lokasi...">
-                <select class="select" name="status">
+        
+        <!-- FILTER FORM - SAMA PERSIS DENGAN USERS.PHP -->
+        <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px;">
+            <div style="flex: 2; min-width: 200px;">
+                <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari ID / pelapor / lokasi..." style="width: 100%;">
+            </div>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="status" style="width: 100%;">
                     <option value="">Semua status</option>
-                    <option value="menunggu" <?= $filters['status'] === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
-                    <option value="diproses" <?= $filters['status'] === 'diproses' ? 'selected' : '' ?>>Diproses</option>
-                    <option value="selesai" <?= $filters['status'] === 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="ditolak" <?= $filters['status'] === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                    <option value="menunggu" <?= ($filters['status'] ?? '') === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
+                    <option value="diproses" <?= ($filters['status'] ?? '') === 'diproses' ? 'selected' : '' ?>>Diproses</option>
+                    <option value="selesai" <?= ($filters['status'] ?? '') === 'selesai' ? 'selected' : '' ?>>Selesai</option>
+                    <option value="ditolak" <?= ($filters['status'] ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                    <option value="completed" <?= ($filters['status'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
+                    <option value="rejected" <?= ($filters['status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
                 </select>
-                <select class="select" name="severity">
+            </div>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="severity" style="width: 100%;">
                     <option value="">Semua tingkat</option>
-                    <option value="ringan" <?= $filters['severity'] === 'ringan' ? 'selected' : '' ?>>Ringan</option>
-                    <option value="sedang" <?= $filters['severity'] === 'sedang' ? 'selected' : '' ?>>Sedang</option>
-                    <option value="parah" <?= $filters['severity'] === 'parah' ? 'selected' : '' ?>>Parah</option>
+                    <option value="ringan" <?= ($filters['severity'] ?? '') === 'ringan' ? 'selected' : '' ?>>Ringan</option>
+                    <option value="sedang" <?= ($filters['severity'] ?? '') === 'sedang' ? 'selected' : '' ?>>Sedang</option>
+                    <option value="parah" <?= ($filters['severity'] ?? '') === 'parah' ? 'selected' : '' ?>>Parah</option>
+                    <option value="berat" <?= ($filters['severity'] ?? '') === 'berat' ? 'selected' : '' ?>>Berat</option>
                 </select>
-                <select class="select" name="kecamatan">
+            </div>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="kecamatan" style="width: 100%;">
                     <option value="">Semua kecamatan</option>
                     <?php foreach ($kecamatanOptions as $kecamatan): ?>
-                        <option value="<?= e($kecamatan) ?>" <?= $filters['kecamatan'] === $kecamatan ? 'selected' : '' ?>><?= e($kecamatan) ?></option>
+                        <option value="<?= e($kecamatan) ?>" <?= ($filters['kecamatan'] ?? '') === $kecamatan ? 'selected' : '' ?>><?= e($kecamatan) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="toolbar-right">
-                <input class="input" type="date" name="date_from" value="<?= e((string) $filters['date_from']) ?>">
-                <input class="input" type="date" name="date_to" value="<?= e((string) $filters['date_to']) ?>">
+            
+            <div>
                 <button class="btn btn-primary" type="submit">Filter</button>
+                <a href="<?= e(url('app/modules/admin/laporan_sampah.php')) ?>" class="btn btn-secondary" style="margin-left: 8px;">Reset</a>
             </div>
         </form>
     </section>
@@ -86,13 +100,13 @@ render_layout('Laporan Sampah', function () use ($filters, $pagination, $kecamat
                     <?php else: ?>
                         <?php foreach ($pagination['items'] as $report): ?>
                             <tr>
-                                <td>#<?= e((string) $report['id_laporan']) ?></td>
-                                <td><?= e((string) $report['pelapor']) ?></td>
-                                <td><?= e((string) $report['jalan']) ?></td>
-                                <td><?= e((string) $report['kecamatan']) ?></td>
-                                <td><?php severity_badge((string) $report['tingkat_keparahan']); ?></td>
-                                <td><?php badge_status((string) $report['status_laporan']); ?></td>
-                                <td><?= e(substr((string) $report['waktu_lapor'], 0, 10)) ?></td>
+                                <td><?= e((string) $report['id_laporan']) ?></td>
+                                <td><?= e((string) ($report['nama_pelapor'] ?? '-')) ?></td>
+                                <td><?= e((string) ($report['jalan'] ?? '-')) ?></td>
+                                <td><?= e((string) ($report['kecamatan'] ?? '-')) ?></td>
+                                <td><?php severity_badge((string) ($report['tingkat_keparahan'] ?? '')); ?></td>
+                                <td><?php badge_status((string) ($report['status_laporan'] ?? '')); ?></td>
+                                <td><?= e(substr((string) ($report['waktu_lapor'] ?? ''), 0, 10)) ?></td>
                                 <td><a class="btn btn-secondary" href="<?= e(url('app/modules/admin/laporan_detail.php?id=' . urlencode((string) $report['id_laporan']))) ?>">Detail</a></td>
                             </tr>
                         <?php endforeach; ?>

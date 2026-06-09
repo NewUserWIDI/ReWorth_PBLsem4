@@ -14,12 +14,12 @@ $filters = [
     'role' => $_GET['role'] ?? '',
     'status' => $_GET['status'] ?? '',
 ];
+
 $rows = admin_users($filters);
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $pagination = admin_paginate($rows, $page, 10);
-$roleOptions = admin_unique_values(mock_admin_users(), 'role');
 
-render_layout('Manajemen User', function () use ($filters, $pagination, $roleOptions): void {
+render_layout('Manajemen User', function () use ($filters, $pagination): void {
     ?>
     <section class="panel">
         <div class="panel-header">
@@ -28,22 +28,35 @@ render_layout('Manajemen User', function () use ($filters, $pagination, $roleOpt
                 <p>Kelola semua pengguna platform ReWorth.</p>
             </div>
         </div>
-        <form class="toolbar" method="get">
-            <div class="toolbar-left">
-                <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari nama/email user...">
-                <select class="select" name="role">
+        
+        <!-- FILTER FORM - SAMA SEPERTI MANAJEMEN SELLER -->
+        <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px;">
+            <div style="flex: 2; min-width: 200px;">
+                <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari user..." style="width: 100%;">
+            </div>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="role" style="width: 100%;">
                     <option value="">Semua role</option>
-                    <?php foreach ($roleOptions as $role): ?>
-                        <option value="<?= e($role) ?>" <?= $filters['role'] === $role ? 'selected' : '' ?>><?= e(ucfirst($role)) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <select class="select" name="status">
-                    <option value="">Semua status</option>
-                    <option value="aktif" <?= $filters['status'] === 'aktif' ? 'selected' : '' ?>>Aktif</option>
-                    <option value="suspend" <?= $filters['status'] === 'suspend' ? 'selected' : '' ?>>Suspend</option>
+                    <option value="masyarakat" <?= ($filters['role'] ?? '') === 'masyarakat' ? 'selected' : '' ?>>Masyarakat</option>
+                    <option value="seller" <?= ($filters['role'] ?? '') === 'seller' ? 'selected' : '' ?>>Seller</option>
+                    <option value="admin" <?= ($filters['role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
+                    <option value="dlh" <?= ($filters['role'] ?? '') === 'dlh' ? 'selected' : '' ?>>DLH</option>
                 </select>
             </div>
-            <button class="btn btn-primary" type="submit">Filter</button>
+            
+            <div style="flex: 1; min-width: 150px;">
+                <select class="select" name="status" style="width: 100%;">
+                    <option value="">Semua status</option>
+                    <option value="aktif" <?= ($filters['status'] ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="suspend" <?= ($filters['status'] ?? '') === 'suspend' ? 'selected' : '' ?>>Suspend</option>
+                </select>
+            </div>
+            
+            <div>
+                <button class="btn btn-primary" type="submit">Filter</button>
+                <a href="<?= e(url('app/modules/admin/users.php')) ?>" class="btn btn-secondary" style="margin-left: 8px;">Reset</a>
+            </div>
         </form>
     </section>
 
@@ -70,14 +83,12 @@ render_layout('Manajemen User', function () use ($filters, $pagination, $roleOpt
                                 <td><?= e((string) $user['id_user']) ?></td>
                                 <td><?= e((string) $user['nama']) ?></td>
                                 <td><?= e((string) $user['email']) ?></td>
-                                <td><span class="status-badge badge-neutral"><?= e((string) $user['role']) ?></span></td>
+                                <td><span class="status-badge badge-neutral"><?= e(ucfirst((string) $user['role'])) ?></span></td>
                                 <td><?php badge_status((string) $user['status']); ?></td>
                                 <td><?= e((string) $user['tanggal_bergabung']) ?></td>
                                 <td>
-                                    <div class="card-actions">
-                                        <a class="btn btn-secondary" href="<?= e(url('app/modules/admin/user_detail.php?id=' . urlencode((string) $user['id_user']))) ?>">Detail</a>
-                                    </div>
-                                </td>
+                                    <a class="btn btn-secondary" href="<?= e(url('app/modules/admin/user_detail.php?id=' . urlencode((string) $user['id_user']))) ?>">Detail</a>
+                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -96,4 +107,3 @@ render_layout('Manajemen User', function () use ($filters, $pagination, $roleOpt
     </section>
     <?php
 });
-
