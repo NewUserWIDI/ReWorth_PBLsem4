@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/supabase.php';
  * Ambil data laporan dari Supabase
  */
 function dlh_reports(array $filters = []): array
+
 {
     // Ambil semua laporan tanpa batasan
     $response = supabase_request('GET', 'laporan_sampah', [
@@ -55,6 +56,9 @@ function dlh_reports(array $filters = []): array
         
         $reports[] = [
             'id_laporan' => $row['id_laporan'] ?? null,
+            'id_masyarakat' => $row['id_masyarakat'] ?? null,
+            'poin_diberikan' => $row['poin_diberikan'] ?? 0,
+
             'foto_sampah' => $row['foto_sampah'] ?? '',
             'jalan' => $row['jalan'] ?? '',
             'kelurahan' => $row['kelurahan'] ?? '',
@@ -217,7 +221,6 @@ function dlh_active_reports(array $reports): array
             && is_numeric($lng);
     }));
 }
-
 /**
  * Ambil daftar kecamatan unik dari laporan
  */

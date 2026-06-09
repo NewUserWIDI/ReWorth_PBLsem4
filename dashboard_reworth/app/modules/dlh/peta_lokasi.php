@@ -81,13 +81,10 @@ render_layout('Peta Lokasi', function () use ($filters, $kecamatanOptions, $repo
                 </select>
                 <select class="select" name="status">
                     <option value="">Status aktif (default)</option>
-                   <select class="select" name="status">
-                    <option value="">Status aktif (default)</option>
                     <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
                     <option value="processing" <?= $filters['status'] === 'processing' ? 'selected' : '' ?>>Diproses</option>
                     <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Selesai</option>
                     <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
-                </select>
                 </select>
             </div>
             <div class="toolbar-right">

@@ -118,31 +118,64 @@ render_layout('Dashboard DLH', function () use ($allReports, $activeReports, $ma
             if (!mapNode || typeof window.L === 'undefined') return;
 
             const points = <?= json_encode($markers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-            const map = L.map(mapNode).setView([-6.92, 107.62], 12);
+            console.log('POINTS DASHBOARD = ', points);
+            const map = L.map(mapNode).setView([-7.94, 112.61], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; OpenStreetMap'
             }).addTo(map);
 
+            const bounds = [];
             points.forEach((point) => {
-                const color = point.tingkat === 'parah' ? '#EF4444' : (point.tingkat === 'sedang' ? '#F59E0B' : '#2E7D32');
-                const icon = L.divIcon({
-                    className: '',
-                    html: `<span style="display:inline-block;width:14px;height:14px;border-radius:999px;background:${color};border:2px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.28)"></span>`,
-                    iconSize: [14, 14]
-                });
+                bounds.push([point.lat, point.lng]);
 
-                const popup = `
-                    <strong>#${point.id}</strong><br>
-                    ${point.jalan}<br>
-                    ${point.kecamatan}<br>
-                    Tingkat: ${point.tingkat}<br>
-                    Status: ${point.status}<br>
-                    ${point.waktu}
-                `;
-                L.marker([point.lat, point.lng], { icon }).addTo(map).bindPopup(popup);
+                // marker code
             });
+
+            if (bounds.length > 0) {
+                map.fitBounds(bounds);
+            }
+
+
+            points.forEach((point) => {
+            const tingkat = (point.tingkat || '').toLowerCase();
+
+            const color =
+                tingkat === 'berat'
+                    ? '#EF4444'
+                    : tingkat === 'sedang'
+                        ? '#F59E0B'
+                        : '#2E7D32';
+
+            const icon = L.divIcon({
+                className: '',
+                html: `<span style="
+                    display:inline-block;
+                    width:14px;
+                    height:14px;
+                    border-radius:999px;
+                    background:${color};
+                    border:2px solid #fff;
+                    box-shadow:0 4px 10px rgba(0,0,0,.28)
+                "></span>`,
+                iconSize: [14, 14]
+            });
+
+            const popup = `
+                <strong>#${point.id}</strong><br>
+                ${point.jalan}<br>
+                ${point.kecamatan}<br>
+                Tingkat: ${point.tingkat}<br>
+                Status: ${point.status}<br>
+                ${point.waktu}
+            `;
+
+            L.marker([point.lat, point.lng], { icon })
+                .addTo(map)
+                .bindPopup(popup);
+        });
+
         })();
-    </script>
-    <?php
-});
+            </script>
+            <?php
+        });
