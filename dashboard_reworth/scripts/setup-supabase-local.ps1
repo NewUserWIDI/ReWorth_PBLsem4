@@ -26,6 +26,11 @@ return [
 ];
 "@
 
-Set-Content -LiteralPath $configPath -Value $content -Encoding UTF8
+$utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText(
+    [System.IO.Path]::GetFullPath($configPath),
+    $content,
+    $utf8WithoutBom
+)
 Write-Host "Konfigurasi lokal dibuat: $configPath"
 Write-Host "File ini diabaikan Git dan tidak akan ikut ter-push."
