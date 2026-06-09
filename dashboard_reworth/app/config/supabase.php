@@ -8,7 +8,11 @@ $localConfig = is_file($localConfigPath) ? require $localConfigPath : [];
 
 $supabaseUrl = (string) ($localConfig['url'] ?? 'https://odtbyyhqyprczbfevflf.supabase.co');
 $supabaseAnonKey = (string) ($localConfig['anon_key'] ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kdGJ5eWhxeXByY3piZmV2ZmxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTU4MjksImV4cCI6MjA5MzczMTgyOX0.Yx84RnYTa8h-RLYkxKO2wWY60ZcDSTYYO_vqB7Bqv14');
-$supabaseServiceRoleKey = (string) ($localConfig['service_role_key'] ?? '');
+$supabaseServiceRoleKey = (string) (
+    $localConfig['service_role_key']
+    ?? $localConfig['secret_key']
+    ?? ''
+);
 $supabaseApiKey = $supabaseServiceRoleKey !== '' ? $supabaseServiceRoleKey : $supabaseAnonKey;
 
 define('SUPABASE_URL', $supabaseUrl);
