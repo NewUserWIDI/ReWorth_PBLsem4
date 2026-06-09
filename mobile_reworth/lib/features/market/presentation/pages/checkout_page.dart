@@ -663,115 +663,130 @@ class _CheckoutBody extends StatelessWidget {
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _SectionCard(
-                  label: 'Alamat',
-                  value: selectedAddress == null
-                      ? 'Tambah alamat pengiriman'
-                      : selectedAddress!.compact,
-                  onTap: onOpenAddress,
-                ),
-                const SizedBox(height: 14),
-                _SectionCard(
-                  label: 'Pengiriman',
-                  value:
-                      '${selectedShipping.fee <= 0 ? 'Free' : currency(selectedShipping.fee)}\n'
-                      '${selectedShipping.name} | ${selectedShipping.estimatedDays}',
-                  onTap: onOpenShipping,
-                ),
-                const SizedBox(height: 14),
-                _SectionCard(
-                  label: 'Pembayaran',
-                  value: '$selectedPayment\nScan QR lalu konfirmasi bayar',
-                  onTap: onOpenPayment,
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Item Pesanan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A1E19).withValues(alpha: 0.88),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 22,
+                    offset: const Offset(0, 12),
                   ),
-                ),
-                const SizedBox(height: 12),
-                if (selectedItems.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.10),
-                      ),
-                    ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CheckoutInfoTile(
+                    label: 'Alamat',
+                    value: selectedAddress == null
+                        ? 'Tambah alamat pengiriman'
+                        : selectedAddress!.compact,
+                    onTap: onOpenAddress,
+                  ),
+                  const _SoftDivider(),
+                  _CheckoutInfoTile(
+                    label: 'Pengiriman',
+                    value:
+                        '${selectedShipping.fee <= 0 ? 'Free' : currency(selectedShipping.fee)}\n'
+                        '${selectedShipping.name} | ${selectedShipping.estimatedDays}',
+                    onTap: onOpenShipping,
+                  ),
+                  const _SoftDivider(),
+                  _CheckoutInfoTile(
+                    label: 'Pembayaran',
+                    value: '$selectedPayment\nScan QR lalu konfirmasi bayar',
+                    onTap: onOpenPayment,
+                  ),
+                  const _SoftDivider(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
                     child: Text(
-                      'Pilih item di keranjang dulu untuk checkout.',
+                      'Item Pesanan',
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.62),
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
                       ),
-                    ),
-                  )
-                else
-                  ...selectedItems.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _CheckoutItemCard(item: item, currency: currency),
                     ),
                   ),
-                const SizedBox(height: 18),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0A1E19).withValues(alpha: 0.86),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.10),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      _SummaryRow(
-                        label: 'Subtotal Produk (${selectedItems.length})',
-                        value: currency(pricing.subtotalProduk),
-                      ),
-                      const SizedBox(height: 10),
-                      _SummaryRow(
-                        label: 'Biaya Pengiriman',
-                        value: pricing.biayaPengiriman <= 0
-                            ? 'Free'
-                            : currency(pricing.biayaPengiriman),
-                      ),
-                      const SizedBox(height: 10),
-                      _SummaryRow(
-                        label: 'Fee Platform 10%',
-                        value: currency(pricing.feePlatform),
-                      ),
-                      const SizedBox(height: 10),
-                      _SummaryRow(
-                        label: 'Biaya Layanan',
-                        value: currency(pricing.biayaLayanan),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Divider(
-                          color: Colors.white.withValues(alpha: 0.10),
-                          height: 1,
+                  if (selectedItems.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                      child: Text(
+                        'Pilih item di keranjang dulu untuk checkout.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.62),
                         ),
                       ),
-                      _SummaryRow(
-                        label: 'Total',
-                        value: currency(pricing.totalBayar),
-                        bold: true,
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < selectedItems.length; i++) ...[
+                            _CheckoutItemCard(
+                              item: selectedItems[i],
+                              currency: currency,
+                            ),
+                            if (i != selectedItems.length - 1)
+                              Divider(
+                                height: 20,
+                                thickness: 1,
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
+                  const _SoftDivider(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                    child: Column(
+                      children: [
+                        _SummaryRow(
+                          label: 'Subtotal Produk (${selectedItems.length})',
+                          value: currency(pricing.subtotalProduk),
+                        ),
+                        const SizedBox(height: 10),
+                        _SummaryRow(
+                          label: 'Biaya Pengiriman',
+                          value: pricing.biayaPengiriman <= 0
+                              ? 'Free'
+                              : currency(pricing.biayaPengiriman),
+                        ),
+                        const SizedBox(height: 10),
+                        _SummaryRow(
+                          label: 'Fee Platform 10%',
+                          value: currency(pricing.feePlatform),
+                        ),
+                        const SizedBox(height: 10),
+                        _SummaryRow(
+                          label: 'Biaya Layanan',
+                          value: currency(pricing.biayaLayanan),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(
+                            color: Colors.white.withValues(alpha: 0.10),
+                            height: 1,
+                          ),
+                        ),
+                        _SummaryRow(
+                          label: 'Total',
+                          value: currency(pricing.totalBayar),
+                          bold: true,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 100),
-              ],
+                  const SizedBox(height: 96),
+                ],
+              ),
             ),
           ),
         ),
@@ -810,7 +825,7 @@ class _CheckoutBody extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: canSubmit ? onConfirm : null,
                 icon: Icon(
-                  Icons.receipt_long_rounded,
+                  Icons.shopping_cart_checkout_rounded,
                   color: canSubmit
                       ? const Color(0xFF082018)
                       : Colors.white.withValues(alpha: 0.72),
@@ -834,8 +849,8 @@ class _CheckoutBody extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
+class _CheckoutInfoTile extends StatelessWidget {
+  const _CheckoutInfoTile({
     required this.label,
     required this.value,
     required this.onTap,
@@ -848,22 +863,10 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0A1E19).withValues(alpha: 0.86),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 340;
@@ -878,7 +881,7 @@ class _SectionCard extends StatelessWidget {
                         Text(
                           label,
                           style: GoogleFonts.poppins(
-                            fontSize: 15,
+                            fontSize: 15.5,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
@@ -915,7 +918,7 @@ class _SectionCard extends StatelessWidget {
                   child: Text(
                     label,
                     style: GoogleFonts.poppins(
-                      fontSize: 15,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
@@ -946,6 +949,19 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
+class _SoftDivider extends StatelessWidget {
+  const _SoftDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.white.withValues(alpha: 0.08),
+    );
+  }
+}
+
 class _CheckoutItemCard extends StatelessWidget {
   const _CheckoutItemCard({required this.item, required this.currency});
 
@@ -954,82 +970,74 @@ class _CheckoutItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0A1E19).withValues(alpha: 0.86),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                item.product.gambarUrl ?? '',
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Colors.white,
-                ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 78,
+          height: 78,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.network(
+              item.product.gambarUrl ?? '',
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const Icon(
+                Icons.image_not_supported_outlined,
+                color: Colors.white,
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.product.namaToko,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.56),
-                  ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.product.namaToko,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.56),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  item.product.namaProduk,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                item.product.namaProduk,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Qty ${item.quantity}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    color: Colors.white.withValues(alpha: 0.66),
-                  ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Qty ${item.quantity}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5,
+                  color: Colors.white.withValues(alpha: 0.66),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(
-            currency(item.subtotal),
-            style: GoogleFonts.poppins(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          currency(item.subtotal),
+          style: GoogleFonts.poppins(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

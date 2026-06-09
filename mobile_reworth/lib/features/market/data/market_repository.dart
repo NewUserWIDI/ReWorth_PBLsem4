@@ -104,6 +104,50 @@ class MarketRepository {
       }
     }
 
+    final salesByProduct = <int, int>{};
+    try {
+      final paidOrderRows = List<Map<String, dynamic>>.from(
+        await _supabase
+                .from('pesanan')
+                .select('id_pesanan,status_pesanan')
+                .timeout(const Duration(seconds: 10))
+            as List,
+      );
+      final validOrderIds = paidOrderRows
+          .where((row) {
+            final status = (row['status_pesanan'] ?? '').toString().toLowerCase();
+            return status.contains('diproses') ||
+                status.contains('dikemas') ||
+                status.contains('dikirim') ||
+                status.contains('selesai') ||
+                status.contains('aktif');
+          })
+          .map((row) => _toInt(row['id_pesanan']))
+          .whereType<int>()
+          .toList();
+
+      if (validOrderIds.isNotEmpty) {
+        final detailRows = List<Map<String, dynamic>>.from(
+          await _supabase
+                  .from('detail_pesanan')
+                  .select('id_produk,qty,id_pesanan')
+                  .inFilter('id_pesanan', validOrderIds)
+                  .timeout(const Duration(seconds: 10))
+              as List,
+        );
+        for (final row in detailRows) {
+          final idProduk = _toInt(row['id_produk']);
+          final qty = _toInt(row['qty']) ?? 0;
+          if (idProduk == null) {
+            continue;
+          }
+          salesByProduct[idProduk] = (salesByProduct[idProduk] ?? 0) + qty;
+        }
+      }
+    } catch (_) {
+      // Biarkan 0 kalau tabel/order belum siap.
+    }
+
     return productRows.map((row) {
       final idProduk = _toInt(row['id_produk']) ?? 0;
       final sellerId = row['id_seller']?.toString() ?? '';
@@ -152,6 +196,9 @@ class MarketRepository {
             'review_count',
           ]) ??
           0;
+      final createdAt = _parseDate(
+        _firstString(row, const ['created_at', 'tanggal_dibuat', 'tanggal']),
+      );
 
       return MarketProduct(
         idProduk: idProduk,
@@ -180,8 +227,17 @@ class MarketRepository {
         lokasiToko:
             _firstString(row, const ['lokasi_toko', 'lokasi', 'asal_produk']) ??
             'Indonesia',
+        totalTerjual: salesByProduct[idProduk] ?? 0,
+        createdAt: createdAt,
       );
     }).toList();
+  }
+
+  static DateTime? _parseDate(String? value) {
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(value)?.toLocal();
   }
 
   static String _fallbackCategory(String productName) {

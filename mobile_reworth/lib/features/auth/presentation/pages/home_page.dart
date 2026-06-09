@@ -666,11 +666,11 @@ class _BannerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -687,43 +687,33 @@ class _BannerCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Positioned(
-              top: 0,
-              right: 0,
-              bottom: 0,
-              child: SizedBox(
-                width: 154,
-                child: Image.asset(
-                  item.imageAsset,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.centerRight,
-                ),
-              ),
+            Image.asset(
+              item.imageAsset,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              alignment: Alignment.centerRight,
             ),
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: 114,
-              child: Container(
-                width: 96,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      item.backgroundStart,
-                      item.backgroundStart.withValues(alpha: 0.92),
-                      item.backgroundStart.withValues(alpha: 0.15),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.48, 0.82, 1.0],
-                  ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    item.backgroundStart,
+                    item.backgroundStart.withValues(alpha: 0.98),
+                    item.backgroundStart.withValues(alpha: 0.82),
+                    item.backgroundStart.withValues(alpha: 0.44),
+                    item.backgroundStart.withValues(alpha: 0.10),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.22, 0.42, 0.60, 0.78, 1.0],
                 ),
               ),
             ),
             Positioned(
               top: -24,
-              right: 86,
+              right: 88,
               child: Container(
                 width: 86,
                 height: 86,
@@ -734,49 +724,56 @@ class _BannerCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 22, 150, 20),
+              padding: const EdgeInsets.fromLTRB(24, 24, 148, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     item.title,
+                    maxLines: 2,
                     style: GoogleFonts.poppins(
-                      fontSize: 21,
+                      fontSize: 22,
                       height: 1.12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: item.textColor,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     item.subtitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      height: 1.5,
+                      height: 1.46,
                       fontWeight: FontWeight.w400,
-                      color: item.textColor.withValues(alpha: 0.78),
+                      color: item.textColor.withValues(alpha: 0.82),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
-                      vertical: 10,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.34),
+                      color: const Color(0xFF184635),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.42),
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 14,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: Text(
                       item.ctaLabel,
                       style: GoogleFonts.poppins(
                         fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: item.textColor,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
                     ),
                   ),

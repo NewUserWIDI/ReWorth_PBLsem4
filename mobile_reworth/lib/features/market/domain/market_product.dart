@@ -17,6 +17,8 @@ class MarketProduct {
     required this.rating,
     required this.jumlahUlasan,
     required this.lokasiToko,
+    required this.totalTerjual,
+    required this.createdAt,
   });
 
   final int idProduk;
@@ -36,4 +38,6 @@ class MarketProduct {
   final double rating;
   final int jumlahUlasan;
   final String lokasiToko;
+  final int totalTerjual;
+  final DateTime? createdAt;
 }
