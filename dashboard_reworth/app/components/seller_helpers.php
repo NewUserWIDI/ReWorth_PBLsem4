@@ -96,6 +96,7 @@ function seller_session_payload(array $seller, ?array $profile): array
         'role' => 'seller',
         'status' => 'aktif',
         'nama_toko' => (string) ($seller['nama_toko'] ?? 'Toko ReWorth'),
+        'foto_toko' => (string) ($seller['foto_toko'] ?? ''),
     ];
 }
 
@@ -116,6 +117,11 @@ function seller_fetch_profile(string $sellerUserId): ?array
     }
 
     $profile = seller_fetch_profile_row($sellerUserId);
+    $bankAccount = supabase_fetch_one('kartu_pembayaran', '*', [
+        'id_masyarakat' => 'eq.' . $sellerUserId,
+        'status_aktif' => 'eq.true',
+        'order' => 'kartu_utama.desc,created_at.desc',
+    ]);
 
     return [
         'seller_id' => (string) ($seller['id_seller'] ?? ''),
@@ -131,6 +137,14 @@ function seller_fetch_profile(string $sellerUserId): ?array
         'email' => (string) ($profile['email'] ?? ''),
         'no_telp' => (string) ($profile['no_telp'] ?? $profile['nomor_hp'] ?? ''),
         'total_poin' => (int) ($profile['total_poin'] ?? 0),
+        'rekening_bank' => is_array($bankAccount) ? [
+            'id_kartu' => (string) ($bankAccount['id_kartu'] ?? ''),
+            'nama_bank' => (string) ($bankAccount['nama_bank'] ?? ''),
+            'nama_pemilik' => (string) ($bankAccount['nama_pemilik'] ?? ''),
+            'last4_digit' => (string) ($bankAccount['last4_digit'] ?? ''),
+            'jenis_kartu' => (string) ($bankAccount['jenis_kartu'] ?? 'Debit'),
+            'kartu_utama' => (bool) ($bankAccount['kartu_utama'] ?? false),
+        ] : null,
     ];
 }
 
@@ -202,6 +216,7 @@ function seller_normalize_products(array $productRows, string $sellerUserId): ar
         $images = $imageMap[$productId] ?? [];
         $primaryImage = $images[0]['public_url'] ?? '';
         $createdAt = (string) ($row['created_at'] ?? '');
+        $updatedAt = (string) ($row['updated_at'] ?? $createdAt);
 
         return [
             'id' => (string) $productId,
@@ -224,7 +239,9 @@ function seller_normalize_products(array $productRows, string $sellerUserId): ar
             'rating' => (float) ($row['rating'] ?? 0),
             'foto' => $primaryImage,
             'images' => $images,
+            'sku' => (string) ($row['sku'] ?? ('RWT-' . str_pad((string) $productId, 5, '0', STR_PAD_LEFT))),
             'tanggal_dibuat' => $createdAt !== '' ? substr($createdAt, 0, 10) : '-',
+            'terakhir_diperbarui' => $updatedAt !== '' ? $updatedAt : '-',
         ];
     }, $productRows));
 }
@@ -747,11 +764,9 @@ function seller_finalize_order_items(array $items, float $subtotalProduk, float 
         return [];
     }
 
-    $remainingFee = $feePlatform;
     $finalized = [];
-    $lastIndex = count($items) - 1;
 
-    foreach ($items as $index => $item) {
+    foreach ($items as $item) {
         $grossSubtotal = (float) ($item['subtotal'] ?? 0);
         $storedFee = $item['fee_platform_item'] ?? null;
         $storedNet = $item['pendapatan_seller'] ?? null;
@@ -760,15 +775,14 @@ function seller_finalize_order_items(array $items, float $subtotalProduk, float 
             $feeItem = (float) $storedFee;
             $netItem = (float) $storedNet;
         } else {
-            $feeItem = $index === $lastIndex
-                ? $remainingFee
-                : seller_round_money(
-                    $subtotalProduk <= 0 ? 0 : $feePlatform * ($grossSubtotal / $subtotalProduk)
-                );
+            // A checkout may contain products from multiple sellers, so each
+            // seller item receives only its proportional share of the fee.
+            $feeItem = seller_round_money(
+                $subtotalProduk <= 0 ? 0 : $feePlatform * ($grossSubtotal / $subtotalProduk)
+            );
             $netItem = seller_round_money($grossSubtotal - $feeItem);
         }
 
-        $remainingFee = seller_round_money($remainingFee - $feeItem);
         $finalized[] = [
             ...$item,
             'fee_platform_item' => seller_round_money($feeItem),
@@ -799,7 +813,15 @@ function seller_filter_orders(array $orders, array $filters): array
             return false;
         }
 
-        if ($status !== '' && $status !== 'semua' && $orderStatus !== $status) {
+        if ($status === 'aktif') {
+            if (in_array($orderStatus, ['selesai', 'dibatalkan'], true)) {
+                return false;
+            }
+        } elseif ($status === 'riwayat') {
+            if (!in_array($orderStatus, ['selesai', 'dibatalkan'], true)) {
+                return false;
+            }
+        } elseif ($status !== '' && $status !== 'semua' && $orderStatus !== $status) {
             return false;
         }
         if ($query === '') {
@@ -884,6 +906,7 @@ function seller_fetch_dashboard_data(string $sellerUserId): array
     $newOrders = array_values(array_filter($orders, static fn (array $item): bool => (string) ($item['status_pesanan'] ?? '') === 'diproses'));
     $completed = array_values(array_filter($orders, static fn (array $item): bool => (string) ($item['status_pesanan'] ?? '') === 'selesai'));
     $sales = array_sum(array_map(static fn (array $item): float => (float) ($item['total'] ?? 0), $completed));
+    $salesChart = seller_build_sales_chart($completed, 30);
 
     return [
         'products' => $products,
@@ -892,6 +915,51 @@ function seller_fetch_dashboard_data(string $sellerUserId): array
         'new_orders' => $newOrders,
         'completed_orders' => $completed,
         'sales' => $sales,
+        'sales_chart' => $salesChart,
+    ];
+}
+
+function seller_build_sales_chart(array $completedOrders, int $days = 30): array
+{
+    $today = new DateTimeImmutable('today');
+    $rows = [];
+
+    for ($offset = max(1, $days) - 1; $offset >= 0; $offset--) {
+        $date = $today->modify('-' . $offset . ' days');
+        $key = $date->format('Y-m-d');
+        $rows[$key] = [
+            'date' => $key,
+            'label' => $date->format('d M'),
+            'amount' => 0.0,
+            'orders' => 0,
+        ];
+    }
+
+    foreach ($completedOrders as $order) {
+        $timestamp = strtotime((string) ($order['tanggal'] ?? ''));
+        if ($timestamp === false) {
+            continue;
+        }
+
+        $key = date('Y-m-d', $timestamp);
+        if (!isset($rows[$key])) {
+            continue;
+        }
+
+        $rows[$key]['amount'] += (float) ($order['total'] ?? 0);
+        $rows[$key]['orders']++;
+    }
+
+    $maxAmount = 0.0;
+    foreach ($rows as $row) {
+        $maxAmount = max($maxAmount, (float) $row['amount']);
+    }
+
+    return [
+        'days' => array_values($rows),
+        'max_amount' => $maxAmount,
+        'total_amount' => array_sum(array_column($rows, 'amount')),
+        'total_orders' => array_sum(array_column($rows, 'orders')),
     ];
 }
 
@@ -989,6 +1057,57 @@ function seller_update_store_profile(string $sellerUserId, string $tab, array $p
             'updated_at' => gmdate('c'),
         ];
         supabase_update('profiles', $profilePayload, ['id' => 'eq.' . $sellerUserId]);
+
+        $bankName = trim((string) ($post['bank_name'] ?? ''));
+        $bankOwner = trim((string) ($post['bank_owner'] ?? ''));
+        $bankAccountNumber = preg_replace('/\D+/', '', (string) ($post['bank_account_number'] ?? '')) ?? '';
+        $hasAnyBankInput = $bankName !== '' || $bankOwner !== '' || $bankAccountNumber !== '';
+
+        if ($hasAnyBankInput) {
+            if ($bankName === '' || $bankOwner === '' || strlen($bankAccountNumber) < 6) {
+                return ['success' => false, 'type' => 'danger', 'message' => 'Lengkapi data rekening: nama bank, nama pemilik, dan nomor rekening minimal 6 digit.'];
+            }
+
+            $last4 = strlen($bankAccountNumber) >= 4
+                ? substr($bankAccountNumber, -4)
+                : str_pad($bankAccountNumber, 4, '0', STR_PAD_LEFT);
+            $existingBank = $profile['rekening_bank'] ?? null;
+            $bankPayload = [
+                'id_masyarakat' => $sellerUserId,
+                'nama_bank' => $bankName,
+                'jenis_kartu' => 'Debit',
+                'nama_pemilik' => $bankOwner,
+                'last4_digit' => $last4,
+                'kartu_utama' => true,
+                'status_aktif' => true,
+                'updated_at' => gmdate('c'),
+            ];
+
+            if (is_array($existingBank) && ($existingBank['id_kartu'] ?? '') !== '') {
+                $updatedBank = supabase_update('kartu_pembayaran', $bankPayload, [
+                    'id_kartu' => 'eq.' . $existingBank['id_kartu'],
+                    'id_masyarakat' => 'eq.' . $sellerUserId,
+                ]);
+
+                if ($updatedBank === [] && supabase_last_error() !== null) {
+                    return ['success' => false, 'type' => 'danger', 'message' => seller_supabase_message('Gagal memperbarui rekening bank.')];
+                }
+            } else {
+                $bankPayload['created_at'] = gmdate('c');
+                $insertedBank = supabase_insert('kartu_pembayaran', $bankPayload);
+                if ($insertedBank === [] && supabase_last_error() !== null) {
+                    return ['success' => false, 'type' => 'danger', 'message' => seller_supabase_message('Gagal menambahkan rekening bank.')];
+                }
+            }
+        }
+
+        if (isset($_SESSION['dashboard_user']) && is_array($_SESSION['dashboard_user'])) {
+            $_SESSION['dashboard_user']['nama_toko'] = $sellerPayload['nama_toko'];
+            $_SESSION['dashboard_user']['email'] = $profilePayload['email'];
+            if (isset($sellerPayload['foto_toko'])) {
+                $_SESSION['dashboard_user']['foto_toko'] = $sellerPayload['foto_toko'];
+            }
+        }
 
         return ['success' => true, 'type' => 'success', 'message' => 'Profil toko berhasil diperbarui.'];
     }

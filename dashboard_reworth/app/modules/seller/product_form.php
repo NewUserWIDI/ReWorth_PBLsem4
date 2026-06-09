@@ -87,10 +87,10 @@ render_layout($isEdit ? 'Edit Produk' : 'Tambah Produk', function () use ($isEdi
                 </div>
             </div>
             <?php if (($product['images'] ?? []) !== []): ?>
-                <div class="quick-cards" style="margin-bottom: 16px;">
+                <div class="product-thumb-strip" style="margin-bottom: 16px;">
                     <?php foreach ($product['images'] as $image): ?>
-                        <article class="quick-card" style="padding:0;overflow:hidden;">
-                            <img src="<?= e((string) ($image['public_url'] ?? '')) ?>" alt="gambar produk" style="width:100%;height:120px;object-fit:cover;border-radius:16px;">
+                        <article>
+                            <img src="<?= e((string) ($image['public_url'] ?? '')) ?>" alt="gambar produk">
                         </article>
                     <?php endforeach; ?>
                 </div>

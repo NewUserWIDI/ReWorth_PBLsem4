@@ -19,13 +19,14 @@ $products = $dashboard['products'];
 $newOrders = $dashboard['new_orders'];
 $sales = $dashboard['sales'];
 $lowStock = $dashboard['low_stock'];
+$salesChart = $dashboard['sales_chart'] ?? ['days' => [], 'max_amount' => 0, 'total_amount' => 0, 'total_orders' => 0];
 $storeName = (string) ($sellerProfile['nama_toko'] ?? 'Toko ReWorth');
 
-render_layout('Dashboard Seller', function () use ($orders, $products, $newOrders, $sales, $lowStock, $storeName): void {
+render_layout('Dashboard Seller', function () use ($orders, $products, $newOrders, $sales, $lowStock, $storeName, $salesChart): void {
     ?>
     <section class="seller-hero">
         <div class="seller-hero-content">
-            <h2><?= e($storeName) ?> Aktif</h2>
+            <h2><?= e($storeName) ?></h2>
             <p>Kelola toko, produk, dan pesanan Anda langsung dari data Supabase yang sama dengan aplikasi mobile.</p>
             <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/store_profile.php')) ?>">Lihat Profil Toko</a>
         </div>
@@ -38,7 +39,7 @@ render_layout('Dashboard Seller', function () use ($orders, $products, $newOrder
         <?php stat_card('Pendapatan Bersih', 'Rp ' . number_format((int) $sales, 0, ',', '.'), 'Setelah fee platform checkout'); ?>
         <?php stat_card('Pesanan Baru', count($newOrders), 'Perlu diproses'); ?>
         <?php stat_card('Produk Aktif', count(array_filter($products, fn ($item) => ($item['status_produk'] ?? '') === 'aktif')), 'Tayang di market'); ?>
-        <?php stat_card('Saldo Tersedia', 'Rp ' . number_format((int) max($sales, 0), 0, ',', '.'), 'Net seller dari pesanan selesai'); ?>
+        <?php stat_card('Produk Perhatian', count($lowStock), 'Stok tersisa 5 atau kurang'); ?>
     </div>
 
     <div class="content-grid">
@@ -49,16 +50,32 @@ render_layout('Dashboard Seller', function () use ($orders, $products, $newOrder
                     <p>Ringkasan akan bertambah seiring transaksi toko.</p>
                 </div>
             </div>
-            <div class="chart-placeholder">
-                <div>
-                    <strong><?= count($orders) > 0 ? 'Data transaksi seller sudah tersinkron' : 'Belum cukup data penjualan' ?></strong>
-                    <p class="panel-subtitle">Grafik detail bisa ditambahkan setelah seller dashboard stabil dengan data real.</p>
-                </div>
+            <div class="seller-chart">
+                <?php $maxAmount = max(1, (float) ($salesChart['max_amount'] ?? 0)); ?>
+                <?php foreach (($salesChart['days'] ?? []) as $index => $day): ?>
+                    <?php
+                        $amount = (float) ($day['amount'] ?? 0);
+                        $height = $amount > 0 ? max(10, (int) round(($amount / $maxAmount) * 150)) : 6;
+                        $showLabel = $index === 0 || $index === 9 || $index === 19 || $index === 29;
+                    ?>
+                    <div class="seller-chart-bar" title="<?= e((string) ($day['label'] ?? '')) ?> | Rp <?= e(number_format((int) $amount, 0, ',', '.')) ?> | <?= e((string) ($day['orders'] ?? 0)) ?> pesanan">
+                        <span style="height: <?= e((string) $height) ?>px"></span>
+                        <?php if ($showLabel): ?><small><?= e((string) ($day['label'] ?? '')) ?></small><?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="chart-summary">
+                <strong>Rp <?= e(number_format((int) ($salesChart['total_amount'] ?? 0), 0, ',', '.')) ?></strong>
+                <span><?= e((string) ($salesChart['total_orders'] ?? 0)) ?> pesanan selesai dalam 30 hari terakhir</span>
             </div>
         </section>
 
         <section class="panel">
-            <div class="panel-header"><h2>Produk Perlu Perhatian</h2></div>
+            <div class="panel-header">
+                <div>
+                    <h2>Produk Perlu Perhatian</h2>
+                </div>
+            </div>
             <div class="attention-list">
                 <?php if ($lowStock === []): ?>
                     <div class="empty-state">Semua produk aman.</div>

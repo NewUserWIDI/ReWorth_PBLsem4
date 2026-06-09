@@ -32,7 +32,7 @@ function sidebar_items(string $role): array
             ['Produk', 'app/modules/seller/products.php', 'box'],
             ['Pesanan', 'app/modules/seller/orders.php', 'orders'],
             ['Pelanggan', 'app/modules/seller/customers.php', 'users'],
-            ['Saldo', 'app/modules/seller/transactions.php', 'wallet'],
+            ['Riwayat Pesanan', 'app/modules/seller/transactions.php', 'history'],
             ['Pengaturan Toko', 'app/modules/seller/store_profile.php', 'settings'],
             ['Keluar', 'public/logout.php', 'logout'],
         ],
@@ -125,6 +125,11 @@ function render_sidebar(array $user): void
             <section class="sidebar-profile">
                 <strong>DLH Kota Bandung</strong>
                 <span>monitoring@dlh.reworth.app</span>
+            </section>
+        <?php elseif ($role === 'seller'): ?>
+            <section class="sidebar-profile">
+                <strong><?= e($user['nama_toko'] ?? $user['nama'] ?? 'Seller ReWorth') ?></strong>
+                <span><i class="sidebar-status-dot"></i> Toko Aktif</span>
             </section>
         <?php endif; ?>
         <?php if ($role === 'seller'): ?>

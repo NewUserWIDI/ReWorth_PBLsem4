@@ -12,11 +12,11 @@ require_active_seller();
 $user = current_user() ?? [];
 $sellerUserId = (string) ($user['seller_user_id'] ?? $user['user_id'] ?? '');
 $filters = [
-    'status' => $_GET['status'] ?? '',
+    'status' => $_GET['status'] ?? 'aktif',
     'q' => $_GET['q'] ?? '',
 ];
 $orders = seller_fetch_order_summaries($sellerUserId, $filters);
-$tabs = ['semua' => 'Semua', 'diproses' => 'Diproses', 'dikemas' => 'Dikemas', 'dikirim' => 'Dikirim', 'selesai' => 'Selesai', 'dibatalkan' => 'Dibatalkan'];
+$tabs = ['aktif' => 'Aktif', 'diproses' => 'Diproses', 'dikemas' => 'Dikemas', 'dikirim' => 'Dikirim'];
 
 render_layout('Pesanan', function () use ($orders, $tabs, $filters): void {
     ?>
@@ -24,17 +24,17 @@ render_layout('Pesanan', function () use ($orders, $tabs, $filters): void {
         <div class="panel-header">
             <div>
                 <h2>Pesanan</h2>
-                <p>Kelola semua pesanan toko Anda.</p>
+                <p>Kelola pesanan yang belum selesai atau belum dibatalkan.</p>
             </div>
         </div>
         <form class="toolbar" method="get" style="margin-bottom: 18px;">
             <div class="tabs">
                 <?php foreach ($tabs as $value => $label): ?>
-                    <a class="tab <?= (($filters['status'] ?: 'semua') === $value) ? 'active' : '' ?>" href="?<?= e(http_build_query(['status' => $value, 'q' => $filters['q']])) ?>"><?= e($label) ?></a>
+                    <a class="tab <?= (($filters['status'] ?: 'aktif') === $value) ? 'active' : '' ?>" href="?<?= e(http_build_query(['status' => $value, 'q' => $filters['q']])) ?>"><?= e($label) ?></a>
                 <?php endforeach; ?>
             </div>
             <input class="input" style="width: 280px;" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari ID pesanan atau pembeli">
-            <input type="hidden" name="status" value="<?= e((string) ($filters['status'] ?: 'semua')) ?>">
+            <input type="hidden" name="status" value="<?= e((string) ($filters['status'] ?: 'aktif')) ?>">
         </form>
         <div class="table-wrap">
             <table class="data-table">

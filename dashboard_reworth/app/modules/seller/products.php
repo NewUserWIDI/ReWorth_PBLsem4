@@ -22,20 +22,52 @@ $filters = [
     'q' => $_GET['q'] ?? '',
     'kategori' => $_GET['kategori'] ?? '',
     'status' => $_GET['status'] ?? '',
+    'sort' => $_GET['sort'] ?? 'terbaru',
 ];
 
-$products = seller_fetch_products($sellerUserId, $filters);
+$queryFilters = $filters;
+if (($queryFilters['status'] ?? '') === 'stok_habis') {
+    $queryFilters['status'] = '';
+}
+
+$allProducts = seller_fetch_products($sellerUserId);
+$products = seller_fetch_products($sellerUserId, $queryFilters);
+if (($filters['status'] ?? '') === 'stok_habis') {
+    $products = array_values(array_filter($products, static fn (array $product): bool => (int) ($product['stok'] ?? 0) <= 0));
+}
+
+usort($products, static function (array $a, array $b) use ($filters): int {
+    return match ((string) ($filters['sort'] ?? 'terbaru')) {
+        'harga_asc' => ((int) ($a['harga'] ?? 0)) <=> ((int) ($b['harga'] ?? 0)),
+        'harga_desc' => ((int) ($b['harga'] ?? 0)) <=> ((int) ($a['harga'] ?? 0)),
+        'stok' => ((int) ($a['stok'] ?? 0)) <=> ((int) ($b['stok'] ?? 0)),
+        default => ((int) ($b['id_produk'] ?? 0)) <=> ((int) ($a['id_produk'] ?? 0)),
+    };
+});
+
+$summary = [
+    'total' => count($allProducts),
+    'aktif' => count(array_filter($allProducts, static fn (array $product): bool => (string) ($product['status_produk'] ?? '') === 'aktif')),
+    'stok_habis' => count(array_filter($allProducts, static fn (array $product): bool => (int) ($product['stok'] ?? 0) <= 0)),
+    'nonaktif' => count(array_filter($allProducts, static fn (array $product): bool => (string) ($product['status_produk'] ?? '') === 'nonaktif')),
+];
 $categories = seller_fetch_categories();
 
-render_layout('Produk', function () use ($products, $categories, $filters): void {
+render_layout('Produk', function () use ($products, $categories, $filters, $summary): void {
     ?>
     <section class="panel">
         <div class="panel-header">
             <div>
-                <h2>Produk</h2>
-                <p>Kelola semua produk toko Anda.</p>
+                <h2>Katalog Produk</h2>
+                <p>Kelola produk yang dijual di mini market.</p>
             </div>
             <a class="btn btn-primary" href="<?= e(url('app/modules/seller/product_form.php')) ?>">Tambah Produk</a>
+        </div>
+        <div class="seller-product-summary">
+            <article><span>Total Produk</span><strong><?= e((string) $summary['total']) ?></strong></article>
+            <article><span>Produk Aktif</span><strong><?= e((string) $summary['aktif']) ?></strong></article>
+            <article><span>Stok Habis</span><strong><?= e((string) $summary['stok_habis']) ?></strong></article>
+            <article><span>Produk Nonaktif</span><strong><?= e((string) $summary['nonaktif']) ?></strong></article>
         </div>
         <form class="toolbar" method="get" style="margin-bottom: 18px;">
             <div class="toolbar-left">
@@ -49,9 +81,15 @@ render_layout('Produk', function () use ($products, $categories, $filters): void
                 </select>
                 <select class="select" style="width: 180px;" name="status">
                     <option value="">Semua status</option>
-                    <?php foreach (['aktif', 'nonaktif', 'pending', 'disembunyikan'] as $status): ?>
-                        <option value="<?= e($status) ?>" <?= $filters['status'] === $status ? 'selected' : '' ?>><?= e(status_label($status)) ?></option>
-                    <?php endforeach; ?>
+                    <option value="aktif" <?= $filters['status'] === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                    <option value="nonaktif" <?= $filters['status'] === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                    <option value="stok_habis" <?= $filters['status'] === 'stok_habis' ? 'selected' : '' ?>>Stok Habis</option>
+                </select>
+                <select class="select" style="width: 180px;" name="sort">
+                    <option value="terbaru" <?= $filters['sort'] === 'terbaru' ? 'selected' : '' ?>>Terbaru</option>
+                    <option value="harga_asc" <?= $filters['sort'] === 'harga_asc' ? 'selected' : '' ?>>Harga Terendah</option>
+                    <option value="harga_desc" <?= $filters['sort'] === 'harga_desc' ? 'selected' : '' ?>>Harga Tertinggi</option>
+                    <option value="stok" <?= $filters['sort'] === 'stok' ? 'selected' : '' ?>>Stok Terendah</option>
                 </select>
             </div>
             <button class="btn btn-secondary" type="submit">Filter</button>
@@ -61,25 +99,24 @@ render_layout('Produk', function () use ($products, $categories, $filters): void
                 <div class="empty-state">Belum ada produk yang cocok dengan filter.</div>
             <?php else: ?>
                 <?php foreach ($products as $product): ?>
-                    <article class="product-card">
-                        <div class="product-card-media" style="padding:0;overflow:hidden;">
+                    <article class="product-card seller-catalog-card">
+                        <div class="product-card-media seller-product-media">
                             <?php if (($product['foto'] ?? '') !== ''): ?>
-                                <img src="<?= e((string) $product['foto']) ?>" alt="<?= e((string) $product['nama_produk']) ?>" style="width:100%;height:100%;object-fit:cover;">
+                                <img src="<?= e((string) $product['foto']) ?>" alt="<?= e((string) $product['nama_produk']) ?>">
                             <?php else: ?>
                                 <?= e(substr((string) $product['nama_produk'], 0, 2)) ?>
                             <?php endif; ?>
+                            <span class="seller-card-status"><?php badge_status((string) $product['status_produk']); ?></span>
                         </div>
                         <div class="product-card-body">
-                            <div class="panel-header" style="margin-bottom: 10px;">
-                                <div>
-                                    <h3><?= e((string) $product['nama_produk']) ?></h3>
-                                    <p><?= e((string) $product['kategori']) ?></p>
-                                </div>
-                                <?php badge_status((string) $product['status_produk']); ?>
+                            <div class="seller-product-head">
+                                <span><?= e((string) $product['kategori']) ?></span>
+                                <small>Stok <?= e((string) $product['stok']) ?></small>
                             </div>
+                            <h3><?= e((string) $product['nama_produk']) ?></h3>
+                            <p><?= e((string) ($product['deskripsi'] !== '' ? $product['deskripsi'] : 'Belum ada deskripsi produk.')) ?></p>
                             <div class="product-meta">
-                                <span>Harga<br><strong>Rp <?= e(number_format((int) $product['harga'], 0, ',', '.')) ?></strong></span>
-                                <span>Stok<br><strong><?= e((string) $product['stok']) ?></strong></span>
+                                <span><small>Harga</small><strong>Rp <?= e(number_format((int) $product['harga'], 0, ',', '.')) ?></strong></span>
                             </div>
                             <div class="card-actions">
                                 <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/product_detail.php?id=' . urlencode((string) $product['id_produk']))) ?>">Detail</a>
@@ -94,6 +131,9 @@ render_layout('Produk', function () use ($products, $categories, $filters): void
                     </article>
                 <?php endforeach; ?>
             <?php endif; ?>
+        </div>
+        <div class="seller-pagination" aria-label="Navigasi halaman katalog">
+            <span>&lt;</span><strong>1</strong><span>2</span><span>3</span><span>&gt;</span>
         </div>
     </section>
     <?php

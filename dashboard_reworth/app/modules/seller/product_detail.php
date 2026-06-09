@@ -21,58 +21,72 @@ if ($product === null) {
 
 render_layout('Detail Produk', function () use ($product): void {
     $images = $product['images'] ?? [];
+    $formatDate = static function (string $value): string {
+        $timestamp = strtotime($value);
+        return $timestamp !== false ? date('d M Y', $timestamp) : $value;
+    };
+    $formatDateTime = static function (string $value): string {
+        $timestamp = strtotime($value);
+        return $timestamp !== false ? date('d M Y H:i', $timestamp) : $value;
+    };
     ?>
-    <section class="panel">
-        <div class="panel-header">
-            <div>
-                <h2><?= e((string) $product['nama_produk']) ?></h2>
-                <p>Informasi lengkap produk toko.</p>
-            </div>
-            <div class="toolbar-right">
-                <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/products.php')) ?>">Kembali</a>
-                <a class="btn btn-primary" href="<?= e(url('app/modules/seller/product_form.php?id=' . urlencode((string) $product['id_produk']))) ?>">Edit Produk</a>
-            </div>
+    <div class="page-heading">
+        <div>
+            <p>Produk &gt; <strong>Detail Produk</strong></p>
+            <h2>Detail Produk</h2>
+            <span>Informasi lengkap produk toko Anda.</span>
         </div>
-        <div class="content-grid">
-            <div class="form-stack">
-                <div class="product-card-media" style="height: 330px; margin: 0; padding:0; overflow:hidden;">
+        <div class="toolbar-right">
+            <a class="btn btn-secondary" href="<?= e(url('app/modules/seller/products.php')) ?>">Kembali</a>
+            <a class="btn btn-primary" href="<?= e(url('app/modules/seller/product_form.php?id=' . urlencode((string) $product['id_produk']))) ?>">Edit Produk</a>
+        </div>
+    </div>
+
+    <section class="panel seller-detail-overview">
+        <div class="seller-product-detail-grid">
+            <div class="seller-detail-gallery">
+                <div class="product-detail-hero">
+                    <span class="seller-detail-status"><?php badge_status((string) $product['status_produk']); ?></span>
+                    <span class="seller-preview-icon" aria-hidden="true">↗</span>
                     <?php if (($product['foto'] ?? '') !== ''): ?>
-                        <img src="<?= e((string) $product['foto']) ?>" alt="<?= e((string) $product['nama_produk']) ?>" style="width:100%;height:100%;object-fit:cover;">
+                        <img src="<?= e((string) $product['foto']) ?>" alt="<?= e((string) $product['nama_produk']) ?>">
                     <?php else: ?>
                         <?= e(substr((string) $product['nama_produk'], 0, 2)) ?>
                     <?php endif; ?>
                 </div>
                 <?php if ($images !== []): ?>
-                    <div class="quick-cards">
+                    <div class="product-thumb-strip">
                         <?php foreach ($images as $image): ?>
-                            <article class="quick-card" style="padding:0;overflow:hidden;">
-                                <img src="<?= e((string) ($image['public_url'] ?? '')) ?>" alt="gambar produk" style="width:100%;height:100px;object-fit:cover;border-radius:16px;">
+                            <article>
+                                <img src="<?= e((string) ($image['public_url'] ?? '')) ?>" alt="gambar produk">
                             </article>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="form-stack">
-                <section class="form-card">
-                    <div class="stat-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-                        <div><span class="panel-subtitle">Kategori</span><strong><?= e((string) $product['kategori']) ?></strong></div>
-                        <div><span class="panel-subtitle">Harga</span><strong>Rp <?= e(number_format((int) $product['harga'], 0, ',', '.')) ?></strong></div>
-                        <div><span class="panel-subtitle">Stok</span><strong><?= e((string) $product['stok']) ?></strong></div>
-                    </div>
-                </section>
-                <section class="form-card">
-                    <h2 class="panel-title">Detail Barang</h2>
-                    <p class="panel-subtitle"><?= e((string) $product['deskripsi']) ?></p>
-                    <p><strong>Status:</strong> <?php badge_status((string) $product['status_produk']); ?></p>
-                    <p><strong>Bahan:</strong> <?= e((string) ($product['bahan'] !== '' ? $product['bahan'] : '-')) ?></p>
-                    <p><strong>Manfaat:</strong> <?= e((string) ($product['manfaat'] !== '' ? $product['manfaat'] : '-')) ?></p>
-                    <p><strong>Cara Pakai:</strong> <?= e((string) ($product['cara_pakai'] !== '' ? $product['cara_pakai'] : '-')) ?></p>
-                    <p><strong>Eco Value:</strong> <?= e((string) ($product['eco_value'] !== '' ? $product['eco_value'] : '-')) ?></p>
-                    <p><strong>Berat:</strong> <?= e((string) (($product['berat_gram'] ?? 0) > 0 ? $product['berat_gram'] . ' gram' : '-')) ?></p>
-                    <p><strong>Tanggal Dibuat:</strong> <?= e((string) $product['tanggal_dibuat']) ?></p>
-                </section>
+            <div class="seller-detail-specs">
+                <div><span>Kategori</span><strong><?= e((string) $product['kategori']) ?></strong></div>
+                <div><span>Harga</span><strong class="money">Rp <?= e(number_format((int) $product['harga'], 0, ',', '.')) ?></strong></div>
+                <div><span>Stok</span><strong><?= e((string) $product['stok']) ?></strong></div>
+                <div><span>SKU</span><strong><?= e((string) $product['sku']) ?></strong></div>
+                <div><span>Tanggal Dibuat</span><strong><?= e($formatDate((string) $product['tanggal_dibuat'])) ?></strong></div>
+                <div><span>Terakhir Diperbarui</span><strong><?= e($formatDateTime((string) $product['terakhir_diperbarui'])) ?></strong></div>
             </div>
         </div>
+    </section>
+
+    <section class="panel seller-detail-copy">
+        <h2 class="panel-title">Detail Barang</h2>
+        <p class="seller-detail-description"><?= e((string) ($product['deskripsi'] !== '' ? $product['deskripsi'] : 'Belum ada deskripsi produk.')) ?></p>
+        <dl class="seller-detail-list">
+            <div><dt>Status</dt><dd><?php badge_status((string) $product['status_produk']); ?></dd></div>
+            <div><dt>Bahan</dt><dd><?= e((string) ($product['bahan'] !== '' ? $product['bahan'] : '-')) ?></dd></div>
+            <div><dt>Manfaat</dt><dd><?= e((string) ($product['manfaat'] !== '' ? $product['manfaat'] : '-')) ?></dd></div>
+            <div><dt>Cara Pakai</dt><dd><?= e((string) ($product['cara_pakai'] !== '' ? $product['cara_pakai'] : '-')) ?></dd></div>
+            <div><dt>Eco Value</dt><dd><?= e((string) ($product['eco_value'] !== '' ? $product['eco_value'] : '-')) ?></dd></div>
+            <div><dt>Berat</dt><dd><?= e((string) (($product['berat_gram'] ?? 0) > 0 ? $product['berat_gram'] . ' gram' : '-')) ?></dd></div>
+            <div><dt>Tanggal Dibuat</dt><dd><?= e($formatDate((string) $product['tanggal_dibuat'])) ?></dd></div>
+        </dl>
     </section>
     <?php
 });
