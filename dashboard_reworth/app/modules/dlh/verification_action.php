@@ -43,12 +43,58 @@ if ($action === 'accept') {
 
 if ($action === 'finish') {
 
-    dlh_update_status((int)$id, 'completed');
+    $laporan = dlh_find_report((int)$id);
 
-    set_flash('success', 'Laporan selesai diproses.');
+    if ($laporan === null) {
+        set_flash('danger', 'Laporan tidak ditemukan.');
+        redirect('app/modules/dlh/laporan.php');
+    }
+
+    // Hitung poin berdasarkan tingkat keparahan
+    $poin = match ($laporan['tingkat_keparahan']) {
+        'Ringan' => 10,
+        'Sedang' => 20,
+        'Berat'  => 30,
+        default  => 10,
+    };
+
+    // Update status laporan + simpan poin yang diberikan
+    dlh_update_status(
+        (int)$id,
+        'completed',
+        null,
+        $poin
+    );
+
+    // Tambahkan poin ke user pelapor
+    $userId = $laporan['id_masyarakat'];
+
+    $profile = supabase_fetch_one(
+        'profiles',
+        '*',
+        ['id' => 'eq.' . $userId]
+    );
+
+    if ($profile !== null) {
+
+        $currentPoint = (int)($profile['poin'] ?? 0);
+
+        supabase_update(
+            'profiles',
+            [
+                'poin' => $currentPoint + $poin
+            ],
+            [
+                'id' => 'eq.' . $userId
+            ]
+        );
+    }
+
+    set_flash(
+        'success',
+        "Laporan selesai diproses. {$poin} poin diberikan kepada pelapor."
+    );
+
     redirect('app/modules/dlh/riwayat.php');
 }
-
-set_flash('warning', 'Aksi belum didukung.');
-redirect('app/modules/dlh/laporan.php');
 
