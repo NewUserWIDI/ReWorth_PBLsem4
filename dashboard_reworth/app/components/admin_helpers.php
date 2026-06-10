@@ -687,45 +687,463 @@ function admin_overview(): array
 
 // ==================== SYSTEM ACTIVITIES ====================
 
+function admin_month_start(): string
+{
+    return admin_now()->modify('first day of this month')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_activity_in_filter(array $values): ?string
+{
+    $formatted = [];
+    foreach ($values as $value) {
+        if ($value === null || $value === '') {
+            continue;
+        }
+
+        if (is_int($value) || is_float($value) || ctype_digit((string) $value)) {
+            $formatted[] = (string) $value;
+            continue;
+        }
+
+        $escaped = str_replace('"', '\"', (string) $value);
+        $formatted[] = '"' . $escaped . '"';
+    }
+
+    if ($formatted === []) {
+        return null;
+    }
+
+    return 'in.(' . implode(',', $formatted) . ')';
+}
+
+function admin_activity_time_value(?string $value): int
+{
+    if ($value === null || trim($value) === '') {
+        return 0;
+    }
+
+    $timestamp = strtotime($value);
+    return $timestamp === false ? 0 : $timestamp;
+}
+
+function admin_activity_role_label(string $role): string
+{
+    return match (strtolower(trim($role))) {
+        'admin' => 'Admin',
+        'dlh' => 'DLH',
+        'seller' => 'Seller',
+        'user', 'masyarakat' => 'Masyarakat',
+        default => 'Sistem',
+    };
+}
+
+function admin_activity_status_label(string $status): string
+{
+    $status = strtolower(trim($status));
+
+    return match ($status) {
+        'pending' => 'Menunggu',
+        'processing', 'diproses' => 'Diproses',
+        'completed', 'selesai' => 'Selesai',
+        'disetujui', 'approved' => 'Disetujui',
+        'ditolak', 'rejected' => 'Ditolak',
+        'sukses', 'success' => 'Sukses',
+        'gagal', 'failed' => 'Gagal',
+        default => $status === '' ? '-' : ucfirst($status),
+    };
+}
+
+function admin_activity_type_key(string $label): string
+{
+    return match ($label) {
+        'Registrasi Akun' => 'registrasi',
+        'Belanja Mini Market' => 'transaksi',
+        'Pengajuan Seller' => 'pengajuan_seller',
+        'Tukar Poin' => 'tukar_poin',
+        'Lapor Sampah' => 'lapor_sampah',
+        default => 'lainnya',
+    };
+}
+
+function admin_activity_period_bounds(string $period): array
+{
+    $period = strtolower(trim($period));
+    $start = null;
+
+    if ($period === 'harian') {
+        $start = admin_activity_time_value(admin_today_start());
+    } elseif ($period === 'mingguan') {
+        $start = admin_activity_time_value(admin_week_start());
+    } elseif ($period === 'bulanan') {
+        $start = admin_activity_time_value(admin_month_start());
+    }
+
+    return [
+        'period' => in_array($period, ['harian', 'mingguan', 'bulanan'], true) ? $period : 'selamanya',
+        'start' => $start,
+        'end' => null,
+    ];
+}
+
+function admin_activity_matches_period(int $timestamp, ?int $start, ?int $end): bool
+{
+    if ($timestamp <= 0) {
+        return false;
+    }
+
+    if ($start !== null && $timestamp < $start) {
+        return false;
+    }
+
+    if ($end !== null && $timestamp > $end) {
+        return false;
+    }
+
+    return true;
+}
+
+function admin_activity_profiles_map(array $profileIds): array
+{
+    $profileIds = array_values(array_unique(array_filter(array_map(
+        static fn ($id): string => trim((string) $id),
+        $profileIds
+    ))));
+
+    if ($profileIds === []) {
+        return [];
+    }
+
+    $filter = admin_activity_in_filter($profileIds);
+    if ($filter === null) {
+        return [];
+    }
+
+    $profiles = [];
+    foreach (supabase_fetch('profiles', 'id,nama_lengkap,nama,email,no_telp,role', ['id' => $filter]) as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $profiles[(string) ($row['id'] ?? '')] = $row;
+    }
+
+    return $profiles;
+}
+
+function admin_activity_rewards_map(array $rewardIds): array
+{
+    $rewardIds = array_values(array_unique(array_filter(array_map(
+        static fn ($id): int => (int) $id,
+        $rewardIds
+    ))));
+
+    if ($rewardIds === []) {
+        return [];
+    }
+
+    $filter = admin_activity_in_filter($rewardIds);
+    if ($filter === null) {
+        return [];
+    }
+
+    $rewards = [];
+    foreach (supabase_fetch('reward', 'id_reward,nama_reward,jenis_reward,provider,nominal_reward', ['id_reward' => $filter]) as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $rewards[(int) ($row['id_reward'] ?? 0)] = $row;
+    }
+
+    return $rewards;
+}
+
+function admin_activity_actor_name(?array $profile, string $fallback = 'Pengguna ReWorth'): string
+{
+    if (!is_array($profile)) {
+        return $fallback;
+    }
+
+    $name = trim((string) (($profile['nama_lengkap'] ?? $profile['nama'] ?? '') ?: ''));
+    return $name !== '' ? $name : $fallback;
+}
+
 function admin_activities(array $filters = []): array
 {
-    $query = ['select' => '*', 'order' => 'tanggal.desc', 'limit' => '50'];
-    
-    if (!empty($filters['date_from'])) {
-        $query['tanggal'] = 'gte.' . $filters['date_from'];
-    }
-    if (!empty($filters['date_to'])) {
-        $query['tanggal'] = 'lte.' . $filters['date_to'] . ' 23:59:59';
-    }
-    
-    $poinHistory = supabase_fetch('riwayat_poin', '*,profiles(nama_lengkap)', $query);
-    
-    $activities = [];
-    if (is_array($poinHistory)) {
-        foreach ($poinHistory as $history) {
-            $profile = $history['profiles'] ?? [];
-            $activities[] = [
-                'waktu' => format_date($history['tanggal'] ?? null),
-                'aktor' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
-                'role' => 'Masyarakat',
-                'aktivitas' => 'Poin ' . ($history['jenis_transaksi'] ?? ''),
-                'modul' => 'Rewards',
-                'detail' => $history['keterangan'] ?? ($history['sumber_poin'] ?? 'Transaksi poin'),
-            ];
+    $limit = max(1, (int) ($filters['limit'] ?? 100));
+    $sourceLimit = max(30, min(500, $limit * 8));
+    $periodBounds = admin_activity_period_bounds((string) ($filters['period'] ?? 'selamanya'));
+    $startTs = $periodBounds['start'];
+    $endTs = $periodBounds['end'];
+
+    $dateFrom = trim((string) ($filters['date_from'] ?? ''));
+    if ($dateFrom !== '') {
+        $dateFromTs = admin_activity_time_value($dateFrom . ' 00:00:00');
+        if ($dateFromTs > 0) {
+            $startTs = $startTs !== null ? max($startTs, $dateFromTs) : $dateFromTs;
         }
     }
-    
-    usort($activities, fn($a, $b) => strtotime($b['waktu']) - strtotime($a['waktu']));
-    
-    if (!empty($filters['q'])) {
-        $q = strtolower($filters['q']);
-        $activities = array_filter($activities, fn($act) => 
-            str_contains(strtolower($act['aktor']), $q) || 
-            str_contains(strtolower($act['aktivitas']), $q)
-        );
+
+    $dateTo = trim((string) ($filters['date_to'] ?? ''));
+    if ($dateTo !== '') {
+        $dateToTs = admin_activity_time_value($dateTo . ' 23:59:59');
+        if ($dateToTs > 0) {
+            $endTs = $endTs !== null ? min($endTs, $dateToTs) : $dateToTs;
+        }
     }
-    
-    return array_values($activities);
+
+    $profileRows = supabase_fetch('profiles', 'id,nama_lengkap,nama,email,role,created_at', [
+        'order' => 'created_at.desc',
+        'limit' => (string) $sourceLimit,
+    ]);
+    $reportRows = supabase_fetch('laporan_sampah', 'id_laporan,id_masyarakat,deskripsi,status_laporan,kelurahan,kecamatan,waktu_lapor', [
+        'order' => 'waktu_lapor.desc',
+        'limit' => (string) $sourceLimit,
+    ]);
+    $orderRows = supabase_fetch('pesanan', 'id_pesanan,id_masyarakat,kode_pesanan,total_bayar,status_pesanan,tanggal_pesanan,created_at', [
+        'order' => 'tanggal_pesanan.desc',
+        'limit' => (string) $sourceLimit,
+    ]);
+    $sellerApplicationRows = supabase_fetch('pengajuan_seller', 'id_pengajuan,id_masyarakat,nama_toko_usulan,status_pengajuan,alasan_penolakan,tanggal_pengajuan,tanggal_diproses', [
+        'order' => 'tanggal_pengajuan.desc',
+        'limit' => (string) $sourceLimit,
+    ]);
+    $pointRedemptionRows = supabase_fetch('penukaran_poin', 'id_penukaran,id_masyarakat,id_reward,no_hp_tujuan,poin_terpakai,status_proses,kode_referensi,tanggal_penukaran,tanggal_diproses', [
+        'order' => 'tanggal_penukaran.desc',
+        'limit' => (string) $sourceLimit,
+    ]);
+
+    $profileIds = [];
+    foreach ([$reportRows, $orderRows, $sellerApplicationRows, $pointRedemptionRows] as $rows) {
+        foreach ($rows as $row) {
+            if (is_array($row) && !empty($row['id_masyarakat'])) {
+                $profileIds[] = (string) $row['id_masyarakat'];
+            }
+        }
+    }
+    foreach ($profileRows as $row) {
+        if (is_array($row) && !empty($row['id'])) {
+            $profileIds[] = (string) $row['id'];
+        }
+    }
+
+    $rewardIds = [];
+    foreach ($pointRedemptionRows as $row) {
+        if (is_array($row) && !empty($row['id_reward'])) {
+            $rewardIds[] = (int) $row['id_reward'];
+        }
+    }
+
+    $profilesMap = admin_activity_profiles_map($profileIds);
+    $rewardsMap = admin_activity_rewards_map($rewardIds);
+
+    $activities = [];
+
+    foreach ($profileRows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $rawRole = strtolower(trim((string) ($row['role'] ?? '')));
+        if (!in_array($rawRole, ['user', 'masyarakat'], true)) {
+            continue;
+        }
+
+        $timestamp = admin_activity_time_value((string) ($row['created_at'] ?? ''));
+        if (!admin_activity_matches_period($timestamp, $startTs, $endTs)) {
+            continue;
+        }
+
+        $name = admin_activity_actor_name($row);
+        $email = trim((string) ($row['email'] ?? ''));
+        $activities[] = [
+            'timestamp' => $timestamp,
+            'waktu' => format_date($row['created_at'] ?? null),
+            'aktor' => $name,
+            'role' => 'Masyarakat',
+            'aktivitas' => 'Registrasi Akun',
+            'type_key' => 'registrasi',
+            'modul' => 'Akun',
+            'detail' => $email !== '' ? $name . ' mendaftar dengan email ' . $email . '.' : $name . ' membuat akun baru di ReWorth.',
+        ];
+    }
+
+    foreach ($reportRows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $timestamp = admin_activity_time_value((string) ($row['waktu_lapor'] ?? ''));
+        if (!admin_activity_matches_period($timestamp, $startTs, $endTs)) {
+            continue;
+        }
+
+        $profile = $profilesMap[(string) ($row['id_masyarakat'] ?? '')] ?? null;
+        $name = admin_activity_actor_name($profile);
+        $location = trim(implode(', ', array_filter([
+            (string) ($row['kelurahan'] ?? ''),
+            (string) ($row['kecamatan'] ?? ''),
+        ])));
+        $status = admin_activity_status_label((string) ($row['status_laporan'] ?? 'pending'));
+        $detail = 'Laporan sampah #' . (string) ($row['id_laporan'] ?? '-') . ' dibuat';
+        if ($location !== '') {
+            $detail .= ' di ' . $location;
+        }
+        $detail .= ' dengan status ' . $status . '.';
+
+        $activities[] = [
+            'timestamp' => $timestamp,
+            'waktu' => format_date($row['waktu_lapor'] ?? null),
+            'aktor' => $name,
+            'role' => admin_activity_role_label((string) (($profile['role'] ?? 'user'))),
+            'aktivitas' => 'Lapor Sampah',
+            'type_key' => 'lapor_sampah',
+            'modul' => 'Laporan Sampah',
+            'detail' => $detail,
+        ];
+    }
+
+    foreach ($orderRows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $timeValue = (string) (($row['tanggal_pesanan'] ?? '') !== '' ? $row['tanggal_pesanan'] : ($row['created_at'] ?? ''));
+        $timestamp = admin_activity_time_value($timeValue);
+        if (!admin_activity_matches_period($timestamp, $startTs, $endTs)) {
+            continue;
+        }
+
+        $profile = $profilesMap[(string) ($row['id_masyarakat'] ?? '')] ?? null;
+        $name = admin_activity_actor_name($profile);
+        $orderCode = (string) (($row['kode_pesanan'] ?? '') ?: ('ORD-' . (string) ($row['id_pesanan'] ?? '-')));
+        $status = admin_activity_status_label((string) ($row['status_pesanan'] ?? 'pending'));
+
+        $activities[] = [
+            'timestamp' => $timestamp,
+            'waktu' => format_date($timeValue ?: null),
+            'aktor' => $name,
+            'role' => admin_activity_role_label((string) (($profile['role'] ?? 'user'))),
+            'aktivitas' => 'Belanja Mini Market',
+            'type_key' => 'transaksi',
+            'modul' => 'Mini Market',
+            'detail' => 'Pesanan ' . $orderCode . ' dibuat dengan total Rp ' . number_format((int) ($row['total_bayar'] ?? 0), 0, ',', '.') . ' dan status ' . $status . '.',
+        ];
+    }
+
+    foreach ($sellerApplicationRows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $status = (string) ($row['status_pengajuan'] ?? 'Pending');
+        $isProcessed = trim((string) ($row['tanggal_diproses'] ?? '')) !== '' && strcasecmp($status, 'Pending') !== 0;
+        $timeValue = $isProcessed ? (string) ($row['tanggal_diproses'] ?? '') : (string) ($row['tanggal_pengajuan'] ?? '');
+        $timestamp = admin_activity_time_value($timeValue);
+        if (!admin_activity_matches_period($timestamp, $startTs, $endTs)) {
+            continue;
+        }
+
+        $profile = $profilesMap[(string) ($row['id_masyarakat'] ?? '')] ?? null;
+        $name = admin_activity_actor_name($profile);
+        $storeName = trim((string) ($row['nama_toko_usulan'] ?? 'Toko Baru'));
+        $statusLabel = admin_activity_status_label($status);
+        $detail = $isProcessed
+            ? 'Pengajuan seller untuk toko ' . $storeName . ' telah ' . strtolower($statusLabel) . '.'
+            : 'Pengguna mengajukan seller untuk toko ' . $storeName . '.';
+
+        if (!$isProcessed && !empty($row['tanggal_pengajuan'])) {
+            $detail .= ' Menunggu verifikasi admin.';
+        }
+
+        if ($isProcessed && !empty($row['alasan_penolakan']) && strcasecmp($status, 'Ditolak') === 0) {
+            $detail .= ' Alasan: ' . trim((string) $row['alasan_penolakan']) . '.';
+        }
+
+        $activities[] = [
+            'timestamp' => $timestamp,
+            'waktu' => format_date($timeValue ?: null),
+            'aktor' => $name,
+            'role' => admin_activity_role_label((string) (($profile['role'] ?? 'user'))),
+            'aktivitas' => 'Pengajuan Seller',
+            'type_key' => 'pengajuan_seller',
+            'modul' => 'Seller',
+            'detail' => $detail,
+        ];
+    }
+
+    foreach ($pointRedemptionRows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $status = (string) ($row['status_proses'] ?? 'Pending');
+        $isProcessed = trim((string) ($row['tanggal_diproses'] ?? '')) !== '' && strcasecmp($status, 'Pending') !== 0;
+        $timeValue = $isProcessed ? (string) ($row['tanggal_diproses'] ?? '') : (string) ($row['tanggal_penukaran'] ?? '');
+        $timestamp = admin_activity_time_value($timeValue);
+        if (!admin_activity_matches_period($timestamp, $startTs, $endTs)) {
+            continue;
+        }
+
+        $profile = $profilesMap[(string) ($row['id_masyarakat'] ?? '')] ?? null;
+        $reward = $rewardsMap[(int) ($row['id_reward'] ?? 0)] ?? [];
+        $name = admin_activity_actor_name($profile);
+        $rewardName = trim((string) (($reward['nama_reward'] ?? $reward['nominal_reward'] ?? 'Reward') ?: 'Reward'));
+        $statusLabel = admin_activity_status_label($status);
+
+        $activities[] = [
+            'timestamp' => $timestamp,
+            'waktu' => format_date($timeValue ?: null),
+            'aktor' => $name,
+            'role' => admin_activity_role_label((string) (($profile['role'] ?? 'user'))),
+            'aktivitas' => 'Tukar Poin',
+            'type_key' => 'tukar_poin',
+            'modul' => 'Reward',
+            'detail' => 'Penukaran ' . number_format((int) ($row['poin_terpakai'] ?? 0), 0, ',', '.') . ' poin untuk ' . $rewardName . ' dengan status ' . $statusLabel . '.',
+        ];
+    }
+
+    $q = strtolower(trim((string) ($filters['q'] ?? '')));
+    $typeFilter = trim((string) ($filters['type'] ?? ''));
+    $roleFilter = trim((string) ($filters['role'] ?? ''));
+
+    $activities = array_values(array_filter($activities, static function (array $activity) use ($q, $typeFilter, $roleFilter): bool {
+        if ($typeFilter !== '') {
+            $matchesType = strcasecmp((string) ($activity['type_key'] ?? ''), $typeFilter) === 0
+                || strcasecmp((string) ($activity['aktivitas'] ?? ''), $typeFilter) === 0;
+            if (!$matchesType) {
+                return false;
+            }
+        }
+
+        if ($roleFilter !== '' && strcasecmp((string) ($activity['role'] ?? ''), $roleFilter) !== 0) {
+            return false;
+        }
+
+        if ($q !== '') {
+            $haystack = strtolower(implode(' ', [
+                (string) ($activity['aktor'] ?? ''),
+                (string) ($activity['aktivitas'] ?? ''),
+                (string) ($activity['modul'] ?? ''),
+                (string) ($activity['detail'] ?? ''),
+            ]));
+
+            if (!str_contains($haystack, $q)) {
+                return false;
+            }
+        }
+
+        return true;
+    }));
+
+    usort($activities, static fn (array $a, array $b): int => ((int) ($b['timestamp'] ?? 0)) <=> ((int) ($a['timestamp'] ?? 0)));
+
+    $activities = array_slice($activities, 0, $limit);
+
+    return array_values(array_map(static function (array $activity): array {
+        $activity['type_key'] = (string) ($activity['type_key'] ?? admin_activity_type_key((string) ($activity['aktivitas'] ?? '')));
+        return $activity;
+    }, $activities));
 }
 
 // ==================== HELPER FUNCTIONS ====================

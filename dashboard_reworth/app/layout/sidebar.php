@@ -10,7 +10,7 @@ function sidebar_items(string $role): array
             [
                 'type' => 'group',
                 'key' => 'data_petugas',
-                'label' => 'Data Petugas',
+                'label' => 'Data Pengguna',
                 'icon' => 'users',
                 'children' => [
                     ['key' => 'data_masyarakat', 'label' => 'Data User', 'path' => 'app/modules/admin/users.php?role=user'],
@@ -44,10 +44,8 @@ function sidebar_items(string $role): array
         ],
         'dlh' => [
             ['type' => 'link', 'key' => 'dashboard', 'label' => 'Dashboard', 'path' => 'app/modules/dlh/dashboard.php', 'icon' => 'home'],
-            ['type' => 'link', 'key' => 'monitoring', 'label' => 'Monitoring', 'path' => 'app/modules/dlh/monitoring.php', 'icon' => 'activity'],
             ['type' => 'link', 'key' => 'laporan', 'label' => 'Laporan Sampah', 'path' => 'app/modules/dlh/laporan.php', 'icon' => 'orders'],
             ['type' => 'link', 'key' => 'peta', 'label' => 'Peta Lokasi', 'path' => 'app/modules/dlh/peta_lokasi.php', 'icon' => 'map'],
-            ['type' => 'link', 'key' => 'petugas', 'label' => 'Petugas', 'path' => 'app/modules/dlh/petugas.php', 'icon' => 'users'],
             ['type' => 'link', 'key' => 'riwayat', 'label' => 'Riwayat', 'path' => 'app/modules/dlh/riwayat.php', 'icon' => 'history'],
             ['type' => 'link', 'key' => 'pengaturan', 'label' => 'Pengaturan', 'path' => 'app/modules/dlh/pengaturan.php', 'icon' => 'settings'],
         ],

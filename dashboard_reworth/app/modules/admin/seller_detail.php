@@ -72,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'tanggal_disetujui' => date('Y-m-d H:i:s'),
         ]);
 
-        if (!isset($insertResult['id_seller'])) {
+        $insertedSeller = is_array($insertResult[0] ?? null) ? $insertResult[0] : null;
+        if (!is_array($insertedSeller) || !isset($insertedSeller['id_seller'])) {
             set_flash('danger', 'Gagal menyimpan data seller: ' . supabase_last_error());
             redirect('app/modules/admin/sellers.php?status=menunggu');
         }
@@ -81,11 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status_pengajuan' => 'Disetujui',
             'tanggal_diproses' => date('Y-m-d H:i:s'),
         ], ['id_pengajuan' => 'eq.' . $idPengajuan]);
+        if (supabase_last_error() !== null) {
+            set_flash('danger', 'Seller berhasil dibuat, tetapi status pengajuan gagal diperbarui: ' . supabase_last_error());
+            redirect('app/modules/admin/sellers.php?status=menunggu');
+        }
 
         supabase_update('profiles', [
             'role' => 'seller',
             'status_pengajuan_seller' => 'aktif',
         ], ['id' => 'eq.' . $pengajuan['id_masyarakat']]);
+        if (supabase_last_error() !== null) {
+            set_flash('danger', 'Seller berhasil dibuat, tetapi profil user gagal diperbarui: ' . supabase_last_error());
+            redirect('app/modules/admin/sellers.php?status=menunggu');
+        }
 
         set_flash('success', 'Pengajuan seller berhasil disetujui.');
         redirect('app/modules/admin/sellers.php?status=menunggu');
