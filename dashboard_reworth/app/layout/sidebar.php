@@ -19,10 +19,8 @@ function sidebar_items(string $role): array
         ],
         'dlh' => [
             ['Dashboard', 'app/modules/dlh/dashboard.php', 'home'],
-            ['Monitoring', 'app/modules/dlh/monitoring.php', 'activity'],
             ['Laporan Sampah', 'app/modules/dlh/laporan.php', 'orders'],
             ['Peta Lokasi', 'app/modules/dlh/peta_lokasi.php', 'map'],
-            ['Petugas', 'app/modules/dlh/petugas.php', 'users'],
             ['Riwayat', 'app/modules/dlh/riwayat.php', 'history'],
             ['Pengaturan', 'app/modules/dlh/pengaturan.php', 'settings'],
             ['Keluar', 'public/logout.php', 'logout'],

@@ -45,6 +45,12 @@ if ($action === 'finish') {
 
     $laporan = dlh_find_report((int)$id);
 
+    if ($laporan['status_laporan'] === 'completed') {
+    set_flash('warning', 'Laporan sudah pernah diselesaikan.');
+    redirect('app/modules/dlh/riwayat.php');
+    }
+    
+
     if ($laporan === null) {
         set_flash('danger', 'Laporan tidak ditemukan.');
         redirect('app/modules/dlh/laporan.php');
@@ -66,35 +72,31 @@ if ($action === 'finish') {
         $poin
     );
 
-    // Tambahkan poin ke user pelapor
     $userId = $laporan['id_masyarakat'];
 
-    $profile = supabase_fetch_one(
+$profile = supabase_fetch_one(
+    'profiles',
+    '*',
+    ['id' => 'eq.' . $userId]
+);
+
+if ($profile !== null) {
+
+    $currentPoint = (int)($profile['total_poin'] ?? 0);
+    $currentValid = (int)($profile['total_laporan_valid'] ?? 0);
+
+    supabase_update(
         'profiles',
-        '*',
-        ['id' => 'eq.' . $userId]
+        [
+            'total_poin' => $currentPoint + $poin,
+            'total_laporan_valid' => $currentValid + 1
+        ],
+        [
+            'id' => 'eq.' . $userId
+        ]
     );
-
-    if ($profile !== null) {
-
-        $currentPoint = (int)($profile['poin'] ?? 0);
-
-        supabase_update(
-            'profiles',
-            [
-                'poin' => $currentPoint + $poin
-            ],
-            [
-                'id' => 'eq.' . $userId
-            ]
-        );
-    }
-
-    set_flash(
-        'success',
-        "Laporan selesai diproses. {$poin} poin diberikan kepada pelapor."
-    );
-
-    redirect('app/modules/dlh/riwayat.php');
 }
 
+    set_flash('success', 'Laporan berhasil diselesaikan. Poin telah diberikan kepada pelapor.');
+    redirect('app/modules/dlh/riwayat.php');
+}

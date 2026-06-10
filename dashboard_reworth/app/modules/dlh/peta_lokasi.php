@@ -73,12 +73,6 @@ render_layout('Peta Lokasi', function () use ($filters, $kecamatanOptions, $repo
                     <option value="sedang" <?= $filters['severity'] === 'sedang' ? 'selected' : '' ?>>Sedang</option>
                     <option value="parah" <?= $filters['severity'] === 'parah' ? 'selected' : '' ?>>Parah</option>
                 </select>
-                <select class="select" name="kecamatan">
-                    <option value="">Semua kecamatan</option>
-                    <?php foreach ($kecamatanOptions as $kecamatan): ?>
-                        <option value="<?= e($kecamatan) ?>" <?= $filters['kecamatan'] === $kecamatan ? 'selected' : '' ?>><?= e($kecamatan) ?></option>
-                    <?php endforeach; ?>
-                </select>
                 <select class="select" name="status">
                     <option value="">Status aktif (default)</option>
                     <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
@@ -86,11 +80,6 @@ render_layout('Peta Lokasi', function () use ($filters, $kecamatanOptions, $repo
                     <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Selesai</option>
                     <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
                 </select>
-            </div>
-            <div class="toolbar-right">
-                <input class="input" type="date" name="date_from" value="<?= e((string) $filters['date_from']) ?>">
-                <input class="input" type="date" name="date_to" value="<?= e((string) $filters['date_to']) ?>">
-                <button class="btn btn-primary" type="submit">Terapkan</button>
             </div>
         </form>
     </section>

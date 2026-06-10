@@ -30,7 +30,31 @@ $filters = [
     'date_to' => $_GET['date_to'] ?? '',
 ];
 
-$reports = dlh_reports($filters);
+
+$reports = array_values(
+    array_filter(
+        dlh_reports($filters),
+        function ($item) use ($tab) {
+
+            $status = (string) ($item['status_laporan'] ?? '');
+
+            return match ($tab) {
+
+                'menunggu' => $status === 'pending',
+
+                'diproses' => $status === 'processing',
+
+                default => in_array(
+                    $status,
+                    ['pending', 'processing'],
+                    true
+                ),
+            };
+        }
+    )
+);
+
+
 $kecamatanOptions = dlh_unique_kecamatan();
 
 render_layout('Laporan Sampah', function () use ($reports, $filters, $tab, $kecamatanOptions): void {
@@ -49,38 +73,27 @@ render_layout('Laporan Sampah', function () use ($reports, $filters, $tab, $keca
                 <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari ID, lokasi, pelapor..." style="min-width:260px;">
                 <select class="select" name="status">
                     <option value="">Semua status</option>
-                <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>Menunggu</option>
-                <option value="processing" <?= $filters['status'] === 'processing' ? 'selected' : '' ?>>Diproses</option>
-                <option value="completed" <?= $filters['status'] === 'completed' ? 'selected' : '' ?>>Selesai</option>
-                <option value="rejected" <?= $filters['status'] === 'rejected' ? 'selected' : '' ?>>Ditolak</option>
-                </select>
+                <option value="pending" <?= $filters['status'] === 'pending' ? 'selected' : '' ?>>
+                    Menunggu
+                </option>
+                <option value="processing" <?= $filters['status'] === 'processing' ? 'selected' : '' ?>>
+                    Diproses
+                </option>
+            </select>
                 <select class="select" name="severity">
                     <option value="">Semua tingkat</option>
-                   <option value="">Semua tingkat</option>
                     <option value="Ringan" <?= $filters['severity'] === 'Ringan' ? 'selected' : '' ?>>Ringan</option>
                     <option value="Sedang" <?= $filters['severity'] === 'Sedang' ? 'selected' : '' ?>>Sedang</option>
                     <option value="Berat" <?= $filters['severity'] === 'Berat' ? 'selected' : '' ?>>Berat</option>
                 </select>
-                <select class="select" name="kecamatan">
-                    <option value="">Semua kecamatan</option>
-                    <?php foreach ($kecamatanOptions as $kecamatan): ?>
-                        <option value="<?= e($kecamatan) ?>" <?= $filters['kecamatan'] === $kecamatan ? 'selected' : '' ?>><?= e($kecamatan) ?></option>
-                    <?php endforeach; ?>
-                </select>
             </div>
-            <div class="toolbar-right">
-                <input class="input" type="date" name="date_from" value="<?= e((string) $filters['date_from']) ?>">
-                <input class="input" type="date" name="date_to" value="<?= e((string) $filters['date_to']) ?>">
-                <button class="btn btn-primary" type="submit">Filter</button>
-            </div>
+
         </form>
 
         <div class="tabs" style="margin-bottom:14px;">
             <a class="tab <?= $tab === 'semua' ? 'active' : '' ?>" href="?tab=semua">Semua</a>
             <a class="tab <?= $tab === 'menunggu' ? 'active' : '' ?>" href="?tab=menunggu">Menunggu</a>
             <a class="tab <?= $tab === 'diproses' ? 'active' : '' ?>" href="?tab=diproses">Diproses</a>
-            <a class="tab <?= $tab === 'selesai' ? 'active' : '' ?>" href="?tab=selesai">Selesai</a>
-            <a class="tab <?= $tab === 'ditolak' ? 'active' : '' ?>" href="?tab=ditolak">Ditolak</a>
         </div>
 
         <div class="table-wrap">

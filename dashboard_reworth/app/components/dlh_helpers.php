@@ -244,6 +244,51 @@ function dlh_unique_kecamatan(): array
     return $kecamatan;
 }
 
+function dlh_find_report(int $id): ?array
+{
+    $result = supabase_request(
+        'GET',
+        'laporan_sampah',
+        [
+            'id_laporan' => 'eq.' . $id,
+            'limit' => '1'
+        ],
+        null
+    );
+
+    if (($result['status'] ?? 0) !== 200) {
+        return null;
+    }
+
+    $data = $result['data'] ?? [];
+
+    if (!is_array($data) || !isset($data[0])) {
+        return null;
+    }
+
+    $report = $data[0];
+
+    // Ambil data profile pelapor
+    if (!empty($report['id_masyarakat'])) {
+
+        $profile = supabase_fetch_one(
+            'profiles',
+            '*',
+            ['id' => 'eq.' . $report['id_masyarakat']]
+        );
+
+        if ($profile) {
+            $report['pelapor'] =
+                $profile['nama_lengkap']
+                ?? $profile['username']
+                ?? $profile['email']
+                ?? 'Masyarakat';
+        }
+    }
+
+    return $report;
+}
+
 /**
  * Update status laporan
  */

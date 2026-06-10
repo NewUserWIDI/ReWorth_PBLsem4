@@ -7,66 +7,312 @@ require_once __DIR__ . '/../../layout/main_layout.php';
 
 require_role('dlh');
 
-$tab = $_GET['tab'] ?? 'profil';
-$allowed = ['profil', 'akun', 'notifikasi', 'keamanan'];
-if (!in_array($tab, $allowed, true)) {
-    $tab = 'profil';
+$currentUser = current_user();
+
+render_layout('Profil Akun', function () use ($currentUser): void {
+?>
+
+<style>
+
+.profile-page{
+    width:100%;
+    padding:24px 32px 64px;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    set_flash('success', 'Pengaturan berhasil disimpan (mock).');
-    redirect('app/modules/dlh/pengaturan.php?tab=' . urlencode($tab));
+.profile-breadcrumb{
+    font-size:13px;
+    color:#98A2B3;
+    margin-bottom:16px;
 }
 
-render_layout('Pengaturan', function () use ($tab): void {
-    ?>
-    <section class="panel">
-        <div class="panel-header">
+.profile-header{
+    margin-bottom:32px;
+}
+
+.profile-header h1{
+    margin:0;
+    font-size:42px;
+    font-weight:700;
+    color:#111827;
+}
+
+.profile-header p{
+    margin-top:8px;
+    font-size:16px;
+    color:#667085;
+}
+
+.profile-hero-card,
+.account-card{
+    background:#FFFFFF;
+    border:1px solid #ECEEF1;
+    border-radius:28px;
+    box-shadow:0 8px 32px rgba(0,0,0,.03);
+}
+
+.profile-hero-card{
+    width:100%;
+    padding:40px;
+    display:flex;
+    align-items:flex-start;
+    gap:48px;
+    margin-bottom:24px;
+}
+
+.profile-avatar{
+    width:180px;
+    height:180px;
+    border-radius:50%;
+    background:#2E7D32;
+    color:#FFFFFF;
+    font-size:64px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+}
+
+.profile-main-info{
+    flex:1;
+}
+
+.profile-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:32px;
+}
+
+.profile-top h2{
+    margin:0;
+    font-size:48px;
+    font-weight:700;
+    line-height:1.2;
+    color:#111827;
+}
+
+.status-badge{
+    display:inline-flex;
+    align-items:center;
+    background:#ECFDF3;
+    color:#15803D;
+    padding:8px 16px;
+    border-radius:999px;
+    margin-top:14px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.btn-edit{
+    height:48px;
+    padding:0 22px;
+    border:1px solid #D0D5DD;
+    border-radius:14px;
+    background:#FFFFFF;
+    font-weight:600;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.btn-edit:hover{
+    background:#F9FAFB;
+}
+
+.profile-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(180px,1fr));
+    gap:24px 32px;
+}
+
+.profile-item{
+    display:flex;
+    flex-direction:column;
+}
+
+.profile-item span{
+    font-size:13px;
+    color:#98A2B3;
+    margin-bottom:6px;
+}
+
+.profile-item strong{
+    font-size:17px;
+    font-weight:600;
+    color:#111827;
+}
+
+.text-success{
+    color:#15803D;
+}
+
+.account-card{
+    padding:32px;
+}
+
+.account-card h3{
+    margin:0 0 24px;
+    font-size:24px;
+    font-weight:700;
+    color:#111827;
+}
+
+.info-row{
+    min-height:72px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid #ECEEF1;
+}
+
+.info-row:last-child{
+    border-bottom:none;
+}
+
+.info-row span{
+    font-size:15px;
+    color:#667085;
+}
+
+.info-row strong{
+    font-size:16px;
+    font-weight:600;
+    color:#111827;
+}
+
+@media(max-width:992px){
+
+    .profile-hero-card{
+        flex-direction:column;
+    }
+
+    .profile-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:640px){
+
+    .profile-grid{
+        grid-template-columns:1fr;
+    }
+
+    .profile-top{
+        flex-direction:column;
+        gap:20px;
+    }
+
+    .profile-top h2{
+        font-size:36px;
+    }
+
+}
+
+</style>
+
+<section class="profile-page">
+
+
+<div class="profile-breadcrumb">
+    Pengaturan > Profil Akun
+</div>
+
+<div class="profile-header">
+    <h1>Profil Akun</h1>
+    <p>Kelola informasi akun petugas DLH.</p>
+</div>
+
+<div class="profile-hero-card">
+
+    <div class="profile-avatar">
+        <?= strtoupper(substr($currentUser['nama_lengkap'] ?? 'P',0,1)) ?>
+    </div>
+
+    <div class="profile-main-info">
+
+        <div class="profile-top">
+
             <div>
-                <h2>Pengaturan</h2>
-                <p>Kelola profil instansi dan preferensi sistem.</p>
-            </div>
-        </div>
-        <div class="settings-layout">
-            <nav class="settings-tabs">
-                <a class="<?= $tab === 'profil' ? 'active' : '' ?>" href="?tab=profil">Profil Instansi</a>
-                <a class="<?= $tab === 'akun' ? 'active' : '' ?>" href="?tab=akun">Akun</a>
-                <a class="<?= $tab === 'notifikasi' ? 'active' : '' ?>" href="?tab=notifikasi">Notifikasi</a>
-                <a class="<?= $tab === 'keamanan' ? 'active' : '' ?>" href="?tab=keamanan">Keamanan</a>
-            </nav>
 
-            <form method="post" class="form-card form-stack">
-                <?php if ($tab === 'profil'): ?>
-                    <label class="form-field"><span>Logo Instansi</span><input type="file" name="logo"></label>
-                    <div class="form-grid">
-                        <label class="form-field"><span>Nama Instansi</span><input name="nama_instansi" value="DLH Kota Bandung"></label>
-                        <label class="form-field"><span>Email</span><input name="email" type="email" value="monitoring@dlh.reworth.app"></label>
-                        <label class="form-field"><span>Telepon</span><input name="telepon" value="022-1234567"></label>
-                        <label class="form-field"><span>Kota/Kabupaten</span><input name="kota" value="Bandung"></label>
-                    </div>
-                    <label class="form-field"><span>Alamat</span><textarea name="alamat">Jl. Wastukencana No. 2, Bandung</textarea></label>
-                <?php elseif ($tab === 'akun'): ?>
-                    <div class="form-grid">
-                        <label class="form-field"><span>Nama Admin DLH</span><input name="nama_admin" value="Petugas DLH"></label>
-                        <label class="form-field"><span>Email Login</span><input name="email_login" type="email" value="dlh@reworth.app"></label>
-                        <label class="form-field"><span>Role</span><input name="role" value="DLH" readonly></label>
-                    </div>
-                <?php elseif ($tab === 'notifikasi'): ?>
-                    <label class="form-field"><span>Notifikasi laporan baru</span><select name="notif_baru"><option>Aktif</option><option>Nonaktif</option></select></label>
-                    <label class="form-field"><span>Notifikasi laporan parah</span><select name="notif_parah"><option>Aktif</option><option>Nonaktif</option></select></label>
-                    <label class="form-field"><span>Batas laporan belum diproses (jam)</span><input type="number" value="6" min="1" name="sla_jam"></label>
-                <?php else: ?>
-                    <label class="form-field"><span>Password lama</span><input type="password" name="old_password"></label>
-                    <label class="form-field"><span>Password baru</span><input type="password" name="new_password"></label>
-                    <label class="form-field"><span>Konfirmasi password baru</span><input type="password" name="confirm_password"></label>
-                    <label class="form-field"><span>Logout semua sesi</span><select name="logout_all"><option>Tidak</option><option>Ya</option></select></label>
-                <?php endif; ?>
-                <div class="card-actions">
-                    <button class="btn btn-primary" type="submit">Simpan Perubahan</button>
+                <h2>
+                    <?= e($currentUser['nama_lengkap'] ?? 'Petugas DLH') ?>
+                </h2>
+
+                <div class="status-badge">
+                    Akun Aktif
                 </div>
-            </form>
-        </div>
-    </section>
-    <?php
-});
 
+            </div>
+
+            <button class="btn-edit" type="button">
+                Edit Profil
+            </button>
+
+        </div>
+
+        <div class="profile-grid">
+
+            <div class="profile-item">
+                <span>Email</span>
+                <strong><?= e($currentUser['email'] ?? '-') ?></strong>
+            </div>
+
+            <div class="profile-item">
+                <span>Username</span>
+                <strong><?= e($currentUser['username'] ?? '-') ?></strong>
+            </div>
+
+            <div class="profile-item">
+                <span>Role</span>
+                <strong><?= strtoupper(e($currentUser['role'] ?? '-')) ?></strong>
+            </div>
+
+            <div class="profile-item">
+                <span>Status</span>
+                <strong class="text-success">Aktif</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="account-card">
+
+    <h3>Informasi Akun</h3>
+
+    <div class="info-row">
+        <span>Nama Lengkap</span>
+        <strong><?= e($currentUser['nama_lengkap'] ?? '-') ?></strong>
+    </div>
+
+    <div class="info-row">
+        <span>Email</span>
+        <strong><?= e($currentUser['email'] ?? '-') ?></strong>
+    </div>
+
+    <div class="info-row">
+        <span>Username</span>
+        <strong><?= e($currentUser['username'] ?? '-') ?></strong>
+    </div>
+
+    <div class="info-row">
+        <span>Role</span>
+        <strong><?= strtoupper(e($currentUser['role'] ?? '-')) ?></strong>
+    </div>
+
+    <div class="info-row">
+        <span>Status Akun</span>
+        <strong class="text-success">Aktif</strong>
+    </div>
+
+</div>
+
+
+</section>
+
+<?php
+});
+?>

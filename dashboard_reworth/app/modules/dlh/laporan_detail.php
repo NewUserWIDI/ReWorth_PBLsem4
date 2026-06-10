@@ -23,7 +23,10 @@ render_layout('Detail Laporan', function () use ($report): void {
         <div class="panel-header">
             <div>
                 <h2>Detail Laporan #<?= e((string) $report['id_laporan']) ?></h2>
-                <p><?= e((string) $report['waktu_lapor']) ?> | Pelapor: <?= e((string) $report['pelapor']) ?></p>
+                        <p>
+                <?= e((string) $report['waktu_lapor']) ?>
+                | Pelapor: <?= e((string) ($report['nama_pelapor'] ?? '-')) ?>
+            </p>
             </div>
             <div class="report-meta">
                 <?php severity_badge((string) $report['tingkat_keparahan']); ?>
@@ -64,33 +67,125 @@ render_layout('Detail Laporan', function () use ($report): void {
                     <div id="dlh-detail-map" class="map-canvas" style="height:220px;border-radius:14px;"></div>
                 </article>
 
-                <article class="form-card">
-                    <div class="panel-header"><h2>Aksi Verifikasi</h2></div>
-                    <form class="action-row" method="post" action="<?= e(url('app/modules/dlh/verification_action.php')) ?>" data-confirm="Terima laporan ini dan ubah status ke diproses?">
-                        <input type="hidden" name="id_laporan" value="<?= e((string) $report['id_laporan']) ?>">
-                        <input type="hidden" name="action" value="accept">
-                        <button class="btn btn-primary" type="submit">Verifikasi / Terima</button>
-                    </form>
-                    <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0;">
-                    <form class="reject-form" method="post" action="<?= e(url('app/modules/dlh/verification_action.php')) ?>" data-confirm="Tolak laporan ini?">
-                        <input type="hidden" name="id_laporan" value="<?= e((string) $report['id_laporan']) ?>">
-                        <input type="hidden" name="action" value="reject">
-                        <label class="form-field">
-                            <span>Alasan Penolakan (minimal 10 karakter)</span>
-                            <textarea name="alasan_ditolak" required minlength="10" placeholder="Contoh: Foto tidak jelas, lokasi tidak valid, atau laporan duplikat."></textarea>
-                        </label>
-                        <button class="btn btn-danger" type="submit">Tolak Laporan</button>
-                    </form>
-                    <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0;">
-                    <form class="action-row" method="post" action="<?= e(url('app/modules/dlh/verification_action.php')) ?>" data-confirm="Tandai laporan ini selesai?">
-                        <input type="hidden" name="id_laporan" value="<?= e((string) $report['id_laporan']) ?>">
-                        <input type="hidden" name="action" value="finish">
-                        <button class="btn btn-secondary" type="submit">Update ke Selesai</button>
-                    </form>
-                </article>
-            </div>
-        </div>
-    </section>
+              <?php
+$statusLaporan = strtolower(
+    trim((string)($report['status_laporan'] ?? ''))
+);
+?>
+
+<article class="form-card">
+
+    <div class="panel-header">
+        <h2>Status Laporan</h2>
+    </div>
+
+    <div class="status-info">
+
+        <?php if ($statusLaporan === 'completed'): ?>
+            <span class="status-badge badge-success">
+                Laporan Sudah Selesai Diproses
+            </span>
+
+        <?php elseif ($statusLaporan === 'rejected'): ?>
+            <span class="status-badge badge-danger">
+                Laporan Ditolak
+            </span>
+
+            <p style="margin-top:12px;">
+                <strong>Alasan:</strong>
+                <?= e((string)($report['alasan_ditolak'] ?? '-')) ?>
+            </p>
+
+        <?php elseif ($statusLaporan === 'processing'): ?>
+            <span class="status-badge badge-warning">
+                Sedang Diproses DLH
+            </span>
+
+        <?php elseif ($statusLaporan === 'pending'): ?>
+            <span class="status-badge badge-neutral">
+                Menunggu Verifikasi
+            </span>
+
+        <?php endif; ?>
+
+    </div>
+
+</article>
+
+<?php if (in_array($statusLaporan, ['pending', 'processing'], true)): ?>
+
+<article class="form-card">
+
+    <div class="panel-header">
+        <h2>Aksi Verifikasi</h2>
+    </div>
+
+    <form class="action-row"
+          method="post"
+          action="<?= e(url('app/modules/dlh/verification_action.php')) ?>">
+
+        <input type="hidden"
+               name="id_laporan"
+               value="<?= e((string)$report['id_laporan']) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="accept">
+
+        <button class="btn btn-primary" type="submit">
+            Verifikasi / Terima
+        </button>
+
+    </form>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0;">
+
+    <form class="reject-form"
+          method="post"
+          action="<?= e(url('app/modules/dlh/verification_action.php')) ?>">
+
+        <input type="hidden"
+               name="id_laporan"
+               value="<?= e((string)$report['id_laporan']) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="reject">
+
+        <textarea name="alasan_ditolak"
+                  required
+                  minlength="10"
+                  placeholder="Masukkan alasan penolakan"></textarea>
+
+        <button class="btn btn-danger" type="submit">
+            Tolak Laporan
+        </button>
+
+    </form>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0;">
+
+    <form class="action-row"
+          method="post"
+          action="<?= e(url('app/modules/dlh/verification_action.php')) ?>">
+
+        <input type="hidden"
+               name="id_laporan"
+               value="<?= e((string)$report['id_laporan']) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="finish">
+
+        <button class="btn btn-secondary" type="submit">
+            Update ke Selesai
+        </button>
+
+    </form>
+
+</article>
+
+<?php endif; ?>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
