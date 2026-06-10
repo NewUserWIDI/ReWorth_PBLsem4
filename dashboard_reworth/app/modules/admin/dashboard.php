@@ -40,7 +40,7 @@ render_layout('Dashboard Admin', function () use ($overview, $activities, $pendi
         <?php stat_card('Total Seller', number_format((int) $overview['total_seller'], 0, ',', '.'), '+' . number_format((int) $overview['new_seller_week'], 0, ',', '.') . ' minggu ini'); ?>
         <?php stat_card('Total Laporan Sampah', number_format((int) $overview['total_laporan_sampah'], 0, ',', '.'), '+' . number_format((int) $overview['new_laporan_today'], 0, ',', '.') . ' hari ini'); ?>
         <?php stat_card('Total Transaksi', number_format((int) $overview['total_transaksi'], 0, ',', '.'), '+' . number_format((int) $overview['transaksi_week'], 0, ',', '.') . ' minggu ini'); ?>
-        <?php stat_card('Total Pendapatan', 'Rp ' . number_format((int) $overview['total_pendapatan'], 0, ',', '.'), 'Minggu ini Rp ' . number_format((int) $overview['pendapatan_week'], 0, ',', '.')); ?>
+        <?php stat_card('Pendapatan Sistem', 'Rp ' . number_format((int) $overview['total_pendapatan'], 0, ',', '.'), '10% per pesanan, minggu ini Rp ' . number_format((int) $overview['pendapatan_week'], 0, ',', '.')); ?>
     </div>
 
     <div class="two-col-grid">

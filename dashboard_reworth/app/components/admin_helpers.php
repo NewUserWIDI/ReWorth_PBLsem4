@@ -96,6 +96,57 @@ function admin_count_recent(string $table, string $dateColumn, string $startIso,
     }));
 }
 
+function admin_revenue_from_orders(array $orders, ?string $startIso = null, ?string $endIso = null): int
+{
+    $startTs = $startIso !== null ? (strtotime($startIso) ?: 0) : null;
+    $endTs = $endIso !== null ? (strtotime($endIso) ?: 0) : null;
+    $totalRevenue = 0.0;
+
+    foreach ($orders as $order) {
+        if (!is_array($order)) {
+            continue;
+        }
+
+        $status = strtolower(trim((string) ($order['status_pesanan'] ?? '')));
+        if (in_array($status, ['dibatalkan', 'cancelled', 'ditolak', 'gagal'], true)) {
+            continue;
+        }
+
+        if ($startTs !== null) {
+            $dateValue = (string) ($order['tanggal_pesanan'] ?? $order['created_at'] ?? '');
+            $timestamp = strtotime($dateValue);
+            if ($timestamp === false) {
+                continue;
+            }
+            if ($timestamp < $startTs) {
+                continue;
+            }
+            if ($endTs !== null && $timestamp >= $endTs) {
+                continue;
+            }
+        }
+
+        $feePlatform = null;
+        if (isset($order['fee_platform']) && is_numeric($order['fee_platform'])) {
+            $feePlatform = (float) $order['fee_platform'];
+        } elseif (isset($order['subtotal_produk']) && is_numeric($order['subtotal_produk'])) {
+            $feePlatform = (float) $order['subtotal_produk'] * 0.10;
+        } elseif (isset($order['subtotal']) && is_numeric($order['subtotal'])) {
+            $feePlatform = (float) $order['subtotal'] * 0.10;
+        } elseif (isset($order['total_bayar']) && is_numeric($order['total_bayar'])) {
+            $feePlatform = (float) $order['total_bayar'] * 0.10;
+        }
+
+        if ($feePlatform === null || $feePlatform <= 0) {
+            continue;
+        }
+
+        $totalRevenue += $feePlatform;
+    }
+
+    return (int) round($totalRevenue);
+}
+
 // ==================== USER MANAGEMENT ====================
 
 function admin_users(array $filters = []): array
@@ -608,10 +659,17 @@ function admin_overview(): array
     $totalTransaksi = admin_count_rows('pesanan', 'id_pesanan');
     $transaksiWeek = admin_count_recent('pesanan', 'tanggal_pesanan', $weekStart);
 
-    $totalPendapatan = admin_sum_column('pesanan', 'total_bayar');
-    $pendapatanWeek = admin_sum_column('pesanan', 'total_bayar', [
-        'tanggal_pesanan' => 'gte.' . $weekStart,
-    ]);
+    $ordersForRevenue = supabase_fetch(
+        'pesanan',
+        'total_bayar,fee_platform,subtotal_produk,subtotal,status_pesanan,tanggal_pesanan,created_at',
+        ['order' => 'tanggal_pesanan.desc']
+    );
+    if (!is_array($ordersForRevenue)) {
+        $ordersForRevenue = [];
+    }
+
+    $totalPendapatan = admin_revenue_from_orders($ordersForRevenue);
+    $pendapatanWeek = admin_revenue_from_orders($ordersForRevenue, $weekStart, null);
 
     return [
         'total_user' => $totalUser,
