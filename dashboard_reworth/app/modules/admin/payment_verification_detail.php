@@ -106,8 +106,8 @@ render_layout('Detail Verifikasi Pembayaran', function () use ($payment): void {
         </div>
         <form class="form-stack" method="post">
             <label class="form-field">
-                <span>Catatan Verifikasi</span>
-                <textarea name="catatan_verifikasi" placeholder="Tulis catatan untuk audit internal atau alasan penolakan..."><?= e((string) ($payment['catatan_verifikasi'] ?? '')) ?></textarea>
+                <span>Catatan Verifikasi / Alasan Penolakan</span>
+                <textarea name="catatan_verifikasi" minlength="10" placeholder="Jika menolak pembayaran, alasan wajib diisi minimal 10 karakter."><?= e((string) ($payment['catatan_verifikasi'] ?? '')) ?></textarea>
             </label>
             <div class="card-actions">
                 <button class="btn btn-primary" type="submit" name="decision" value="approve">Terima Pembayaran</button>

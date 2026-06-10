@@ -9,7 +9,7 @@ class MockAuthRepository implements AuthRepository {
       email: 'demo@reworth.app',
       password: 'password123',
       poin: 0,
-      streak: 0,
+      streak: 7,
       jumlahLaporanValid: 0,
       alamatTersimpan: const [],
       metodePembayaran: const [],

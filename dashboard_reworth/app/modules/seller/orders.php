@@ -24,7 +24,7 @@ render_layout('Pesanan', function () use ($orders, $tabs, $filters): void {
         <div class="panel-header">
             <div>
                 <h2>Pesanan</h2>
-                <p>Kelola pesanan yang belum selesai atau belum dibatalkan.</p>
+                <p>Kelola pesanan aktif yang sedang menunggu proses sampai pengiriman.</p>
             </div>
         </div>
         <form class="toolbar" method="get" style="margin-bottom: 18px;">

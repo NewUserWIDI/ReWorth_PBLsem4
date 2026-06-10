@@ -14,7 +14,12 @@ $sellerUserId = (string) ($user['seller_user_id'] ?? $user['user_id'] ?? '');
 $orderId = (int) ($_GET['id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $result = seller_update_order_status($sellerUserId, $orderId, (string) ($_POST['status_pesanan'] ?? ''));
+    $result = seller_update_order_status(
+        $sellerUserId,
+        $orderId,
+        (string) ($_POST['status_pesanan'] ?? ''),
+        (string) ($_POST['alasan_penolakan'] ?? '')
+    );
     set_flash((string) ($result['type'] ?? 'success'), (string) ($result['message'] ?? 'Status diperbarui.'));
     redirect('app/modules/seller/order_detail.php?id=' . $orderId);
 }
@@ -91,13 +96,17 @@ render_layout('Detail Pesanan', function () use ($order, $address, $payment, $sh
             </div>
             <form method="post" class="toolbar-right" style="display:flex;gap:10px;align-items:center;">
                 <select class="select" name="status_pesanan" required>
-                    <?php foreach (['diproses', 'dikemas', 'dikirim', 'selesai', 'dibatalkan'] as $status): ?>
+                    <?php foreach (['diproses', 'dikemas', 'dikirim', 'selesai', 'ditolak'] as $status): ?>
                         <option value="<?= e($status) ?>" <?= (string) ($order['status_pesanan'] ?? '') === $status ? 'selected' : '' ?>><?= e(status_label($status)) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <button class="btn btn-primary" type="submit">Simpan Status</button>
             </form>
         </div>
+        <label class="form-field" style="margin-top:16px;">
+            <span>Alasan Penolakan</span>
+            <textarea name="alasan_penolakan" minlength="10" placeholder="Wajib diisi minimal 10 karakter jika seller menolak pesanan."><?= e((string) ($payment['catatan_verifikasi'] ?? '')) ?></textarea>
+        </label>
         <div class="stat-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 16px;">
             <div><span class="panel-subtitle">Subtotal Bruto</span><strong>Rp <?= e(number_format((int) ($order['subtotal_bruto_seller'] ?? 0), 0, ',', '.')) ?></strong></div>
             <div><span class="panel-subtitle">Fee Platform</span><strong>Rp <?= e(number_format((int) ($order['fee_platform_seller'] ?? 0), 0, ',', '.')) ?></strong></div>

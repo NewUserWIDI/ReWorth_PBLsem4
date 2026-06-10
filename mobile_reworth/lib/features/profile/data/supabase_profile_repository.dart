@@ -200,7 +200,7 @@ class SupabaseProfileRepository implements ProfileRepository {
 
       final profileResponse = await _client
           .from('profiles')
-          .select('total_poin, no_telp, nama_lengkap')
+          .select('total_poin, no_telp, nomor_hp, nama_lengkap')
           .eq('id', authUser.id)
           .single();
 
@@ -211,7 +211,9 @@ class SupabaseProfileRepository implements ProfileRepository {
         return false;
       }
 
-      final userPhone = (profileResponse['no_telp'] as String?) ?? '';
+      final userPhone = (profileResponse['no_telp'] as String?)?.trim().isNotEmpty == true
+          ? (profileResponse['no_telp'] as String).trim()
+          : ((profileResponse['nomor_hp'] as String?) ?? '').trim();
 
       if (userPhone.isEmpty) {
         print('User phone number is required for redemption');
@@ -240,15 +242,19 @@ class SupabaseProfileRepository implements ProfileRepository {
           })
           .eq('id', authUser.id);
 
-      await _client.from('riwayat_poin').insert({
-        'id_masyarakat': authUser.id,
-        'jenis_transaksi': 'Keluar',
-        'sumber_poin': 'Tukar Reward: ${reward.namaReward}',
-        'jumlah_poin': pointsRequired,
-        'saldo_setelah': newPoints,
-        'keterangan': 'Penukaran ${reward.namaReward} - ${reward.description}',
-        'tanggal': now.toIso8601String(),
-      });
+      try {
+        await _client.from('riwayat_poin').insert({
+          'id_masyarakat': authUser.id,
+          'jenis_transaksi': 'Keluar',
+          'sumber_poin': 'Tukar Reward: ${reward.namaReward}',
+          'jumlah_poin': pointsRequired,
+          'saldo_setelah': newPoints,
+          'keterangan': 'Penukaran ${reward.namaReward} - ${reward.description}',
+          'tanggal': now.toIso8601String(),
+        });
+      } catch (e) {
+        print('Warning riwayat_poin insert failed: $e');
+      }
 
       return true;
     } catch (e) {

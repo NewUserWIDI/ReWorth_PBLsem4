@@ -27,7 +27,7 @@ render_layout('Riwayat Pesanan', function () use ($orders, $balance): void {
         <div class="panel-header">
             <div>
                 <h2>Riwayat Pesanan</h2>
-                <p>Pesanan yang selesai atau dibatalkan dipindahkan ke halaman ini.</p>
+                <p>Pesanan yang selesai atau ditolak dipindahkan ke halaman ini.</p>
             </div>
         </div>
         <?php if ($orders === []): ?>

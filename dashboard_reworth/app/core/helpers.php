@@ -51,6 +51,7 @@ function status_label(string $status): string
         'nonaktif' => 'Nonaktif',
         'baru' => 'Baru',
         'dibatalkan' => 'Dibatalkan',
+        'ditolak_pesanan' => 'Ditolak',
         'berhasil' => 'Berhasil',
         'belum upload' => 'Belum Upload',
         'belum dibayar' => 'Belum Dibayar',
@@ -73,7 +74,7 @@ function status_badge_class(string $status): string
     return match ($normalized) {
         'valid', 'aktif', 'selesai', 'terverifikasi', 'berhasil', 'tersedia' => 'badge-success',
         'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas', 'menunggu pembayaran', 'belum upload', 'belum dibayar' => 'badge-warning',
-        'ditolak', 'gagal', 'dibatalkan', 'nonaktif', 'suspend', 'kadaluarsa' => 'badge-danger',
+        'ditolak', 'ditolak_pesanan', 'gagal', 'dibatalkan', 'nonaktif', 'suspend', 'kadaluarsa' => 'badge-danger',
         'disembunyikan', 'refund' => 'badge-neutral',
         'diproses', 'dikirim', 'tertahan' => 'badge-info',
         default => 'badge-neutral',

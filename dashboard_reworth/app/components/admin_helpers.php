@@ -610,7 +610,7 @@ function map_order_status(string $status): string
         'aktif', 'pending', 'menunggu pembayaran', 'menunggu verifikasi' => 'pending',
         'diproses' => 'diproses',
         'selesai', 'completed' => 'selesai',
-        'dibatalkan', 'cancelled' => 'dibatalkan',
+        'ditolak', 'dibatalkan', 'cancelled' => 'ditolak',
         default => 'pending',
     };
 }

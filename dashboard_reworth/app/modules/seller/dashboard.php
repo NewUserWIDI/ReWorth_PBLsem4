@@ -20,9 +20,55 @@ $newOrders = $dashboard['new_orders'];
 $sales = $dashboard['sales'];
 $lowStock = $dashboard['low_stock'];
 $salesChart = $dashboard['sales_chart'] ?? ['days' => [], 'max_amount' => 0, 'total_amount' => 0, 'total_orders' => 0];
-$storeName = (string) ($sellerProfile['nama_toko'] ?? 'Toko ReWorth');
+$salesChartIsDemo = (float) ($salesChart['total_amount'] ?? 0) <= 0;
+if ($salesChartIsDemo) {
+    $salesChart = seller_build_demo_sales_chart(30);
+}
+$salesChartDays = array_values(is_array($salesChart['days'] ?? null) ? $salesChart['days'] : []);
+$salesChartMax = max(1, (float) ($salesChart['max_amount'] ?? 0));
+$salesChartWidth = max(960, count($salesChartDays) * 42);
+$salesChartHeight = 236;
+$salesChartPaddingX = 20;
+$salesChartPaddingTop = 18;
+$salesChartPaddingBottom = 42;
+$salesChartPlotHeight = $salesChartHeight - $salesChartPaddingTop - $salesChartPaddingBottom;
+$salesChartPlotWidth = $salesChartWidth - ($salesChartPaddingX * 2);
+$salesChartBaseY = $salesChartHeight - $salesChartPaddingBottom;
+$salesChartPoints = [];
+foreach ($salesChartDays as $index => $day) {
+    $amount = (float) ($day['amount'] ?? 0);
+    $x = $salesChartPaddingX;
+    if (count($salesChartDays) > 1) {
+        $x += ($salesChartPlotWidth * $index) / (count($salesChartDays) - 1);
+    }
+    $y = $salesChartPaddingTop + $salesChartPlotHeight - ($amount / $salesChartMax) * $salesChartPlotHeight;
+    $salesChartPoints[] = [
+        'x' => $x,
+        'y' => $y,
+        'label' => (string) ($day['label'] ?? ''),
+        'amount' => $amount,
+        'orders' => (int) ($day['orders'] ?? 0),
+        'show_label' => $index % 5 === 0 || $index === array_key_last($salesChartDays),
+    ];
+}
 
-render_layout('Dashboard Seller', function () use ($orders, $products, $newOrders, $sales, $lowStock, $storeName, $salesChart): void {
+$salesChartLinePath = '';
+$salesChartAreaPath = '';
+if ($salesChartPoints !== []) {
+    foreach ($salesChartPoints as $index => $point) {
+        $command = $index === 0 ? 'M' : 'L';
+        $salesChartLinePath .= $command . ' ' . round($point['x'], 2) . ' ' . round($point['y'], 2) . ' ';
+    }
+    $firstPoint = $salesChartPoints[0];
+    $lastPoint = $salesChartPoints[array_key_last($salesChartPoints)];
+    $salesChartAreaPath = $salesChartLinePath
+        . 'L ' . round($lastPoint['x'], 2) . ' ' . round($salesChartBaseY, 2)
+        . ' L ' . round($firstPoint['x'], 2) . ' ' . round($salesChartBaseY, 2)
+        . ' Z';
+}
+$storeName = (string) ($sellerProfile['nama_toko'] ?? $user['nama_toko'] ?? $user['nama'] ?? 'Toko ReWorth');
+
+render_layout('Dashboard Seller', function () use ($orders, $products, $newOrders, $sales, $lowStock, $storeName, $salesChart, $salesChartIsDemo, $salesChartDays, $salesChartPoints, $salesChartWidth, $salesChartHeight, $salesChartBaseY, $salesChartLinePath, $salesChartAreaPath, $salesChartPaddingTop, $salesChartPlotHeight): void {
     ?>
     <section class="seller-hero">
         <div class="seller-hero-content">
@@ -43,30 +89,60 @@ render_layout('Dashboard Seller', function () use ($orders, $products, $newOrder
     </div>
 
     <div class="content-grid">
-        <section class="panel">
-            <div class="panel-header">
+        <section class="panel seller-sales-panel">
+            <div class="panel-header seller-sales-header">
                 <div>
                     <h2>Grafik Penjualan 30 Hari Terakhir</h2>
-                    <p>Ringkasan akan bertambah seiring transaksi toko.</p>
+                    <p><?= $salesChartIsDemo ? 'Data demo aktif untuk verifikasi tampilan chart.' : 'Ringkasan akan bertambah seiring transaksi toko.' ?></p>
                 </div>
+                <?php if ($salesChartIsDemo): ?>
+                    <span class="seller-sales-demo-badge">Demo</span>
+                <?php endif; ?>
             </div>
-            <div class="seller-chart">
-                <?php $maxAmount = max(1, (float) ($salesChart['max_amount'] ?? 0)); ?>
-                <?php foreach (($salesChart['days'] ?? []) as $index => $day): ?>
-                    <?php
-                        $amount = (float) ($day['amount'] ?? 0);
-                        $height = $amount > 0 ? max(10, (int) round(($amount / $maxAmount) * 150)) : 6;
-                        $showLabel = $index === 0 || $index === 9 || $index === 19 || $index === 29;
-                    ?>
-                    <div class="seller-chart-bar" title="<?= e((string) ($day['label'] ?? '')) ?> | Rp <?= e(number_format((int) $amount, 0, ',', '.')) ?> | <?= e((string) ($day['orders'] ?? 0)) ?> pesanan">
-                        <span style="height: <?= e((string) $height) ?>px"></span>
-                        <?php if ($showLabel): ?><small><?= e((string) ($day['label'] ?? '')) ?></small><?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
+
+            <div class="seller-sales-chart" aria-label="Grafik penjualan 30 hari terakhir">
+                <svg
+                    class="seller-sales-chart-svg"
+                    viewBox="0 0 <?= e((string) $salesChartWidth) ?> <?= e((string) $salesChartHeight) ?>"
+                    role="img"
+                    aria-label="Grafik penjualan 30 hari terakhir"
+                    preserveAspectRatio="none"
+                >
+                    <rect x="0" y="0" width="<?= e((string) $salesChartWidth) ?>" height="<?= e((string) $salesChartHeight) ?>" fill="#ffffff"></rect>
+                    <?php for ($i = 0; $i <= 4; $i++): ?>
+                        <?php $gridY = $salesChartPaddingTop + (int) round(($salesChartPlotHeight / 4) * $i); ?>
+                        <line x1="20" y1="<?= e((string) $gridY) ?>" x2="<?= e((string) ($salesChartWidth - 20)) ?>" y2="<?= e((string) $gridY) ?>" stroke="#E5E7EB" stroke-width="1"></line>
+                    <?php endfor; ?>
+                    <?php if ($salesChartAreaPath !== ''): ?>
+                        <path d="<?= e($salesChartAreaPath) ?>" fill="#DCFCE7" opacity="0.55"></path>
+                        <path d="<?= e($salesChartLinePath) ?>" fill="none" stroke="#15803D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <?php foreach ($salesChartPoints as $point): ?>
+                            <circle cx="<?= e((string) round($point['x'], 2)) ?>" cy="<?= e((string) round($point['y'], 2)) ?>" r="5.5" fill="#15803D" stroke="#ffffff" stroke-width="2"></circle>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    <?php foreach ($salesChartPoints as $point): ?>
+                        <?php if ($point['show_label']): ?>
+                            <text
+                                x="<?= e((string) round($point['x'], 2)) ?>"
+                                y="<?= e((string) ($salesChartHeight - 14)) ?>"
+                                text-anchor="middle"
+                                fill="#6B7280"
+                                font-size="11"
+                                font-family="Poppins, sans-serif"
+                            ><?= e((string) $point['label']) ?></text>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </svg>
             </div>
-            <div class="chart-summary">
-                <strong>Rp <?= e(number_format((int) ($salesChart['total_amount'] ?? 0), 0, ',', '.')) ?></strong>
-                <span><?= e((string) ($salesChart['total_orders'] ?? 0)) ?> pesanan selesai dalam 30 hari terakhir</span>
+
+            <div class="seller-sales-summary">
+                <div>
+                    <strong>Rp <?= e(number_format((int) ($salesChart['total_amount'] ?? 0), 0, ',', '.')) ?></strong>
+                    <span><?= e((string) ($salesChart['total_orders'] ?? 0)) ?> pesanan selesai dalam 30 hari terakhir</span>
+                </div>
+                <?php if ($salesChartIsDemo): ?>
+                    <p>Dummy data ini hanya untuk memastikan garis chart bisa tampil saat data real belum ada.</p>
+                <?php endif; ?>
             </div>
         </section>
 

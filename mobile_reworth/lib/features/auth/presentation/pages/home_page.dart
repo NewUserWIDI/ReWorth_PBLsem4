@@ -1394,81 +1394,92 @@ class _WeeklyStreakCard extends StatelessWidget {
           const SizedBox(height: 18),
           SizedBox(
             height: 54,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned(
-                  left: 14,
-                  right: 14,
-                  top: 14,
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 14,
-                  top: 14,
-                  child: FractionallySizedBox(
-                    widthFactor: activeDays / 7,
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEA7D37),
-                        borderRadius: BorderRadius.circular(999),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final trackWidth = constraints.maxWidth > 28
+                    ? constraints.maxWidth - 28
+                    : 0.0;
+                final progressWidth = activeDays <= 0
+                    ? 0.0
+                    : trackWidth * (activeDays / 7);
+
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      left: 14,
+                      right: 14,
+                      top: 14,
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Row(
-                  children: List.generate(7, (index) {
-                    final reached = index < activeDays;
-                    return Expanded(
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: reached
-                                  ? const Color(
-                                      0xFFEA7D37,
-                                    ).withValues(alpha: 0.16)
-                                  : const Color(0xFF17372D),
-                              border: Border.all(
-                                color: reached
-                                    ? const Color(0xFFEA7D37)
-                                    : Colors.white.withValues(alpha: 0.18),
+                    Positioned(
+                      left: 14,
+                      top: 14,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                        width: progressWidth,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEA7D37),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: List.generate(7, (index) {
+                        final reached = index < activeDays;
+                        return Expanded(
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: reached
+                                      ? const Color(
+                                          0xFFEA7D37,
+                                        ).withValues(alpha: 0.16)
+                                      : const Color(0xFF17372D),
+                                  border: Border.all(
+                                    color: reached
+                                        ? const Color(0xFFEA7D37)
+                                        : Colors.white.withValues(alpha: 0.18),
+                                  ),
+                                ),
+                                child: Icon(
+                                  reached
+                                      ? Icons.local_fire_department_rounded
+                                      : Icons.circle_outlined,
+                                  size: 15,
+                                  color: reached
+                                      ? const Color(0xFFEA7D37)
+                                      : Colors.white.withValues(alpha: 0.34),
+                                ),
                               ),
-                            ),
-                            child: Icon(
-                              reached
-                                  ? Icons.local_fire_department_rounded
-                                  : Icons.circle_outlined,
-                              size: 15,
-                              color: reached
-                                  ? const Color(0xFFEA7D37)
-                                  : Colors.white.withValues(alpha: 0.34),
-                            ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${index + 1}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: Colors.white.withValues(alpha: 0.68),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${index + 1}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: Colors.white.withValues(alpha: 0.68),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
-              ],
+                        );
+                      }),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 12),

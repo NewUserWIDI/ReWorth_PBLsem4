@@ -54,7 +54,7 @@ render_layout('Transaksi', function () use ($filters, $pagination, $totalValue, 
                     <option value="pending" <?= ($filters['status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
                     <option value="diproses" <?= ($filters['status'] ?? '') === 'diproses' ? 'selected' : '' ?>>Diproses</option>
                     <option value="selesai" <?= ($filters['status'] ?? '') === 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="dibatalkan" <?= ($filters['status'] ?? '') === 'dibatalkan' ? 'selected' : '' ?>>Dibatalkan</option>
+                    <option value="ditolak" <?= ($filters['status'] ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
                 </select>
             </div>
             

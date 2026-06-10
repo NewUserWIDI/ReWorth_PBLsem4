@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum _OrderTab { active, completed, cancelled }
+enum _OrderTab { active, completed, rejected }
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({super.key});
@@ -216,6 +216,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
           code: (row['kode_pesanan'] ?? 'ORD-$orderId').toString(),
           orderStatus: (row['status_pesanan'] ?? '').toString(),
           paymentStatus: (payment['status_pembayaran'] ?? '').toString(),
+          rejectionNote: (payment['catatan_verifikasi'] ?? '').toString(),
           createdAt: _parseDate(
             (row['tanggal_pesanan'] ?? row['created_at'] ?? '').toString(),
           ),
@@ -340,11 +341,11 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
     switch (_selectedTab) {
       case _OrderTab.completed:
         return _orders.where((order) => order.isCompleted).toList();
-      case _OrderTab.cancelled:
-        return _orders.where((order) => order.isCancelled).toList();
+      case _OrderTab.rejected:
+        return _orders.where((order) => order.isRejected).toList();
       case _OrderTab.active:
         return _orders
-            .where((order) => !order.isCompleted && !order.isCancelled)
+            .where((order) => !order.isCompleted && !order.isRejected)
             .toList();
     }
   }
@@ -471,9 +472,9 @@ class _OrderTabBar extends StatelessWidget {
               onTap: () => onChanged(_OrderTab.completed),
             ),
             _TabButton(
-              label: 'Dibatalkan',
-              selected: selectedTab == _OrderTab.cancelled,
-              onTap: () => onChanged(_OrderTab.cancelled),
+              label: 'Ditolak',
+              selected: selectedTab == _OrderTab.rejected,
+              onTap: () => onChanged(_OrderTab.rejected),
             ),
           ],
         ),
@@ -683,7 +684,10 @@ class _OrderCard extends StatelessWidget {
                           foreground: meta.foreground,
                         ),
                         _InlineBadge(
-                          label: _paymentLabel(order.paymentStatus),
+                          label: _paymentLabel(
+                            order.paymentStatus,
+                            order.orderStatus,
+                          ),
                           background: Colors.white.withValues(alpha: 0.08),
                           foreground: Colors.white.withValues(alpha: 0.82),
                         ),
@@ -791,6 +795,13 @@ class _ExpandedOrderDetail extends StatelessWidget {
         const SizedBox(height: 14),
         if (order.addressText.isNotEmpty) ...[
           _DetailTextBlock(title: 'Alamat Pengiriman', body: order.addressText),
+          const SizedBox(height: 12),
+        ],
+        if (order.isRejected && order.rejectionNote.trim().isNotEmpty) ...[
+          _DetailTextBlock(
+            title: 'Alasan Penolakan',
+            body: order.rejectionNote.trim(),
+          ),
           const SizedBox(height: 12),
         ],
         _DetailTextBlock(
@@ -1054,6 +1065,7 @@ class _OrderHistoryItem {
     required this.code,
     required this.orderStatus,
     required this.paymentStatus,
+    required this.rejectionNote,
     required this.createdAt,
     required this.subtotal,
     required this.feePlatform,
@@ -1070,6 +1082,7 @@ class _OrderHistoryItem {
   final String code;
   final String orderStatus;
   final String paymentStatus;
+  final String rejectionNote;
   final DateTime? createdAt;
   final double subtotal;
   final double feePlatform;
@@ -1082,7 +1095,8 @@ class _OrderHistoryItem {
   final List<_OrderLine> lines;
 
   bool get isCompleted => orderStatus.trim().toLowerCase() == 'selesai';
-  bool get isCancelled =>
+  bool get isRejected =>
+      orderStatus.trim().toLowerCase() == 'ditolak' ||
       orderStatus.trim().toLowerCase() == 'dibatalkan' ||
       paymentStatus.trim().toLowerCase().contains('ditolak');
 }
@@ -1123,9 +1137,9 @@ _OrderVisualMeta _orderMeta(String orderStatus, String paymentStatus) {
   final order = orderStatus.trim().toLowerCase();
   final payment = paymentStatus.trim().toLowerCase();
 
-  if (payment.contains('ditolak') || order == 'dibatalkan') {
+  if (payment.contains('ditolak') || order == 'ditolak' || order == 'dibatalkan') {
     return const _OrderVisualMeta(
-      label: 'Dibatalkan',
+      label: 'Ditolak',
       background: Color(0x33E06A6A),
       foreground: Color(0xFFFFC2C2),
     );
@@ -1174,8 +1188,12 @@ _OrderVisualMeta _orderMeta(String orderStatus, String paymentStatus) {
   );
 }
 
-String _paymentLabel(String paymentStatus) {
+String _paymentLabel(String paymentStatus, String orderStatus) {
   final normalized = paymentStatus.trim().toLowerCase();
+  final order = orderStatus.trim().toLowerCase();
+  if (order == 'ditolak' || order == 'dibatalkan') {
+    return 'Pesanan ditolak';
+  }
   if (normalized.contains('terverifikasi')) {
     return 'Pembayaran terverifikasi';
   }
@@ -1192,7 +1210,7 @@ int _progressIndex(String orderStatus, String paymentStatus) {
   final order = orderStatus.trim().toLowerCase();
   final payment = paymentStatus.trim().toLowerCase();
 
-  if (payment.contains('ditolak') || order == 'dibatalkan') {
+  if (payment.contains('ditolak') || order == 'ditolak' || order == 'dibatalkan') {
     return 0;
   }
   if (order == 'selesai') {
@@ -1208,7 +1226,7 @@ int _progressIndex(String orderStatus, String paymentStatus) {
     return 1;
   }
   if (payment.contains('menunggu verifikasi')) {
-    return 1;
+    return 0;
   }
   return 0;
 }
@@ -1219,8 +1237,8 @@ String _tabTitle(_OrderTab tab) {
       return 'Pesanan Aktif';
     case _OrderTab.completed:
       return 'Pesanan Selesai';
-    case _OrderTab.cancelled:
-      return 'Pesanan Dibatalkan';
+    case _OrderTab.rejected:
+      return 'Pesanan Ditolak';
   }
 }
 
@@ -1230,8 +1248,8 @@ String _emptyDescription(_OrderTab tab) {
       return 'Pesanan yang sedang menunggu pembayaran, verifikasi, diproses, atau dikirim akan muncul di sini.';
     case _OrderTab.completed:
       return 'Belum ada pesanan yang selesai. Setelah transaksi tuntas, riwayatnya akan tersimpan di sini.';
-    case _OrderTab.cancelled:
-      return 'Belum ada pesanan yang dibatalkan atau ditolak.';
+    case _OrderTab.rejected:
+      return 'Belum ada pesanan yang ditolak.';
   }
 }
 

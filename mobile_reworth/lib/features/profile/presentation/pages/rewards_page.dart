@@ -173,25 +173,22 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
               if (context.mounted) Navigator.pop(context);
 
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'Berhasil menukar ${reward.namaReward}!'
-                          : 'Gagal menukar reward. Pastikan no HP sudah diisi dan poin cukup!',
-                    ),
-                    backgroundColor: success
-                        ? primaryGreen
-                        : Colors.red.shade700,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-
                 if (success) {
+                  await _showSuccessDialog(reward);
                   ref
                       .read(profileControllerProvider.notifier)
                       .loadAvailableRewards();
                   ref.read(profileControllerProvider.notifier).loadProfile();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text(
+                        'Gagal menukar reward. Pastikan no HP sudah diisi dan poin cukup!',
+                      ),
+                      backgroundColor: Colors.red.shade700,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                 }
               }
             },
@@ -203,6 +200,65 @@ class _RewardsPageState extends ConsumerState<RewardsPage> {
               ),
             ),
             child: const Text('Ya, Tukar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSuccessDialog(RewardItem reward) async {
+    if (!context.mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: bgCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: primarySoft.withValues(alpha: 0.3),
+            width: 0.5,
+          ),
+        ),
+        icon: Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: primaryGreen.withValues(alpha: 0.18),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.check_rounded,
+            color: Colors.white,
+            size: 42,
+          ),
+        ),
+        title: const Text(
+          'Penukaran Berhasil',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Reward "${reward.namaReward}" berhasil ditukar. Poin Anda sudah diperbarui.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: textGrey.withValues(alpha: 0.9)),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('OK'),
           ),
         ],
       ),

@@ -11,6 +11,212 @@ function seller_supabase_access_issue(): ?string
     return null;
 }
 
+function seller_demo_categories(): array
+{
+    return [
+        ['id_kategori' => 1, 'nama_kategori' => 'Kerajinan Daur Ulang', 'deskripsi' => 'Produk handmade dari limbah yang sudah dipilah.'],
+        ['id_kategori' => 2, 'nama_kategori' => 'Dekorasi Rumah', 'deskripsi' => 'Produk dekorasi dan utilitas rumah ramah lingkungan.'],
+        ['id_kategori' => 3, 'nama_kategori' => 'Kompos', 'deskripsi' => 'Produk olahan organik dan pupuk kompos.'],
+    ];
+}
+
+function seller_demo_products(string $sellerUserId = ''): array
+{
+    $today = new DateTimeImmutable('today');
+    $updated = $today->format('Y-m-d\TH:i:sP');
+    $createdOne = $today->modify('-18 days')->format('Y-m-d');
+    $createdTwo = $today->modify('-11 days')->format('Y-m-d');
+    $sellerName = 'Eco Craft';
+
+    return [
+        [
+            'id' => '101',
+            'id_produk' => 101,
+            'id_kategori' => 1,
+            'nama' => 'Tempat Pensil Daur Ulang',
+            'nama_produk' => 'Tempat Pensil Daur Ulang',
+            'seller' => $sellerName,
+            'kategori' => 'Kerajinan Daur Ulang',
+            'harga' => 25000,
+            'stok' => 21,
+            'status' => 'aktif',
+            'status_produk' => 'aktif',
+            'deskripsi' => 'Wadah meja kerja dari bahan daur ulang yang ringan, rapi, dan awet dipakai.',
+            'bahan' => 'Kertas daur ulang dan karton tebal',
+            'manfaat' => 'Merapikan meja dan mengurangi limbah sekali pakai',
+            'cara_pakai' => 'Letakkan alat tulis ke dalam wadah dan simpan di meja kerja.',
+            'eco_value' => 'Reusable, low waste',
+            'berat_gram' => 180,
+            'rating' => 4.8,
+            'foto' => url('assets/logo_reworth.jpeg'),
+            'images' => [[
+                'id_gambar' => 1011,
+                'storage_path' => '',
+                'public_url' => url('assets/logo_reworth.jpeg'),
+                'is_primary' => true,
+            ]],
+            'sku' => 'RWT-00101',
+            'tanggal_dibuat' => $createdOne,
+            'terakhir_diperbarui' => $updated,
+        ],
+        [
+            'id' => '102',
+            'id_produk' => 102,
+            'id_kategori' => 2,
+            'nama' => 'Kaca Kerang',
+            'nama_produk' => 'Kaca Kerang',
+            'seller' => $sellerName,
+            'kategori' => 'Dekorasi Rumah',
+            'harga' => 20000,
+            'stok' => 1,
+            'status' => 'aktif',
+            'status_produk' => 'aktif',
+            'deskripsi' => 'Cermin dekoratif dengan aksen kerang dan tali alami untuk mempercantik ruangan.',
+            'bahan' => 'Cermin kaca, kerang, dan tali alami',
+            'manfaat' => 'Menambah nilai dekoratif ruang rumah',
+            'cara_pakai' => 'Gantung di dinding ruangan yang ingin dipercantik.',
+            'eco_value' => 'Upcycled decor',
+            'berat_gram' => 320,
+            'rating' => 4.7,
+            'foto' => url('assets/ilustrasi.png'),
+            'images' => [[
+                'id_gambar' => 1021,
+                'storage_path' => '',
+                'public_url' => url('assets/ilustrasi.png'),
+                'is_primary' => true,
+            ]],
+            'sku' => 'RWT-00102',
+            'tanggal_dibuat' => $createdTwo,
+            'terakhir_diperbarui' => $updated,
+        ],
+    ];
+}
+
+function seller_demo_order_summaries(string $sellerUserId = ''): array
+{
+    $today = new DateTimeImmutable('today');
+    $products = [];
+    foreach (seller_demo_products($sellerUserId) as $product) {
+        $products[(int) $product['id_produk']] = $product;
+    }
+
+    $makeItem = static function (array $product, int $quantity): array {
+        $subtotal = (float) ($product['harga'] ?? 0) * $quantity;
+        $feeItem = round($subtotal * 0.04, 2);
+        return [
+            'id_produk' => (int) ($product['id_produk'] ?? 0),
+            'nama_produk' => (string) ($product['nama_produk'] ?? ''),
+            'qty' => $quantity,
+            'quantity' => $quantity,
+            'harga' => (float) ($product['harga'] ?? 0),
+            'subtotal' => $subtotal,
+            'fee_platform_item' => $feeItem,
+            'pendapatan_seller' => round($subtotal - $feeItem, 2),
+        ];
+    };
+
+    $orders = [
+        [
+            'id_pesanan' => 9001,
+            'id' => '9001',
+            'kode_pesanan' => 'ORD-9001',
+            'pembeli' => 'Fatma Azzahra',
+            'buyer_email' => 'fatma@mail.com',
+            'buyer_id' => 'USR-1001',
+            'tanggal' => $today->modify('-2 days')->format('Y-m-d H:i:s'),
+            'status' => 'diproses',
+            'status_pesanan' => 'diproses',
+            'subtotal_seller' => 25000.0,
+            'subtotal_bruto_seller' => 25000.0,
+            'fee_platform_seller' => 1000.0,
+            'biaya_layanan' => 500.0,
+            'fee_platform_order' => 1000.0,
+            'total' => 24000.0,
+            'pendapatan_seller' => 24000.0,
+            'total_order' => 25000.0,
+            'total_qty' => 1,
+            'id_alamat' => 1,
+            'id_kartu' => 1,
+            'payment_status' => 'paid',
+            'items' => [$makeItem($products[101], 1)],
+        ],
+        [
+            'id_pesanan' => 9002,
+            'id' => '9002',
+            'kode_pesanan' => 'ORD-9002',
+            'pembeli' => 'Bima Saputra',
+            'buyer_email' => 'bima@mail.com',
+            'buyer_id' => 'USR-1002',
+            'tanggal' => $today->modify('-4 days')->format('Y-m-d H:i:s'),
+            'status' => 'dikemas',
+            'status_pesanan' => 'dikemas',
+            'subtotal_seller' => 45000.0,
+            'subtotal_bruto_seller' => 45000.0,
+            'fee_platform_seller' => 1800.0,
+            'biaya_layanan' => 500.0,
+            'fee_platform_order' => 1800.0,
+            'total' => 43200.0,
+            'pendapatan_seller' => 43200.0,
+            'total_order' => 45000.0,
+            'total_qty' => 2,
+            'id_alamat' => 2,
+            'id_kartu' => 1,
+            'payment_status' => 'paid',
+            'items' => [$makeItem($products[101], 1), $makeItem($products[102], 1)],
+        ],
+        [
+            'id_pesanan' => 9003,
+            'id' => '9003',
+            'kode_pesanan' => 'ORD-9003',
+            'pembeli' => 'Nadia Putri',
+            'buyer_email' => 'nadia@mail.com',
+            'buyer_id' => 'USR-1003',
+            'tanggal' => $today->modify('-8 days')->format('Y-m-d H:i:s'),
+            'status' => 'selesai',
+            'status_pesanan' => 'selesai',
+            'subtotal_seller' => 20000.0,
+            'subtotal_bruto_seller' => 20000.0,
+            'fee_platform_seller' => 800.0,
+            'biaya_layanan' => 500.0,
+            'fee_platform_order' => 800.0,
+            'total' => 19200.0,
+            'pendapatan_seller' => 19200.0,
+            'total_order' => 20000.0,
+            'total_qty' => 1,
+            'id_alamat' => 3,
+            'id_kartu' => 1,
+            'payment_status' => 'paid',
+            'items' => [$makeItem($products[102], 1)],
+        ],
+        [
+            'id_pesanan' => 9004,
+            'id' => '9004',
+            'kode_pesanan' => 'ORD-9004',
+            'pembeli' => 'Dina Maharani',
+            'buyer_email' => 'dina@mail.com',
+            'buyer_id' => 'USR-1004',
+            'tanggal' => $today->modify('-10 days')->format('Y-m-d H:i:s'),
+            'status' => 'ditolak',
+            'status_pesanan' => 'ditolak',
+            'subtotal_seller' => 25000.0,
+            'subtotal_bruto_seller' => 25000.0,
+            'fee_platform_seller' => 0.0,
+            'biaya_layanan' => 0.0,
+            'fee_platform_order' => 0.0,
+            'total' => 0.0,
+            'pendapatan_seller' => 0.0,
+            'total_order' => 25000.0,
+            'total_qty' => 1,
+            'id_alamat' => 4,
+            'id_kartu' => 1,
+            'payment_status' => 'rejected',
+            'items' => [$makeItem($products[101], 1)],
+        ],
+    ];
+
+    return $orders;
+}
+
 function seller_authenticate_dashboard_user(string $identifier, string $password): array
 {
     $identifier = trim($identifier);
@@ -113,6 +319,25 @@ function seller_fetch_profile(string $sellerUserId): ?array
 {
     $seller = supabase_fetch_one('seller', '*', ['id_masyarakat' => 'eq.' . $sellerUserId]);
     if ($seller === null) {
+        if ($sellerUserId === '' || $sellerUserId === '5c16b203-0b61-49e9-afa9-b7a9b89d3bed') {
+            return [
+                'seller_id' => 'demo-seller',
+                'seller_user_id' => $sellerUserId,
+                'nama_toko' => 'Eco Craft',
+                'deskripsi_toko' => 'Toko produk daur ulang ReWorth untuk seller demo dashboard.',
+                'alamat_toko' => 'Alamat toko Eco Craft',
+                'foto_toko' => '',
+                'username_dashboard' => 'ecocraft',
+                'status_verifikasi' => 'aktif',
+                'aktif' => true,
+                'owner_name' => 'Eco Craft',
+                'email' => 'seller@reworth.app',
+                'no_telp' => '081234567890',
+                'total_poin' => 0,
+                'rekening_bank' => null,
+            ];
+        }
+
         return null;
     }
 
@@ -151,6 +376,10 @@ function seller_fetch_profile(string $sellerUserId): ?array
 function seller_fetch_categories(): array
 {
     $rows = supabase_fetch('kategori_produk', '*', ['order' => 'nama_kategori.asc']);
+    if ($rows === []) {
+        return seller_demo_categories();
+    }
+
     return array_values(array_map(static function (array $row): array {
         return [
             'id_kategori' => (int) ($row['id_kategori'] ?? 0),
@@ -177,6 +406,10 @@ function seller_fetch_products(string $sellerUserId, array $filters = []): array
     ]);
 
     $products = seller_normalize_products($rows, $sellerUserId);
+    if ($products === []) {
+        $products = seller_demo_products($sellerUserId);
+    }
+
     return seller_filter_products($products, $filters);
 }
 
@@ -189,7 +422,17 @@ function seller_fetch_product_by_id(string $sellerUserId, int $productId): ?arra
     ]);
 
     $products = seller_normalize_products($rows, $sellerUserId);
-    return $products[0] ?? null;
+    if ($products !== []) {
+        return $products[0];
+    }
+
+    foreach (seller_demo_products($sellerUserId) as $product) {
+        if ((int) ($product['id_produk'] ?? 0) === $productId) {
+            return $product;
+        }
+    }
+
+    return null;
 }
 
 function seller_normalize_products(array $productRows, string $sellerUserId): array
@@ -608,7 +851,7 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
 
     $productIds = array_keys($productMap);
     if ($productIds === []) {
-        return [];
+        return seller_filter_orders(seller_demo_order_summaries($sellerUserId), $filters);
     }
 
     $detailRows = supabase_fetch('detail_pesanan', '*', [
@@ -617,7 +860,7 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
     ]);
 
     if ($detailRows === []) {
-        return [];
+        return seller_filter_orders(seller_demo_order_summaries($sellerUserId), $filters);
     }
 
     $grouped = [];
@@ -755,6 +998,10 @@ function seller_fetch_order_summaries(string $sellerUserId, array $filters = [])
         $summaries[] = $summary;
     }
 
+    if ($summaries === []) {
+        $summaries = seller_demo_order_summaries($sellerUserId);
+    }
+
     return seller_filter_orders($summaries, $filters);
 }
 
@@ -814,11 +1061,11 @@ function seller_filter_orders(array $orders, array $filters): array
         }
 
         if ($status === 'aktif') {
-            if (in_array($orderStatus, ['selesai', 'dibatalkan'], true)) {
+            if (in_array($orderStatus, ['selesai', 'ditolak', 'dibatalkan'], true)) {
                 return false;
             }
         } elseif ($status === 'riwayat') {
-            if (!in_array($orderStatus, ['selesai', 'dibatalkan'], true)) {
+            if (!in_array($orderStatus, ['selesai', 'ditolak', 'dibatalkan'], true)) {
                 return false;
             }
         } elseif ($status !== '' && $status !== 'semua' && $orderStatus !== $status) {
@@ -862,12 +1109,16 @@ function seller_fetch_order_detail(string $sellerUserId, int $orderId): ?array
     ];
 }
 
-function seller_update_order_status(string $sellerUserId, int $orderId, string $status): array
+function seller_update_order_status(string $sellerUserId, int $orderId, string $status, string $reason = ''): array
 {
-    $allowedStatuses = ['diproses', 'dikemas', 'dikirim', 'selesai', 'dibatalkan'];
+    $allowedStatuses = ['diproses', 'dikemas', 'dikirim', 'selesai', 'ditolak'];
     $status = strtolower(trim($status));
+    $reason = trim($reason);
     if (!in_array($status, $allowedStatuses, true)) {
         return ['success' => false, 'type' => 'danger', 'message' => 'Status pesanan tidak valid.'];
+    }
+    if ($status === 'ditolak' && mb_strlen($reason) < 10) {
+        return ['success' => false, 'type' => 'danger', 'message' => 'Alasan penolakan pesanan minimal 10 karakter.'];
     }
 
     $detail = seller_fetch_order_detail($sellerUserId, $orderId);
@@ -875,9 +1126,10 @@ function seller_update_order_status(string $sellerUserId, int $orderId, string $
         return ['success' => false, 'type' => 'danger', 'message' => 'Pesanan tidak ditemukan untuk seller ini.'];
     }
 
+    $now = gmdate('c');
     $updated = supabase_update('pesanan', [
         'status_pesanan' => $status,
-        'updated_at' => gmdate('c'),
+        'updated_at' => $now,
     ], [
         'id_pesanan' => 'eq.' . $orderId,
     ]);
@@ -889,11 +1141,20 @@ function seller_update_order_status(string $sellerUserId, int $orderId, string $
     $payoutStatus = $status === 'selesai' ? 'tersedia' : 'tertahan';
     supabase_update('detail_pesanan', [
         'status_pencairan' => $payoutStatus,
-        'tanggal_pencairan' => $status === 'selesai' ? gmdate('c') : null,
+        'tanggal_pencairan' => $status === 'selesai' ? $now : null,
     ], [
         'id_pesanan' => 'eq.' . $orderId,
         'id_seller' => 'eq.' . $sellerUserId,
     ]);
+
+    if ($status === 'ditolak') {
+        supabase_update('pembayaran', [
+            'catatan_verifikasi' => $reason,
+            'updated_at' => $now,
+        ], [
+            'id_pesanan' => 'eq.' . $orderId,
+        ]);
+    }
 
     return ['success' => true, 'type' => 'success', 'message' => 'Status pesanan berhasil diperbarui.'];
 }
@@ -960,6 +1221,72 @@ function seller_build_sales_chart(array $completedOrders, int $days = 30): array
         'max_amount' => $maxAmount,
         'total_amount' => array_sum(array_column($rows, 'amount')),
         'total_orders' => array_sum(array_column($rows, 'orders')),
+    ];
+}
+
+function seller_build_demo_sales_chart(int $days = 30): array
+{
+    $days = max(1, $days);
+    $today = new DateTimeImmutable('today');
+    $rows = [];
+    $pattern = [
+        0,
+        42000,
+        78000,
+        64000,
+        108000,
+        92000,
+        56000,
+        30000,
+        84000,
+        132000,
+        101000,
+        72000,
+        54000,
+        98000,
+        145000,
+        87000,
+        63000,
+        24000,
+        76000,
+        110000,
+        96000,
+        69000,
+        51000,
+        125000,
+        148000,
+        88000,
+        64000,
+        35000,
+        91000,
+        136000,
+    ];
+
+    for ($offset = $days - 1; $offset >= 0; $offset--) {
+        $date = $today->modify('-' . $offset . ' days');
+        $key = $date->format('Y-m-d');
+        $index = ($days - 1) - $offset;
+        $amount = (float) ($pattern[$index % count($pattern)] ?? 0);
+
+        $rows[$key] = [
+            'date' => $key,
+            'label' => $date->format('d M'),
+            'amount' => $amount,
+            'orders' => $amount > 0 ? max(1, (int) round($amount / 45000)) : 0,
+        ];
+    }
+
+    $maxAmount = 0.0;
+    foreach ($rows as $row) {
+        $maxAmount = max($maxAmount, (float) $row['amount']);
+    }
+
+    return [
+        'days' => array_values($rows),
+        'max_amount' => $maxAmount,
+        'total_amount' => array_sum(array_column($rows, 'amount')),
+        'total_orders' => array_sum(array_column($rows, 'orders')),
+        'is_demo' => true,
     ];
 }
 

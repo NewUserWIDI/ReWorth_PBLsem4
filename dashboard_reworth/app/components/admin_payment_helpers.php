@@ -132,10 +132,13 @@ function admin_payment_verification_action(int $paymentId, string $decision, str
     if (!in_array($decision, ['approve', 'reject'], true)) {
         return ['success' => false, 'type' => 'danger', 'message' => 'Aksi verifikasi tidak valid.'];
     }
+    if ($decision === 'reject' && mb_strlen($note) < 10) {
+        return ['success' => false, 'type' => 'danger', 'message' => 'Alasan penolakan pembayaran minimal 10 karakter.'];
+    }
 
     $now = gmdate('c');
     $paymentStatus = $decision === 'approve' ? 'Terverifikasi' : 'Ditolak';
-    $orderStatus = $decision === 'approve' ? 'Diproses' : 'Menunggu Pembayaran';
+    $orderStatus = $decision === 'approve' ? 'Diproses' : 'Ditolak';
 
     $paymentUpdate = supabase_update('pembayaran', [
         'status_pembayaran' => $paymentStatus,
@@ -186,7 +189,7 @@ function admin_payment_verification_action(int $paymentId, string $decision, str
         'type' => 'success',
         'message' => $decision === 'approve'
             ? 'Pembayaran berhasil diverifikasi dan pesanan diteruskan ke seller.'
-            : 'Pembayaran ditolak. User perlu mengunggah ulang bukti pembayaran.',
+            : 'Pembayaran ditolak dan pesanan dipindahkan ke riwayat ditolak.',
     ];
 }
 
