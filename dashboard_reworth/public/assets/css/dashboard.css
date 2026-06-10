@@ -893,6 +893,219 @@ body {
   font-size: 12px;
 }
 
+.activity-preview-panel {
+  background:
+    radial-gradient(circle at top right, rgba(181, 255, 119, 0.18), transparent 16rem),
+    linear-gradient(180deg, #ffffff 0%, #f8fbf7 100%);
+}
+
+.activity-preview-grid,
+.activity-detail-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.activity-preview-card,
+.activity-detail-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.activity-preview-card::before,
+.activity-detail-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #2e7d32;
+}
+
+.activity-accent-registrasi::before {
+  background: #2563eb;
+}
+
+.activity-accent-transaksi::before {
+  background: #0f766e;
+}
+
+.activity-accent-pengajuan_seller::before {
+  background: #d97706;
+}
+
+.activity-accent-tukar_poin::before {
+  background: #7c3aed;
+}
+
+.activity-accent-lapor_sampah::before {
+  background: #15803d;
+}
+
+.activity-preview-top,
+.activity-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.activity-type-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.activity-type-registrasi {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.activity-type-transaksi {
+  color: #0f766e;
+  background: #ccfbf1;
+}
+
+.activity-type-pengajuan_seller {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.activity-type-tukar_poin {
+  color: #6d28d9;
+  background: #ede9fe;
+}
+
+.activity-type-lapor_sampah {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.activity-type-lainnya {
+  color: #475467;
+  background: #f2f4f7;
+}
+
+.activity-time-stamp,
+.activity-detail-header time {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.activity-preview-card h3,
+.activity-detail-card h3 {
+  margin: 14px 0 0;
+  color: #111827;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.activity-preview-card p,
+.activity-detail-copy {
+  margin: 10px 0 0;
+  color: #475467;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.activity-preview-meta,
+.activity-detail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.activity-actor-text,
+.activity-detail-footer strong {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.seller-review-card {
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.activity-page-hero {
+  background:
+    radial-gradient(circle at top left, rgba(46, 125, 50, 0.16), transparent 16rem),
+    linear-gradient(180deg, #ffffff 0%, #f7faf7 100%);
+}
+
+.activity-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.activity-filter-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475467;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 180ms ease;
+}
+
+.activity-filter-tab.active,
+.activity-filter-tab:hover {
+  border-color: #2e7d32;
+  background: #e8f5e9;
+  color: #166534;
+}
+
+.activity-summary-grid {
+  margin-bottom: 18px;
+}
+
+.activity-summary-card {
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8faf8 100%);
+}
+
+.activity-filter-form {
+  display: grid;
+  gap: 16px;
+}
+
+.activity-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(180px, 1fr)) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.activity-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.activity-pagination {
+  justify-content: flex-end;
+  margin-top: 24px;
+  gap: 12px;
+}
+
 .quick-cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2632,6 +2845,7 @@ body {
   .quick-cards,
   .product-grid,
   .form-grid,
+  .activity-filter-grid,
   .seller-detail-metrics,
   .seller-profile-grid,
   .seller-bank-card,
@@ -2674,6 +2888,14 @@ body {
 
   .seller-catalog-toolbar .seller-catalog-search {
     grid-column: 1 / -1;
+  }
+
+  .activity-preview-top,
+  .activity-detail-header,
+  .activity-filter-actions,
+  .activity-pagination {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .seller-product-detail-main-grid {
