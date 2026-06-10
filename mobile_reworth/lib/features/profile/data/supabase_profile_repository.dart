@@ -41,6 +41,7 @@ class SupabaseProfileRepository implements ProfileRepository {
           fotoProfil: '',
           totalPoin: 0,
           totalLaporanValid: 0,
+          streakPoin: 0,
           setorSampahKg: 0,
           role: 'user',
           statusPengajuanSeller: null,
@@ -56,6 +57,7 @@ class SupabaseProfileRepository implements ProfileRepository {
             'role': 'user',
             'nama': newProfile.nama,
             'nomor_hp': newProfile.noTelp,
+            'streak_poin': 0,
             'created_at': now.toIso8601String(),
             'updated_at': now.toIso8601String(),
           });
@@ -211,7 +213,8 @@ class SupabaseProfileRepository implements ProfileRepository {
         return false;
       }
 
-      final userPhone = (profileResponse['no_telp'] as String?)?.trim().isNotEmpty == true
+      final userPhone =
+          (profileResponse['no_telp'] as String?)?.trim().isNotEmpty == true
           ? (profileResponse['no_telp'] as String).trim()
           : ((profileResponse['nomor_hp'] as String?) ?? '').trim();
 
@@ -249,7 +252,8 @@ class SupabaseProfileRepository implements ProfileRepository {
           'sumber_poin': 'Tukar Reward: ${reward.namaReward}',
           'jumlah_poin': pointsRequired,
           'saldo_setelah': newPoints,
-          'keterangan': 'Penukaran ${reward.namaReward} - ${reward.description}',
+          'keterangan':
+              'Penukaran ${reward.namaReward} - ${reward.description}',
           'tanggal': now.toIso8601String(),
         });
       } catch (e) {

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../lapor_sampah/domain/report_reward_points.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -19,7 +22,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _bootstrapNotifications();
+  }
+
+  Future<void> _bootstrapNotifications() async {
+    try {
+      await initializeDateFormatting('id_ID', null);
+    } catch (_) {}
+
+    if (!mounted) {
+      return;
+    }
+
+    await _loadNotifications();
   }
 
   Future<void> _loadNotifications() async {
@@ -40,7 +55,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         await _client
                 .from('laporan_sampah')
                 .select(
-                  'status_laporan,poin_diberikan,waktu_lapor,jalan,kelurahan,kecamatan',
+                  'status_laporan,poin_diberikan,tingkat_keparahan,waktu_lapor,jalan,kelurahan,kecamatan',
                 )
                 .eq('id_masyarakat', userId)
                 .order('waktu_lapor', ascending: false)
@@ -58,6 +73,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ].where((part) => part.isNotEmpty).join(', ');
         final occurredAt = _parseDate(row['waktu_lapor']?.toString());
         final points = (row['poin_diberikan'] as num?)?.toInt() ?? 0;
+        final severity = row['tingkat_keparahan']?.toString();
+        final rewardPoints = reportRewardPointsFromRow(
+          status: status,
+          severity: severity,
+          storedPoints: points,
+        );
 
         if (status.contains('ditolak') || status.contains('rejected')) {
           items.add(
@@ -66,7 +87,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               subtitle: location.isEmpty
                   ? 'Laporan belum bisa diverifikasi. Anda tetap mendapat apresiasi.'
                   : location,
-              meta: points > 0 ? '+$points poin' : '+3 poin',
+              meta: '+$rewardPoints poin',
               icon: Icons.close_rounded,
               iconColor: const Color(0xFFE58F41),
               occurredAt: occurredAt,
@@ -82,7 +103,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               subtitle: location.isEmpty
                   ? 'Laporan Anda berhasil diverifikasi admin.'
                   : location,
-              meta: points > 0 ? '+$points poin' : '+10 poin',
+              meta: '+$rewardPoints poin',
               icon: Icons.check_rounded,
               iconColor: const Color(0xFF6DAE6F),
               occurredAt: occurredAt,
@@ -137,6 +158,43 @@ class _NotificationsPageState extends State<NotificationsPage> {
             occurredAt: occurredAt,
           ),
         );
+      }
+    } catch (_) {}
+
+    try {
+      final pointHistoryRows = List<Map<String, dynamic>>.from(
+        await _client
+                .from('riwayat_poin')
+                .select(
+                  'jenis_transaksi,sumber_poin,jumlah_poin,saldo_setelah,keterangan,tanggal',
+                )
+                .eq('id_masyarakat', userId)
+                .order('tanggal', ascending: false)
+                .limit(6)
+                .timeout(const Duration(seconds: 10))
+            as List,
+      );
+
+      for (final row in pointHistoryRows) {
+        final source = (row['sumber_poin'] ?? '').toString().trim();
+        final amount = (row['jumlah_poin'] as num?)?.toInt() ?? 0;
+        final occurredAt = _parseDate(row['tanggal']?.toString());
+        final lowerSource = source.toLowerCase();
+
+        if (lowerSource.contains('streak') || amount == 25) {
+          items.add(
+            _NotificationItem(
+              title: 'Bonus streak didapat',
+              subtitle: source.isEmpty
+                  ? '7 laporan aktif berhasil membuka bonus mingguan.'
+                  : source,
+              meta: '+$amount poin',
+              icon: Icons.local_fire_department_rounded,
+              iconColor: const Color(0xFFFFB347),
+              occurredAt: occurredAt,
+            ),
+          );
+        }
       }
     } catch (_) {}
 
@@ -405,7 +463,7 @@ List<_NotificationItem> _fallbackNotifications() {
     _NotificationItem(
       title: 'Poin berhasil ditambahkan',
       subtitle: 'Kontribusi lingkungan Anda berhasil menambah poin akun.',
-      meta: '+10 poin',
+      meta: 'Poin sesuai keparahan',
       icon: Icons.check_rounded,
       iconColor: const Color(0xFF6DAE6F),
       occurredAt: now.subtract(const Duration(hours: 2)),
@@ -476,5 +534,9 @@ String _sectionDateLabel(DateTime date, DateTime now) {
 
   if (dayDiff == 0) return 'Hari ini';
   if (dayDiff == 1) return 'Kemarin';
-  return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+  try {
+    return DateFormat('d MMMM yyyy', 'id_ID').format(date);
+  } catch (_) {
+    return DateFormat('d MMM yyyy').format(date);
+  }
 }

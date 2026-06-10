@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'report_history_page.dart'; // IMPORT UNTUK NAVIGASI
+import '../../domain/report_reward_points.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -419,20 +420,6 @@ class _ReportPageState extends State<ReportPage> {
                     ),
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Tutup dialog
-                    Navigator.pop(context); // Kembali ke ReportPage
-                  },
-                  child: Text(
-                    'Nanti saja',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.84),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -732,14 +719,14 @@ class _ReportPageState extends State<ReportPage> {
                 height: 1.5,
                 color: Colors.white.withOpacity(0.85),
               ),
-              children: const [
-                TextSpan(
+              children: [
+                const TextSpan(
                   text:
                       'Laporan yang valid akan diverifikasi petugas dan Anda mendapatkan ',
                 ),
                 TextSpan(
-                  text: '10 poin!',
-                  style: TextStyle(
+                  text: reportApprovedPointsSummary(),
+                  style: const TextStyle(
                     color: _softAccent,
                     fontWeight: FontWeight.w700,
                   ),

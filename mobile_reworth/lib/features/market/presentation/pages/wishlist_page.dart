@@ -60,8 +60,8 @@ class WishlistPage extends ConsumerWidget {
 
                       return LayoutBuilder(
                         builder: (context, constraints) {
-                          final isNarrow = constraints.maxWidth < 380;
-                          final aspectRatio = isNarrow ? 0.62 : 0.68;
+                          final isNarrow = constraints.maxWidth < 390;
+                          final aspectRatio = isNarrow ? 0.58 : 0.64;
 
                           return GridView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

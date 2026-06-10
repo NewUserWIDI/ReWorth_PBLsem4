@@ -12,6 +12,7 @@ import '../../../market/data/market_repository.dart';
 import '../../../market/domain/market_product.dart';
 import '../../../profile/application/profile_controller.dart';
 import '../../application/auth_controller.dart';
+import '../../../lapor_sampah/domain/report_reward_points.dart';
 
 const _pagePadding = 16.0;
 const _homeGradient = LinearGradient(
@@ -36,6 +37,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _activeBannerIndex = 0;
   bool _isLoadingHome = true;
   int _todayReportCount = 0;
+  int _todayStreakCount = 0;
   List<MarketProduct> _featuredProducts = const [];
   List<_HomeActivityItem> _recentActivities = const [];
 
@@ -94,6 +96,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() => _isLoadingHome = true);
     }
 
+    final profileFuture = ref
+        .read(profileControllerProvider.notifier)
+        .loadProfile();
     final featuredProductsFuture = ref
         .read(marketRepositoryProvider)
         .fetchProducts();
@@ -101,14 +106,15 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     try {
       final results = await Future.wait([
+        profileFuture,
         featuredProductsFuture,
         activityFuture,
       ]);
-      final products = (results[0] as List<MarketProduct>)
+      final products = (results[1] as List<MarketProduct>)
           .where((product) => product.stok > 0)
           .take(3)
           .toList();
-      final activityBundle = results[1] as _HomeActivityBundle;
+      final activityBundle = results[2] as _HomeActivityBundle;
 
       if (!mounted) {
         return;
@@ -117,6 +123,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() {
         _featuredProducts = products;
         _todayReportCount = activityBundle.todayReportCount;
+        _todayStreakCount = activityBundle.todayStreakCount;
         _recentActivities = activityBundle.activities;
         _isLoadingHome = false;
       });
@@ -127,6 +134,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() {
         _featuredProducts = const [];
         _todayReportCount = 0;
+        _todayStreakCount = 0;
         _recentActivities = _fallbackActivities();
         _isLoadingHome = false;
       });
@@ -136,7 +144,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<_HomeActivityBundle> _loadActivitySummary() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      return const _HomeActivityBundle(todayReportCount: 0, activities: []);
+      return const _HomeActivityBundle(
+        todayReportCount: 0,
+        todayStreakCount: 0,
+        activities: [],
+      );
     }
 
     final now = DateTime.now();
@@ -144,6 +156,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final startOfNextDay = startOfDay.add(const Duration(days: 1));
 
     int todayReportCount = 0;
+    int todayStreakCount = 0;
     final activities = <_HomeActivityItem>[];
 
     try {
@@ -161,11 +174,43 @@ class _HomePageState extends ConsumerState<HomePage> {
     } catch (_) {}
 
     try {
+      final completedRows = List<Map<String, dynamic>>.from(
+        await _client
+                .from('laporan_sampah')
+                .select('updated_at')
+                .eq('id_masyarakat', userId)
+                .inFilter('status_laporan', [
+                  'completed',
+                  'selesai',
+                  'valid',
+                  'diterima',
+                  'approved',
+                ])
+                .order('updated_at', ascending: false)
+                .limit(1000)
+                .timeout(const Duration(seconds: 10))
+            as List,
+      );
+
+      for (final row in completedRows) {
+        final updatedAt = _parseDate(row['updated_at']?.toString());
+        if (updatedAt == null) {
+          continue;
+        }
+
+        if (!updatedAt.isBefore(startOfDay) &&
+            updatedAt.isBefore(startOfNextDay)) {
+          todayStreakCount++;
+        }
+      }
+    } catch (_) {}
+
+    try {
       final reportRows = List<Map<String, dynamic>>.from(
         await _client
                 .from('laporan_sampah')
                 .select(
-                  'status_laporan,poin_diberikan,waktu_lapor,jalan,kelurahan,kecamatan',
+                  'status_laporan,poin_diberikan,tingkat_keparahan,waktu_lapor,jalan,kelurahan,kecamatan',
                 )
                 .eq('id_masyarakat', userId)
                 .order('waktu_lapor', ascending: false)
@@ -177,12 +222,18 @@ class _HomePageState extends ConsumerState<HomePage> {
       for (final row in reportRows) {
         final status = (row['status_laporan'] ?? '').toString().toLowerCase();
         final points = (row['poin_diberikan'] as num?)?.toInt() ?? 0;
+        final severity = row['tingkat_keparahan']?.toString();
         final occurredAt = _parseDate(row['waktu_lapor']?.toString());
         final location = [
           (row['jalan'] ?? '').toString().trim(),
           (row['kelurahan'] ?? '').toString().trim(),
           (row['kecamatan'] ?? '').toString().trim(),
         ].where((part) => part.isNotEmpty).join(', ');
+        final rewardPoints = reportRewardPointsFromRow(
+          status: status,
+          severity: severity,
+          storedPoints: points,
+        );
 
         if (status.contains('ditolak') || status.contains('rejected')) {
           activities.add(
@@ -191,7 +242,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               subtitle: location.isEmpty
                   ? 'Tetap terima kasih sudah berkontribusi melapor.'
                   : location,
-              trailingText: points > 0 ? '+$points Poin' : '+3 Poin',
+              trailingText: '+$rewardPoints Poin',
               trailingColor: const Color(0xFFF4B437),
               icon: Icons.close_rounded,
               iconBackground: const Color(0xFFFFC14C),
@@ -211,7 +262,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               subtitle: location.isEmpty
                   ? 'Laporan Anda berhasil diverifikasi admin.'
                   : location,
-              trailingText: points > 0 ? '+$points Poin' : '+10 Poin',
+              trailingText: '+$rewardPoints Poin',
               trailingColor: const Color(0xFF8DCB94),
               icon: Icons.check_rounded,
               iconBackground: const Color(0xFF8DCB94),
@@ -276,6 +327,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final normalizedActivities = activities.take(5).toList();
     return _HomeActivityBundle(
       todayReportCount: todayReportCount,
+      todayStreakCount: todayStreakCount,
       activities: normalizedActivities.isEmpty
           ? _fallbackActivities()
           : normalizedActivities,
@@ -308,7 +360,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final totalPoints = profileUser?.totalPoin ?? authUser?.poin ?? 0;
     final totalReports =
         profileUser?.totalLaporanValid ?? authUser?.jumlahLaporanValid ?? 0;
-    final streak = authUser?.streak ?? 0;
+    final streak = _todayStreakCount;
     final missionProgress = _todayReportCount > 0 ? 1 : 0;
 
     return Scaffold(
@@ -1197,7 +1249,7 @@ class _DailyMissionCard extends StatelessWidget {
                 icon: Icons.check_rounded,
                 iconBackground: Color(0xFF8DCB94),
                 title: 'Disetujui',
-                reward: '+10 poin',
+                reward: 'Poin sesuai tingkat laporan',
                 rewardColor: Color(0xFF9FDE6D),
               ),
               _MissionRewardInfo(
@@ -1298,6 +1350,7 @@ class _WeeklyStreakCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeDays = streak.clamp(0, 7);
+    final completed = activeDays >= 7;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1319,12 +1372,33 @@ class _WeeklyStreakCard extends StatelessWidget {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEA7D37).withValues(alpha: 0.12),
+                  gradient: LinearGradient(
+                    colors: completed
+                        ? [
+                            const Color(0xFFFF7A1A).withValues(alpha: 0.26),
+                            const Color(0xFFFFC04D).withValues(alpha: 0.18),
+                          ]
+                        : [
+                            const Color(0xFFEA7D37).withValues(alpha: 0.12),
+                            const Color(0xFFB24F21).withValues(alpha: 0.08),
+                          ],
+                  ),
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(
+                        0xFFFF8A2A,
+                      ).withValues(alpha: completed ? 0.22 : 0.10),
+                      blurRadius: completed ? 18 : 10,
+                      spreadRadius: completed ? 1 : 0,
+                    ),
+                  ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_fire_department_rounded,
-                  color: Color(0xFFEA7D37),
+                  color: completed
+                      ? const Color(0xFFFFC94D)
+                      : const Color(0xFFEA7D37),
                   size: 30,
                 ),
               ),
@@ -1345,7 +1419,7 @@ class _WeeklyStreakCard extends StatelessWidget {
                     Text(
                       activeDays == 0
                           ? 'Mulai lapor hari ini untuk menjaga progres tetap menyala.'
-                          : '$activeDays/7 hari aktif minggu ini.',
+                          : '$activeDays/7 laporan aktif minggu ini.',
                       style: GoogleFonts.poppins(
                         fontSize: 12.5,
                         height: 1.45,
@@ -1413,7 +1487,9 @@ class _WeeklyStreakCard extends StatelessWidget {
                       child: Container(
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.10),
+                          color: const Color(
+                            0xFF6B2D1A,
+                          ).withValues(alpha: activeDays > 0 ? 0.26 : 0.14),
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
@@ -1427,7 +1503,18 @@ class _WeeklyStreakCard extends StatelessWidget {
                         width: progressWidth,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEA7D37),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF7A1A), Color(0xFFFFC94D)],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFFF8A2A,
+                              ).withValues(alpha: activeDays > 0 ? 0.45 : 0.0),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
@@ -1438,21 +1525,35 @@ class _WeeklyStreakCard extends StatelessWidget {
                         return Expanded(
                           child: Column(
                             children: [
-                              Container(
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 280),
+                                curve: Curves.easeOutCubic,
                                 width: 28,
                                 height: 28,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: reached
                                       ? const Color(
-                                          0xFFEA7D37,
-                                        ).withValues(alpha: 0.16)
+                                          0xFFFF8A2A,
+                                        ).withValues(alpha: 0.24)
                                       : const Color(0xFF17372D),
                                   border: Border.all(
                                     color: reached
-                                        ? const Color(0xFFEA7D37)
-                                        : Colors.white.withValues(alpha: 0.18),
+                                        ? const Color(0xFFFFC94D)
+                                        : Colors.white.withValues(alpha: 0.16),
+                                    width: reached ? 1.4 : 1,
                                   ),
+                                  boxShadow: reached
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(
+                                              0xFFFF8A2A,
+                                            ).withValues(alpha: 0.22),
+                                            blurRadius: 10,
+                                            spreadRadius: 0.6,
+                                          ),
+                                        ]
+                                      : null,
                                 ),
                                 child: Icon(
                                   reached
@@ -1460,8 +1561,8 @@ class _WeeklyStreakCard extends StatelessWidget {
                                       : Icons.circle_outlined,
                                   size: 15,
                                   color: reached
-                                      ? const Color(0xFFEA7D37)
-                                      : Colors.white.withValues(alpha: 0.34),
+                                      ? const Color(0xFFFFC94D)
+                                      : Colors.white.withValues(alpha: 0.30),
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -1561,7 +1662,7 @@ class _ProductCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 184,
+        width: MediaQuery.sizeOf(context).width < 380 ? 170 : 184,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -1591,21 +1692,24 @@ class _ProductCard extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: product.gambarUrl == null || product.gambarUrl!.isEmpty
-                      ? const Icon(
-                          Icons.shopping_bag_outlined,
-                          color: Color(0xFF756D63),
-                          size: 40,
-                        )
-                      : Image.network(
-                          product.gambarUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const Icon(
+                  child: SizedBox.expand(
+                    child:
+                        product.gambarUrl == null || product.gambarUrl!.isEmpty
+                        ? const Icon(
                             Icons.shopping_bag_outlined,
                             color: Color(0xFF756D63),
                             size: 40,
+                          )
+                        : Image.network(
+                            product.gambarUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const Icon(
+                              Icons.shopping_bag_outlined,
+                              color: Color(0xFF756D63),
+                              size: 40,
+                            ),
                           ),
-                        ),
+                  ),
                 ),
               ),
             ),
@@ -1798,10 +1902,12 @@ class _BannerItem {
 class _HomeActivityBundle {
   const _HomeActivityBundle({
     required this.todayReportCount,
+    required this.todayStreakCount,
     required this.activities,
   });
 
   final int todayReportCount;
+  final int todayStreakCount;
   final List<_HomeActivityItem> activities;
 }
 
@@ -1831,7 +1937,7 @@ List<_HomeActivityItem> _fallbackActivities() {
     _HomeActivityItem(
       title: 'Laporan sampah diterima',
       subtitle: 'Aktivitas lingkungan Anda akan tampil di sini.',
-      trailingText: '+10 Poin',
+      trailingText: 'Poin masuk',
       trailingColor: const Color(0xFF9FDE6D),
       icon: Icons.check_rounded,
       iconBackground: const Color(0xFF8DCB94),

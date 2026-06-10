@@ -6,6 +6,7 @@ class ProfileUser {
   final String? fotoProfil;
   final int totalPoin;
   final int totalLaporanValid;
+  final int streakPoin;
   final int setorSampahKg;
   final String role;
   final String? statusPengajuanSeller; // Bisa null
@@ -19,6 +20,7 @@ class ProfileUser {
     this.fotoProfil,
     required this.totalPoin,
     required this.totalLaporanValid,
+    required this.streakPoin,
     required this.setorSampahKg,
     required this.role,
     this.statusPengajuanSeller,
@@ -34,6 +36,7 @@ class ProfileUser {
       fotoProfil: json['foto_profil'] as String?,
       totalPoin: (json['total_poin'] as num?)?.toInt() ?? 0,
       totalLaporanValid: (json['total_laporan_valid'] as num?)?.toInt() ?? 0,
+      streakPoin: (json['streak_poin'] as num?)?.toInt() ?? 0,
       setorSampahKg: (json['setor_sampah_kg'] as num?)?.toInt() ?? 0,
       role: json['role'] as String? ?? 'user',
       statusPengajuanSeller: json['status_pengajuan_seller'] as String?,
@@ -50,6 +53,7 @@ class ProfileUser {
       'foto_profil': fotoProfil,
       'total_poin': totalPoin,
       'total_laporan_valid': totalLaporanValid,
+      'streak_poin': streakPoin,
       'setor_sampah_kg': setorSampahKg,
       'role': role,
       'status_pengajuan_seller': statusPengajuanSeller,

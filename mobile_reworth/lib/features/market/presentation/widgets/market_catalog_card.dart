@@ -21,8 +21,11 @@ class MarketCatalogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width < 380;
+
     return Material(
       color: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(28),
         onTap: onTapCard,
@@ -58,13 +61,13 @@ class MarketCatalogCard extends StatelessWidget {
                       child: _CatalogProductImage(url: product.gambarUrl),
                     ),
                     Positioned(
-                      top: 10,
-                      right: 10,
+                      top: isCompact ? 8 : 10,
+                      right: isCompact ? 8 : 10,
                       child: GestureDetector(
                         onTap: onTapFavorite,
                         child: Container(
-                          width: 36,
-                          height: 36,
+                          width: isCompact ? 34 : 36,
+                          height: isCompact ? 34 : 36,
                           decoration: BoxDecoration(
                             color: const Color(0xE6003B2F),
                             shape: BoxShape.circle,
@@ -73,7 +76,7 @@ class MarketCatalogCard extends StatelessWidget {
                             isFavorite
                                 ? Icons.favorite_rounded
                                 : Icons.favorite_border_rounded,
-                            size: 18,
+                            size: isCompact ? 17 : 18,
                             color: isFavorite
                                 ? const Color(0xFFFF7A7A)
                                 : Colors.white,
@@ -87,7 +90,12 @@ class MarketCatalogCard extends StatelessWidget {
               Expanded(
                 flex: 42,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? 10 : 12,
+                    isCompact ? 8 : 10,
+                    isCompact ? 10 : 12,
+                    isCompact ? 8 : 10,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -96,29 +104,29 @@ class MarketCatalogCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.poppins(
-                          fontSize: 15,
+                          fontSize: isCompact ? 13.8 : 15,
                           fontWeight: FontWeight.w700,
-                          height: 1.18,
+                          height: 1.14,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      SizedBox(height: isCompact ? 2 : 3),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.storefront_rounded,
-                            size: 11,
+                            size: isCompact ? 10 : 11,
                             color: Colors.white.withValues(alpha: 0.72),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: isCompact ? 3 : 4),
                           Expanded(
                             child: Text(
                               product.namaToko,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
-                                fontSize: 10.8,
+                                fontSize: isCompact ? 10 : 10.8,
                                 fontWeight: FontWeight.w400,
                                 color: Colors.white.withValues(alpha: 0.72),
                               ),
@@ -136,18 +144,18 @@ class MarketCatalogCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
-                                fontSize: 14.5,
+                                fontSize: isCompact ? 13.2 : 14.5,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFFF6F4EA),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: isCompact ? 6 : 8),
                           GestureDetector(
                             onTap: onTapAdd,
                             child: Container(
-                              width: 40,
-                              height: 40,
+                              width: isCompact ? 36 : 40,
+                              height: isCompact ? 36 : 40,
                               decoration: const BoxDecoration(
                                 color: Color(0xFFEAF6DD),
                                 shape: BoxShape.circle,
@@ -204,7 +212,7 @@ class _CatalogProductImage extends StatelessWidget {
       errorBuilder: (context, error, stackTrace) => _fallback(),
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) {
-          return child;
+          return SizedBox.expand(child: child);
         }
         return const Center(
           child: SizedBox(

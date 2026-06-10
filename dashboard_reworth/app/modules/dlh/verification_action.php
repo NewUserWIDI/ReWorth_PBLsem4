@@ -27,7 +27,37 @@ if ($action === 'reject') {
         redirect('app/modules/dlh/laporan_detail.php?id=' . urlencode($id));
     }
 
-    dlh_update_status((int)$id, 'rejected', $reason);
+    $laporan = dlh_find_report((int) $id);
+    if ($laporan === null) {
+        set_flash('danger', 'Laporan tidak ditemukan.');
+        redirect('app/modules/dlh/laporan.php');
+    }
+
+    $rejectedPoints = 3;
+    dlh_update_status((int)$id, 'rejected', $reason, $rejectedPoints);
+
+    $userId = (string) ($laporan['id_masyarakat'] ?? '');
+    if ($userId !== '') {
+        $profile = supabase_fetch_one(
+            'profiles',
+            'total_poin',
+            ['id' => 'eq.' . $userId]
+        );
+
+        if ($profile !== null) {
+            $currentPoint = (int) ($profile['total_poin'] ?? 0);
+            supabase_update(
+                'profiles',
+                [
+                    'total_poin' => $currentPoint + $rejectedPoints,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ],
+                [
+                    'id' => 'eq.' . $userId,
+                ]
+            );
+        }
+    }
 
     set_flash('success', 'Laporan berhasil ditolak.');
     redirect('app/modules/dlh/riwayat.php');
@@ -45,15 +75,14 @@ if ($action === 'finish') {
 
     $laporan = dlh_find_report((int)$id);
 
-    if ($laporan['status_laporan'] === 'completed') {
-    set_flash('warning', 'Laporan sudah pernah diselesaikan.');
-    redirect('app/modules/dlh/riwayat.php');
-    }
-    
-
     if ($laporan === null) {
         set_flash('danger', 'Laporan tidak ditemukan.');
         redirect('app/modules/dlh/laporan.php');
+    }
+
+    if (($laporan['status_laporan'] ?? '') === 'completed') {
+        set_flash('warning', 'Laporan sudah pernah diselesaikan.');
+        redirect('app/modules/dlh/riwayat.php');
     }
 
     // Hitung poin berdasarkan tingkat keparahan
@@ -72,30 +101,109 @@ if ($action === 'finish') {
         $poin
     );
 
-    $userId = $laporan['id_masyarakat'];
-
-$profile = supabase_fetch_one(
-    'profiles',
-    '*',
-    ['id' => 'eq.' . $userId]
-);
-
-if ($profile !== null) {
-
-    $currentPoint = (int)($profile['total_poin'] ?? 0);
-    $currentValid = (int)($profile['total_laporan_valid'] ?? 0);
-
-    supabase_update(
+    $userId = (string) ($laporan['id_masyarakat'] ?? '');
+    $profile = supabase_fetch_one(
         'profiles',
-        [
-            'total_poin' => $currentPoint + $poin,
-            'total_laporan_valid' => $currentValid + 1
-        ],
-        [
-            'id' => 'eq.' . $userId
-        ]
+        'total_poin,total_laporan_valid',
+        ['id' => 'eq.' . $userId]
     );
-}
+
+    if ($profile !== null) {
+        $timezone = new DateTimeZone('Asia/Jakarta');
+        $now = new DateTimeImmutable('now', $timezone);
+        $startOfDay = $now->setTime(0, 0, 0);
+        $startOfNextDay = $startOfDay->modify('+1 day');
+        $startOfDayTs = $startOfDay->getTimestamp();
+        $startOfNextDayTs = $startOfNextDay->getTimestamp();
+
+        $completedReports = supabase_fetch(
+            'laporan_sampah',
+            'id_laporan,updated_at',
+            [
+                'id_masyarakat' => 'eq.' . $userId,
+                'status_laporan' => 'in.(completed,selesai,valid,diterima,approved)',
+                'limit' => '1000',
+            ]
+        );
+
+        $todayCompletedCount = 0;
+        foreach ($completedReports as $completedReport) {
+            $updatedAtRaw = (string) ($completedReport['updated_at'] ?? '');
+            if ($updatedAtRaw === '') {
+                continue;
+            }
+
+            $updatedAtTs = strtotime($updatedAtRaw);
+            if ($updatedAtTs === false) {
+                continue;
+            }
+
+            if ($updatedAtTs >= $startOfDayTs && $updatedAtTs < $startOfNextDayTs) {
+                $todayCompletedCount++;
+            }
+        }
+
+        $bonusHistory = supabase_fetch(
+            'riwayat_poin',
+            'tanggal',
+            [
+                'id_masyarakat' => 'eq.' . $userId,
+                'jenis_transaksi' => 'eq.Masuk',
+                'sumber_poin' => 'eq.Bonus Streak 7 Laporan',
+                'limit' => '1000',
+            ]
+        );
+
+        $todayBonusCount = 0;
+        foreach ($bonusHistory as $bonusRow) {
+            $bonusDateRaw = (string) ($bonusRow['tanggal'] ?? '');
+            if ($bonusDateRaw === '') {
+                continue;
+            }
+
+            $bonusDateTs = strtotime($bonusDateRaw);
+            if ($bonusDateTs === false) {
+                continue;
+            }
+
+            if ($bonusDateTs >= $startOfDayTs && $bonusDateTs < $startOfNextDayTs) {
+                $todayBonusCount++;
+            }
+        }
+
+        $currentPoint = (int) ($profile['total_poin'] ?? 0);
+        $currentValid = (int) ($profile['total_laporan_valid'] ?? 0);
+        $streakBonus = ($todayCompletedCount >= 7 && $todayBonusCount === 0) ? 25 : 0;
+        $newTotalPoint = $currentPoint + $poin + $streakBonus;
+
+        supabase_update(
+            'profiles',
+            [
+                'total_laporan_valid' => $currentValid + 1,
+                'streak_poin' => min(7, $todayCompletedCount),
+                'total_poin' => $newTotalPoint,
+            ],
+            [
+                'id' => 'eq.' . $userId
+            ]
+        );
+
+        if ($streakBonus > 0) {
+            try {
+                supabase_insert('riwayat_poin', [
+                    'id_masyarakat' => $userId,
+                    'jenis_transaksi' => 'Masuk',
+                    'sumber_poin' => 'Bonus Streak 7 Laporan',
+                    'jumlah_poin' => $streakBonus,
+                    'saldo_setelah' => $newTotalPoint,
+                    'keterangan' => 'Bonus streak 7 laporan berhasil didapatkan.',
+                    'tanggal' => $now->format(DATE_ATOM),
+                ]);
+            } catch (Throwable $e) {
+                // riwayat bonus bersifat opsional
+            }
+        }
+    }
 
     set_flash('success', 'Laporan berhasil diselesaikan. Poin telah diberikan kepada pelapor.');
     redirect('app/modules/dlh/riwayat.php');

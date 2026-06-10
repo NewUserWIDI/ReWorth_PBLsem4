@@ -116,7 +116,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                       else
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            final isNarrow = constraints.maxWidth < 380;
+                            final isNarrow = constraints.maxWidth < 390;
                             return GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
@@ -126,7 +126,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                                     crossAxisCount: 2,
                                     mainAxisSpacing: 14,
                                     crossAxisSpacing: 14,
-                                    mainAxisExtent: isNarrow ? 286 : 300,
+                                    mainAxisExtent: isNarrow ? 304 : 316,
                                   ),
                               itemBuilder: (context, index) {
                                 final product = filteredProducts[index];

@@ -28,6 +28,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void initState() {
     super.initState();
     _loadRemoteAvatar();
+    Future.microtask(() {
+      ref.read(profileControllerProvider.notifier).loadProfile();
+    });
   }
 
   Future<void> _loadRemoteAvatar() async {
