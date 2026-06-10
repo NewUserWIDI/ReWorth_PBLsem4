@@ -29,6 +29,7 @@ function render_layout(string $title, callable $content): void
     <body>
         <div class="dashboard-shell">
             <?php render_sidebar($user ?? []); ?>
+            <button class="sidebar-overlay" type="button" data-sidebar-overlay aria-label="Tutup sidebar" hidden></button>
             <main class="main-area">
                 <?php render_topbar($title, $user ?? []); ?>
 

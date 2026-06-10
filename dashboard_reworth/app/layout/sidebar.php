@@ -129,52 +129,57 @@ function render_sidebar(array $user): void
     $displayEmail = trim((string) (($user['email'] ?? '') ?: 'dashboard@reworth.app'));
     ?>
     <aside class="sidebar">
-        <div class="brand">
-            <img class="brand-logo" src="<?= e(url('assets/logo_reworth.jpeg')) ?>" alt="Logo ReWorth">
-            <div class="brand-copy">
-                <strong>ReWorth</strong>
-                <span>Bersama Jaga Bumi, Ciptakan Dampak.</span>
+        <div class="sidebar-header">
+            <div class="brand">
+                <img class="brand-logo" src="<?= e(url('assets/logo_reworth.jpeg')) ?>" alt="Logo ReWorth">
+                <div class="brand-copy">
+                    <strong>ReWorth</strong>
+                    <span>Bersama Jaga Bumi, Ciptakan Dampak.</span>
+                </div>
             </div>
         </div>
-        <nav class="sidebar-nav">
-            <?php foreach (sidebar_items($role) as $item): ?>
-                <?php if (($item['type'] ?? 'link') === 'group'): ?>
-                    <?php
-                    $children = $item['children'] ?? [];
-                    $open = false;
-                    foreach ($children as $child) {
-                        if (sidebar_item_active($role, $child['key'], $currentPath, $query)) {
-                            $open = true;
-                            break;
+        <div class="sidebar-scroll">
+            <nav class="sidebar-nav">
+                <?php foreach (sidebar_items($role) as $item): ?>
+                    <?php if (($item['type'] ?? 'link') === 'group'): ?>
+                        <?php
+                        $children = $item['children'] ?? [];
+                        $open = false;
+                        foreach ($children as $child) {
+                            if (sidebar_item_active($role, $child['key'], $currentPath, $query)) {
+                                $open = true;
+                                break;
+                            }
                         }
-                    }
-                    ?>
-                    <details class="sidebar-group" <?= $open ? 'open' : '' ?>>
-                        <summary class="sidebar-link sidebar-group-summary <?= $open ? 'active' : '' ?>">
+                        ?>
+                        <details class="sidebar-group" <?= $open ? 'open' : '' ?>>
+                            <summary class="sidebar-link sidebar-group-summary <?= $open ? 'active' : '' ?>">
+                                <span class="sidebar-group-main">
+                                    <span class="sidebar-menu-icon" aria-hidden="true"><?= sidebar_icon_svg($item['icon'] ?? '') ?></span>
+                                    <span class="sidebar-label"><?= e($item['label']) ?></span>
+                                </span>
+                                <span class="sidebar-chevron" aria-hidden="true"></span>
+                            </summary>
+                            <div class="sidebar-submenu">
+                                <?php foreach ($children as $child): ?>
+                                    <a href="<?= e(url($child['path'])) ?>" class="<?= sidebar_item_active($role, $child['key'], $currentPath, $query) ? 'active' : '' ?>">
+                                        <span class="sidebar-submenu-label"><?= e($child['label']) ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                    <?php else: ?>
+                        <a href="<?= e(url($item['path'])) ?>" class="sidebar-link <?= sidebar_item_active($role, $item['key'], $currentPath, $query) ? 'active' : '' ?>">
                             <span class="sidebar-group-main">
                                 <span class="sidebar-menu-icon" aria-hidden="true"><?= sidebar_icon_svg($item['icon'] ?? '') ?></span>
                                 <span class="sidebar-label"><?= e($item['label']) ?></span>
                             </span>
-                        </summary>
-                        <div class="sidebar-submenu">
-                            <?php foreach ($children as $child): ?>
-                                <a href="<?= e(url($child['path'])) ?>" class="<?= sidebar_item_active($role, $child['key'], $currentPath, $query) ? 'active' : '' ?>">
-                                    <span class="sidebar-submenu-label"><?= e($child['label']) ?></span>
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
-                    </details>
-                <?php else: ?>
-                    <a href="<?= e(url($item['path'])) ?>" class="sidebar-link <?= sidebar_item_active($role, $item['key'], $currentPath, $query) ? 'active' : '' ?>">
-                        <span class="sidebar-group-main">
-                            <span class="sidebar-menu-icon" aria-hidden="true"><?= sidebar_icon_svg($item['icon'] ?? '') ?></span>
-                            <span class="sidebar-label"><?= e($item['label']) ?></span>
-                        </span>
-                    </a>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </nav>
-        <div class="sidebar-bottom">
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
             <a class="sidebar-link sidebar-logout-link" href="<?= e(url($logout['path'])) ?>" data-confirm="<?= e($logout['confirm']) ?>">
                 <span class="sidebar-group-main">
                     <span class="sidebar-menu-icon" aria-hidden="true"><?= sidebar_icon_svg('logout') ?></span>

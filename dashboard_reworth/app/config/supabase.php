@@ -259,12 +259,17 @@ function supabase_delete(string $table, array $query): bool
     return $status >= 200 && $status < 300;
 }
 
-function supabase_count(string $table, string $idColumn = 'id'): int
+function supabase_count(string $table, string $idColumn = 'id', array $query = []): int
 {
+    $query = array_merge($query, [
+        'select' => $idColumn,
+        'limit' => '1',
+    ]);
+
     $result = supabase_request(
         'GET',
         $table,
-        ['select' => $idColumn, 'limit' => '1'],
+        $query,
         null,
         ['Prefer: count=exact']
     );

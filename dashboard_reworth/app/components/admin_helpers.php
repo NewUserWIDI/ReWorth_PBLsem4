@@ -23,6 +23,79 @@ function admin_paginate(array $rows, int $page, int $perPage = 10): array
     ];
 }
 
+function admin_now(): DateTimeImmutable
+{
+    return new DateTimeImmutable('now');
+}
+
+function admin_today_start(): string
+{
+    return admin_now()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_tomorrow_start(): string
+{
+    return admin_now()->modify('+1 day')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_week_start(): string
+{
+    return admin_now()->modify('monday this week')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_count_rows(string $table, string $idColumn = 'id', array $query = []): int
+{
+    return supabase_count($table, $idColumn, $query);
+}
+
+function admin_sum_column(string $table, string $column, array $query = []): int
+{
+    $rows = supabase_fetch($table, $column, $query);
+
+    if (!is_array($rows)) {
+        return 0;
+    }
+
+    return (int) array_sum(array_map(
+        static fn (array $row): int => (int) ($row[$column] ?? 0),
+        array_filter($rows, static fn ($row): bool => is_array($row))
+    ));
+}
+
+function admin_count_recent(string $table, string $dateColumn, string $startIso, ?string $endIso = null, array $query = []): int
+{
+    $rows = supabase_fetch($table, $dateColumn, $query);
+
+    if (!is_array($rows)) {
+        return 0;
+    }
+
+    $startTs = strtotime($startIso) ?: 0;
+    $endTs = $endIso !== null ? (strtotime($endIso) ?: 0) : null;
+
+    return count(array_filter($rows, static function ($row) use ($dateColumn, $startTs, $endTs): bool {
+        if (!is_array($row)) {
+            return false;
+        }
+
+        $value = (string) ($row[$dateColumn] ?? '');
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return false;
+        }
+
+        if ($timestamp < $startTs) {
+            return false;
+        }
+
+        if ($endTs !== null && $timestamp >= $endTs) {
+            return false;
+        }
+
+        return true;
+    }));
+}
+
 // ==================== USER MANAGEMENT ====================
 
 function admin_users(array $filters = []): array
@@ -514,30 +587,43 @@ function admin_transaction_by_id(string $id): ?array
 
 function admin_overview(): array
 {
-    $users = supabase_fetch('profiles', 'id');
-    $totalUser = is_array($users) ? count($users) : 0;
-    
-    $sellers = supabase_fetch('seller', 'id_seller');
-    $totalSeller = is_array($sellers) ? count($sellers) : 0;
-    
-    $reports = supabase_fetch('laporan_sampah', 'id_laporan');
-    $totalLaporan = is_array($reports) ? count($reports) : 0;
-    
-    $orders = supabase_fetch('pesanan', 'id_pesanan');
-    $totalTransaksi = is_array($orders) ? count($orders) : 0;
-    
-    $ordersWithTotal = supabase_fetch('pesanan', 'total_bayar');
-    $totalPendapatan = 0;
-    if (is_array($ordersWithTotal)) {
-        $totalPendapatan = array_sum(array_column($ordersWithTotal, 'total_bayar'));
-    }
-    
+    $todayStart = admin_today_start();
+    $tomorrowStart = admin_tomorrow_start();
+    $weekStart = admin_week_start();
+
+    $totalUser = admin_count_rows('profiles', 'id', [
+        'role' => 'in.(user,masyarakat)',
+    ]);
+
+    $newUsersToday = admin_count_recent('profiles', 'created_at', $todayStart, $tomorrowStart, [
+        'role' => 'in.(user,masyarakat)',
+    ]);
+
+    $totalSeller = admin_count_rows('seller', 'id_seller');
+    $newSellerWeek = admin_count_recent('seller', 'created_at', $weekStart);
+
+    $totalLaporan = admin_count_rows('laporan_sampah', 'id_laporan');
+    $newLaporanToday = admin_count_recent('laporan_sampah', 'waktu_lapor', $todayStart, $tomorrowStart);
+
+    $totalTransaksi = admin_count_rows('pesanan', 'id_pesanan');
+    $transaksiWeek = admin_count_recent('pesanan', 'tanggal_pesanan', $weekStart);
+
+    $totalPendapatan = admin_sum_column('pesanan', 'total_bayar');
+    $pendapatanWeek = admin_sum_column('pesanan', 'total_bayar', [
+        'tanggal_pesanan' => 'gte.' . $weekStart,
+    ]);
+
     return [
         'total_user' => $totalUser,
+        'new_users_today' => $newUsersToday,
         'total_seller' => $totalSeller,
+        'new_seller_week' => $newSellerWeek,
         'total_laporan_sampah' => $totalLaporan,
+        'new_laporan_today' => $newLaporanToday,
         'total_transaksi' => $totalTransaksi,
+        'transaksi_week' => $transaksiWeek,
         'total_pendapatan' => (int) $totalPendapatan,
+        'pendapatan_week' => (int) $pendapatanWeek,
     ];
 }
 
