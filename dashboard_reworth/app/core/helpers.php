@@ -63,6 +63,7 @@ function status_label(string $status): string
         'refund' => 'Refund',
         'tertahan' => 'Tertahan',
         'tersedia' => 'Tersedia',
+        'sukses' => 'Sukses',
         default => ucwords(str_replace('_', ' ', $status)),
     };
 }
@@ -72,7 +73,7 @@ function status_badge_class(string $status): string
     $normalized = strtolower(trim($status));
 
     return match ($normalized) {
-        'valid', 'aktif', 'selesai', 'terverifikasi', 'berhasil', 'tersedia' => 'badge-success',
+        'valid', 'aktif', 'selesai', 'terverifikasi', 'berhasil', 'tersedia', 'sukses' => 'badge-success',
         'menunggu_verifikasi', 'pending', 'menunggu', 'baru', 'dikemas', 'menunggu pembayaran', 'belum upload', 'belum dibayar' => 'badge-warning',
         'ditolak', 'ditolak_pesanan', 'gagal', 'dibatalkan', 'nonaktif', 'suspend', 'kadaluarsa' => 'badge-danger',
         'disembunyikan', 'refund' => 'badge-neutral',

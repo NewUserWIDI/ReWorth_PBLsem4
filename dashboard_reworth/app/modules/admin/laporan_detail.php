@@ -35,6 +35,9 @@ render_layout('Detail Laporan', function () use ($report): void {
     $longitude = (float) ($report['longitude'] ?? 0);
     $tingkatKeparahan = $report['tingkat_keparahan'] ?? '';
     $statusLaporan = $report['status_laporan'] ?? '';
+    $statusKey = strtolower(trim((string) $statusLaporan));
+    $isVerifiedReport = in_array($statusKey, ['selesai', 'completed'], true);
+    $poinDiberikan = (int) ($report['poin_diberikan'] ?? 0);
     ?>
     <section class="panel">
         <div class="panel-header">
@@ -56,6 +59,7 @@ render_layout('Detail Laporan', function () use ($report): void {
                 <p><strong>Deskripsi:</strong> <?= e($deskripsi) ?></p>
                 <p><strong>Waktu Lapor:</strong> <?= e($waktuLapor) ?></p>
                 <p><strong>Updated:</strong> <?= e($updatedAt) ?></p>
+                <p><strong>Poin Diberikan:</strong> <?= e($isVerifiedReport ? (string) $poinDiberikan : '-') ?></p>
                 <?php if (!empty($alasanDitolak)): ?>
                     <p><strong>Alasan Ditolak:</strong> <?= e($alasanDitolak) ?></p>
                 <?php endif; ?>
@@ -70,6 +74,9 @@ render_layout('Detail Laporan', function () use ($report): void {
                 <?php endif; ?>
                 <div id="admin-laporan-map" class="map-canvas" style="height:220px;border-radius:14px;margin-top:12px;"></div>
             </article>
+        </div>
+        <div class="card-actions" style="justify-content:flex-start;margin-top:20px;">
+            <a class="btn btn-secondary" href="<?= e(url('app/modules/admin/laporan_sampah.php')) ?>">Kembali</a>
         </div>
     </section>
 

@@ -14,7 +14,10 @@ require_role('admin');
 // Ganti mock dengan fungsi real dari database
 $overview = admin_overview();  // ← SUDAH DARI DATABASE, BUKAN MOCK
 $activities = admin_activities();
-$pendingSellers = array_values(array_filter(admin_sellers(), fn (array $item): bool => ($item['status_verifikasi'] ?? '') === 'menunggu'));
+$pendingSellers = admin_sellers([
+    'status_verifikasi' => 'menunggu',
+    'include_pending' => true,
+]);
 $illustration = admin_illustration_path();
 
 render_layout('Dashboard Admin', function () use ($overview, $activities, $pendingSellers, $illustration): void {
@@ -33,11 +36,11 @@ render_layout('Dashboard Admin', function () use ($overview, $activities, $pendi
     </section>
 
     <div class="stat-grid stat-grid-five">
-        <?php stat_card('Total User', number_format((int) $overview['total_user'], 0, ',', '.'), '+18 hari ini'); ?>
-        <?php stat_card('Total Seller', number_format((int) $overview['total_seller'], 0, ',', '.'), '+6 minggu ini'); ?>
-        <?php stat_card('Total Laporan Sampah', number_format((int) $overview['total_laporan_sampah'], 0, ',', '.'), '+12 hari ini'); ?>
-        <?php stat_card('Total Transaksi', number_format((int) $overview['total_transaksi'], 0, ',', '.'), '+7% minggu ini'); ?>
-        <?php stat_card('Total Pendapatan', 'Rp ' . number_format((int) $overview['total_pendapatan'], 0, ',', '.'), 'Nilai transaksi platform'); ?>
+        <?php stat_card('Total User', number_format((int) $overview['total_user'], 0, ',', '.'), '+' . number_format((int) $overview['new_users_today'], 0, ',', '.') . ' hari ini'); ?>
+        <?php stat_card('Total Seller', number_format((int) $overview['total_seller'], 0, ',', '.'), '+' . number_format((int) $overview['new_seller_week'], 0, ',', '.') . ' minggu ini'); ?>
+        <?php stat_card('Total Laporan Sampah', number_format((int) $overview['total_laporan_sampah'], 0, ',', '.'), '+' . number_format((int) $overview['new_laporan_today'], 0, ',', '.') . ' hari ini'); ?>
+        <?php stat_card('Total Transaksi', number_format((int) $overview['total_transaksi'], 0, ',', '.'), '+' . number_format((int) $overview['transaksi_week'], 0, ',', '.') . ' minggu ini'); ?>
+        <?php stat_card('Pendapatan Sistem', 'Rp ' . number_format((int) $overview['total_pendapatan'], 0, ',', '.'), '10% per pesanan, minggu ini Rp ' . number_format((int) $overview['pendapatan_week'], 0, ',', '.')); ?>
     </div>
 
     <div class="two-col-grid">
@@ -85,8 +88,7 @@ render_layout('Dashboard Admin', function () use ($overview, $activities, $pendi
                                 <p><?= e((string) $seller['email']) ?> | Daftar: <?= e((string) $seller['tanggal_bergabung']) ?></p>
                                 <div class="report-meta">
                                     <span class="status-badge badge-warning">Menunggu</span>
-                                    <a class="btn btn-primary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Verifikasi</a>
-                                    <a class="btn btn-danger" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Tolak</a>
+                                    <a class="btn btn-primary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']) . '&source=verification')) ?>">Tinjau</a>
                                 </div>
                             </div>
                         </article>

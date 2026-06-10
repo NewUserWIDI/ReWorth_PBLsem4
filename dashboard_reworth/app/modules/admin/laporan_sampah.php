@@ -20,6 +20,18 @@ $filters = [
     'date_to' => $_GET['date_to'] ?? '',
 ];
 
+$statusAliases = [
+    'menunggu' => 'pending',
+    'diproses' => 'processing',
+    'selesai' => 'completed',
+    'ditolak' => 'rejected',
+];
+
+$statusFilter = strtolower(trim((string) ($filters['status'] ?? '')));
+if (isset($statusAliases[$statusFilter])) {
+    $filters['status'] = $statusAliases[$statusFilter];
+}
+
 $rows = dlh_reports($filters);
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $pagination = admin_paginate($rows, $page, 10);
@@ -44,10 +56,8 @@ render_layout('Laporan Sampah', function () use ($filters, $pagination, $kecamat
             <div style="flex: 1; min-width: 150px;">
                 <select class="select" name="status" style="width: 100%;">
                     <option value="">Semua status</option>
-                    <option value="menunggu" <?= ($filters['status'] ?? '') === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
-                    <option value="diproses" <?= ($filters['status'] ?? '') === 'diproses' ? 'selected' : '' ?>>Diproses</option>
-                    <option value="selesai" <?= ($filters['status'] ?? '') === 'selesai' ? 'selected' : '' ?>>Selesai</option>
-                    <option value="ditolak" <?= ($filters['status'] ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                    <option value="pending" <?= ($filters['status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
+                    <option value="processing" <?= ($filters['status'] ?? '') === 'processing' ? 'selected' : '' ?>>Processing</option>
                     <option value="completed" <?= ($filters['status'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
                     <option value="rejected" <?= ($filters['status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
                 </select>
@@ -90,15 +100,21 @@ render_layout('Laporan Sampah', function () use ($filters, $pagination, $kecamat
                         <th>Kecamatan</th>
                         <th>Tingkat</th>
                         <th>Status</th>
+                        <th>Poin</th>
                         <th>Tanggal</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ($pagination['items'] === []): ?>
-                        <tr><td colspan="8" style="text-align:center;color:#6b7280;">Belum ada laporan.</td></tr>
+                        <tr><td colspan="9" style="text-align:center;color:#6b7280;">Belum ada laporan.</td></tr>
                     <?php else: ?>
                         <?php foreach ($pagination['items'] as $report): ?>
+                            <?php
+                            $statusLaporan = strtolower(trim((string) ($report['status_laporan'] ?? '')));
+                            $isVerifiedReport = in_array($statusLaporan, ['selesai', 'completed'], true);
+                            $poinDiberikan = (int) ($report['poin_diberikan'] ?? 0);
+                            ?>
                             <tr>
                                 <td><?= e((string) $report['id_laporan']) ?></td>
                                 <td><?= e((string) ($report['nama_pelapor'] ?? '-')) ?></td>
@@ -106,6 +122,7 @@ render_layout('Laporan Sampah', function () use ($filters, $pagination, $kecamat
                                 <td><?= e((string) ($report['kecamatan'] ?? '-')) ?></td>
                                 <td><?php severity_badge((string) ($report['tingkat_keparahan'] ?? '')); ?></td>
                                 <td><?php badge_status((string) ($report['status_laporan'] ?? '')); ?></td>
+                                <td><?= e($isVerifiedReport ? (string) $poinDiberikan : '-') ?></td>
                                 <td><?= e(substr((string) ($report['waktu_lapor'] ?? ''), 0, 10)) ?></td>
                                 <td><a class="btn btn-secondary" href="<?= e(url('app/modules/admin/laporan_detail.php?id=' . urlencode((string) $report['id_laporan']))) ?>">Detail</a></td>
                             </tr>

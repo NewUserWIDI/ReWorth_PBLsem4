@@ -23,6 +23,130 @@ function admin_paginate(array $rows, int $page, int $perPage = 10): array
     ];
 }
 
+function admin_now(): DateTimeImmutable
+{
+    return new DateTimeImmutable('now');
+}
+
+function admin_today_start(): string
+{
+    return admin_now()->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_tomorrow_start(): string
+{
+    return admin_now()->modify('+1 day')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_week_start(): string
+{
+    return admin_now()->modify('monday this week')->setTime(0, 0, 0)->format('Y-m-d\TH:i:s');
+}
+
+function admin_count_rows(string $table, string $idColumn = 'id', array $query = []): int
+{
+    return supabase_count($table, $idColumn, $query);
+}
+
+function admin_sum_column(string $table, string $column, array $query = []): int
+{
+    $rows = supabase_fetch($table, $column, $query);
+
+    if (!is_array($rows)) {
+        return 0;
+    }
+
+    return (int) array_sum(array_map(
+        static fn (array $row): int => (int) ($row[$column] ?? 0),
+        array_filter($rows, static fn ($row): bool => is_array($row))
+    ));
+}
+
+function admin_count_recent(string $table, string $dateColumn, string $startIso, ?string $endIso = null, array $query = []): int
+{
+    $rows = supabase_fetch($table, $dateColumn, $query);
+
+    if (!is_array($rows)) {
+        return 0;
+    }
+
+    $startTs = strtotime($startIso) ?: 0;
+    $endTs = $endIso !== null ? (strtotime($endIso) ?: 0) : null;
+
+    return count(array_filter($rows, static function ($row) use ($dateColumn, $startTs, $endTs): bool {
+        if (!is_array($row)) {
+            return false;
+        }
+
+        $value = (string) ($row[$dateColumn] ?? '');
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return false;
+        }
+
+        if ($timestamp < $startTs) {
+            return false;
+        }
+
+        if ($endTs !== null && $timestamp >= $endTs) {
+            return false;
+        }
+
+        return true;
+    }));
+}
+
+function admin_revenue_from_orders(array $orders, ?string $startIso = null, ?string $endIso = null): int
+{
+    $startTs = $startIso !== null ? (strtotime($startIso) ?: 0) : null;
+    $endTs = $endIso !== null ? (strtotime($endIso) ?: 0) : null;
+    $totalRevenue = 0.0;
+
+    foreach ($orders as $order) {
+        if (!is_array($order)) {
+            continue;
+        }
+
+        $status = strtolower(trim((string) ($order['status_pesanan'] ?? '')));
+        if (in_array($status, ['dibatalkan', 'cancelled', 'ditolak', 'gagal'], true)) {
+            continue;
+        }
+
+        if ($startTs !== null) {
+            $dateValue = (string) ($order['tanggal_pesanan'] ?? $order['created_at'] ?? '');
+            $timestamp = strtotime($dateValue);
+            if ($timestamp === false) {
+                continue;
+            }
+            if ($timestamp < $startTs) {
+                continue;
+            }
+            if ($endTs !== null && $timestamp >= $endTs) {
+                continue;
+            }
+        }
+
+        $feePlatform = null;
+        if (isset($order['fee_platform']) && is_numeric($order['fee_platform'])) {
+            $feePlatform = (float) $order['fee_platform'];
+        } elseif (isset($order['subtotal_produk']) && is_numeric($order['subtotal_produk'])) {
+            $feePlatform = (float) $order['subtotal_produk'] * 0.10;
+        } elseif (isset($order['subtotal']) && is_numeric($order['subtotal'])) {
+            $feePlatform = (float) $order['subtotal'] * 0.10;
+        } elseif (isset($order['total_bayar']) && is_numeric($order['total_bayar'])) {
+            $feePlatform = (float) $order['total_bayar'] * 0.10;
+        }
+
+        if ($feePlatform === null || $feePlatform <= 0) {
+            continue;
+        }
+
+        $totalRevenue += $feePlatform;
+    }
+
+    return (int) round($totalRevenue);
+}
+
 // ==================== USER MANAGEMENT ====================
 
 function admin_users(array $filters = []): array
@@ -30,14 +154,12 @@ function admin_users(array $filters = []): array
     $query = ['select' => '*'];
     
     if (!empty($filters['role']) && $filters['role'] !== 'semua') {
-        $roleMap = [
-            'masyarakat' => 'user',
-            'admin' => 'admin',
-            'dlh' => 'dlh',
-            'seller' => 'seller',
-        ];
-        $dbRole = $roleMap[$filters['role']] ?? $filters['role'];
-        $query['role'] = 'eq.' . $dbRole;
+        $normalizedRole = strtolower(trim((string) $filters['role']));
+        if (in_array($normalizedRole, ['user', 'masyarakat'], true)) {
+            $query['role'] = 'in.(user,masyarakat)';
+        } else {
+            $query['role'] = 'eq.' . $normalizedRole;
+        }
     }
     
     if (!empty($filters['q'])) {
@@ -51,12 +173,14 @@ function admin_users(array $filters = []): array
     }
     
     return array_map(function ($user) {
+        $rawRole = strtolower(trim((string) ($user['role'] ?? 'user')));
         return [
+            'id' => (string) ($user['id'] ?? ''),
             'id_user' => substr($user['id'] ?? '', 0, 8) . '...',
             'nama' => $user['nama_lengkap'] ?? $user['nama'] ?? '-',
             'email' => $user['email'] ?? '-',
-            'role' => ($user['role'] ?? 'user') === 'user' ? 'masyarakat' : ($user['role'] ?? 'masyarakat'),
-            'status' => 'aktif',
+            'no_telp' => $user['no_telp'] ?? $user['nomor_hp'] ?? '-',
+            'role' => in_array($rawRole, ['user', 'masyarakat'], true) ? 'user' : $rawRole,
             'tanggal_bergabung' => format_date($user['created_at'] ?? null),
             'total_laporan' => (int) ($user['total_laporan_valid'] ?? 0),
             'total_poin' => (int) ($user['total_poin'] ?? 0),
@@ -73,18 +197,20 @@ function admin_user_by_id(string $id): ?array
     }
     
     $user = $result[0];
+    $rawRole = strtolower(trim((string) ($user['role'] ?? 'user')));
     return [
         'id_user' => $user['id'] ?? '',
         'nama' => $user['nama_lengkap'] ?? $user['nama'] ?? '-',
         'email' => $user['email'] ?? '-',
-        'role' => ($user['role'] ?? 'user') === 'user' ? 'masyarakat' : ($user['role'] ?? 'masyarakat'),
-        'status' => 'aktif',
+        'no_telp' => $user['no_telp'] ?? $user['nomor_hp'] ?? '-',
+        'role' => in_array($rawRole, ['user', 'masyarakat'], true) ? 'user' : $rawRole,
         'tanggal_bergabung' => format_date($user['created_at'] ?? null),
         'total_laporan' => (int) ($user['total_laporan_valid'] ?? 0),
         'total_poin' => (int) ($user['total_poin'] ?? 0),
-        'no_telp' => $user['no_telp'] ?? '-',
         'foto_profil' => $user['foto_profil'] ?? null,
         'status_pengajuan_seller' => $user['status_pengajuan_seller'] ?? 'Belum Daftar',
+        'laporan_valid' => (int) ($user['laporan_valid'] ?? 0),
+        'setor_sampah_kg' => (float) ($user['setor_sampah_kg'] ?? 0),
     ];
 }
 
@@ -111,7 +237,7 @@ function admin_sellers(array $filters = []): array
     
     if (is_array($verifiedSellers)) {
         foreach ($verifiedSellers as $seller) {
-            $profile = supabase_fetch_one('profiles', 'nama_lengkap,email', ['id' => 'eq.' . $seller['id_masyarakat']]);
+            $profile = supabase_fetch_one('profiles', 'nama_lengkap,email,no_telp', ['id' => 'eq.' . $seller['id_masyarakat']]);
             $isActive = ($seller['aktif'] ?? true);
             
             $result[] = [
@@ -119,7 +245,7 @@ function admin_sellers(array $filters = []): array
                 'nama_toko' => $seller['nama_toko'] ?? '-',
                 'pemilik' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
                 'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
-                'jumlah_produk' => count_produk_by_seller($seller['id_masyarakat']),
+                'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
                 'status_verifikasi' => $isActive ? 'terverifikasi' : 'nonaktif',
                 'status_toko' => $isActive ? 'aktif' : 'nonaktif',
                 'tanggal_bergabung' => format_date($seller['tanggal_disetujui'] ?? $seller['created_at'] ?? null),
@@ -128,32 +254,34 @@ function admin_sellers(array $filters = []): array
             ];
         }
     }
-    
-    $pendingQuery = ['select' => '*', 'status_pengajuan' => 'eq.Pending'];
-    
-    if (!empty($filters['q'])) {
-        $pendingQuery['or'] = '(nama_toko_usulan.ilike.%' . $filters['q'] . '%,username_usulan.ilike.%' . $filters['q'] . '%)';
-    }
-    
-    $pendingSellers = supabase_fetch('pengajuan_seller', '*', $pendingQuery);
-    
-    if (is_array($pendingSellers)) {
-        foreach ($pendingSellers as $pengajuan) {
-            $profile = supabase_fetch_one('profiles', 'nama_lengkap,email', ['id' => 'eq.' . $pengajuan['id_masyarakat']]);
-            
-            $result[] = [
-                'id_seller' => 'PEN-' . ($pengajuan['id_pengajuan'] ?? ''),
-                'nama_toko' => $pengajuan['nama_toko_usulan'] ?? '-',
-                'pemilik' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
-                'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
-                'jumlah_produk' => 0,
-                'status_verifikasi' => 'menunggu',
-                'status_toko' => 'pending',
-                'tanggal_bergabung' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
-                'alasan_penolakan' => $pengajuan['alasan_penolakan'] ?? '',
-                'is_pengajuan' => true,
-                'id_pengajuan' => $pengajuan['id_pengajuan'],
-            ];
+
+    if (!empty($filters['include_pending'])) {
+        $pendingQuery = ['select' => '*', 'status_pengajuan' => 'eq.Pending'];
+
+        if (!empty($filters['q'])) {
+            $pendingQuery['or'] = '(nama_toko_usulan.ilike.%' . $filters['q'] . '%,username_usulan.ilike.%' . $filters['q'] . '%)';
+        }
+
+        $pendingSellers = supabase_fetch('pengajuan_seller', '*', $pendingQuery);
+
+        if (is_array($pendingSellers)) {
+            foreach ($pendingSellers as $pengajuan) {
+                $profile = supabase_fetch_one('profiles', 'nama_lengkap,email,no_telp', ['id' => 'eq.' . $pengajuan['id_masyarakat']]);
+
+                $result[] = [
+                    'id_seller' => 'PEN-' . ($pengajuan['id_pengajuan'] ?? ''),
+                    'nama_toko' => $pengajuan['nama_toko_usulan'] ?? '-',
+                    'pemilik' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
+                    'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
+                    'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
+                    'status_verifikasi' => 'menunggu',
+                    'status_toko' => 'pending',
+                    'tanggal_bergabung' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
+                    'alasan_penolakan' => $pengajuan['alasan_penolakan'] ?? '',
+                    'is_pengajuan' => true,
+                    'id_pengajuan' => $pengajuan['id_pengajuan'],
+                ];
+            }
         }
     }
     
@@ -162,7 +290,8 @@ function admin_sellers(array $filters = []): array
         $result = array_filter($result, function($item) use ($q) {
             return str_contains(strtolower($item['nama_toko']), $q) ||
                    str_contains(strtolower($item['pemilik']), $q) ||
-                   str_contains(strtolower($item['email']), $q);
+                   str_contains(strtolower($item['email']), $q) ||
+                   str_contains(strtolower((string) ($item['no_telp'] ?? '')), $q);
         });
     }
     
@@ -211,8 +340,11 @@ function admin_seller_by_id(string $id): ?array
             'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
             'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
             'status_verifikasi' => 'menunggu',
+            'status_pengajuan' => (string) ($pengajuan['status_pengajuan'] ?? 'Pending'),
             'status_toko' => 'pending',
             'tanggal_bergabung' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
+            'tanggal_pengajuan' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
+            'tanggal_diproses' => format_date($pengajuan['tanggal_diproses'] ?? null),
             'alasan_penolakan' => $pengajuan['alasan_penolakan'] ?? '',
             'username_usulan' => $pengajuan['username_usulan'] ?? '',
             'kategori_jualan' => $pengajuan['kategori_jualan'] ?? '',
@@ -232,6 +364,10 @@ function admin_seller_by_id(string $id): ?array
     }
     
     $profile = supabase_fetch_one('profiles', '*', ['id' => 'eq.' . $seller['id_masyarakat']]);
+    $pengajuan = null;
+    if (!empty($seller['id_pengajuan'])) {
+        $pengajuan = supabase_fetch_one('pengajuan_seller', '*', ['id_pengajuan' => 'eq.' . $seller['id_pengajuan']]);
+    }
     
     return [
         'id_seller' => (string) ($seller['id_seller'] ?? ''),
@@ -244,10 +380,16 @@ function admin_seller_by_id(string $id): ?array
         'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
         'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
         'status_verifikasi' => map_verification_status($seller['status_verifikasi'] ?? 'Pending'),
+        'status_verifikasi_raw' => (string) ($seller['status_verifikasi'] ?? 'Pending'),
         'status_toko' => ($seller['aktif'] ?? true) ? 'aktif' : 'nonaktif',
         'tanggal_bergabung' => format_date($seller['tanggal_disetujui'] ?? $seller['created_at'] ?? null),
+        'tanggal_disetujui' => format_date($seller['tanggal_disetujui'] ?? null),
+        'tanggal_dibuat' => format_date($seller['created_at'] ?? null),
         'alasan_penolakan' => $seller['alasan_penolakan'] ?? '',
         'username_dashboard' => $seller['username_dashboard'] ?? '',
+        'kategori_jualan' => is_array($pengajuan) ? (string) ($pengajuan['kategori_jualan'] ?? '') : '',
+        'jenis_produk_jualan' => is_array($pengajuan) ? (string) ($pengajuan['jenis_produk_jualan'] ?? '') : '',
+        'aktif' => (bool) ($seller['aktif'] ?? false),
         'is_pengajuan' => false,
     ];
 }
@@ -496,30 +638,50 @@ function admin_transaction_by_id(string $id): ?array
 
 function admin_overview(): array
 {
-    $users = supabase_fetch('profiles', 'id');
-    $totalUser = is_array($users) ? count($users) : 0;
-    
-    $sellers = supabase_fetch('seller', 'id_seller');
-    $totalSeller = is_array($sellers) ? count($sellers) : 0;
-    
-    $reports = supabase_fetch('laporan_sampah', 'id_laporan');
-    $totalLaporan = is_array($reports) ? count($reports) : 0;
-    
-    $orders = supabase_fetch('pesanan', 'id_pesanan');
-    $totalTransaksi = is_array($orders) ? count($orders) : 0;
-    
-    $ordersWithTotal = supabase_fetch('pesanan', 'total_bayar');
-    $totalPendapatan = 0;
-    if (is_array($ordersWithTotal)) {
-        $totalPendapatan = array_sum(array_column($ordersWithTotal, 'total_bayar'));
+    $todayStart = admin_today_start();
+    $tomorrowStart = admin_tomorrow_start();
+    $weekStart = admin_week_start();
+
+    $totalUser = admin_count_rows('profiles', 'id', [
+        'role' => 'in.(user,masyarakat)',
+    ]);
+
+    $newUsersToday = admin_count_recent('profiles', 'created_at', $todayStart, $tomorrowStart, [
+        'role' => 'in.(user,masyarakat)',
+    ]);
+
+    $totalSeller = admin_count_rows('seller', 'id_seller');
+    $newSellerWeek = admin_count_recent('seller', 'created_at', $weekStart);
+
+    $totalLaporan = admin_count_rows('laporan_sampah', 'id_laporan');
+    $newLaporanToday = admin_count_recent('laporan_sampah', 'waktu_lapor', $todayStart, $tomorrowStart);
+
+    $totalTransaksi = admin_count_rows('pesanan', 'id_pesanan');
+    $transaksiWeek = admin_count_recent('pesanan', 'tanggal_pesanan', $weekStart);
+
+    $ordersForRevenue = supabase_fetch(
+        'pesanan',
+        'total_bayar,fee_platform,subtotal_produk,subtotal,status_pesanan,tanggal_pesanan,created_at',
+        ['order' => 'tanggal_pesanan.desc']
+    );
+    if (!is_array($ordersForRevenue)) {
+        $ordersForRevenue = [];
     }
-    
+
+    $totalPendapatan = admin_revenue_from_orders($ordersForRevenue);
+    $pendapatanWeek = admin_revenue_from_orders($ordersForRevenue, $weekStart, null);
+
     return [
         'total_user' => $totalUser,
+        'new_users_today' => $newUsersToday,
         'total_seller' => $totalSeller,
+        'new_seller_week' => $newSellerWeek,
         'total_laporan_sampah' => $totalLaporan,
+        'new_laporan_today' => $newLaporanToday,
         'total_transaksi' => $totalTransaksi,
+        'transaksi_week' => $transaksiWeek,
         'total_pendapatan' => (int) $totalPendapatan,
+        'pendapatan_week' => (int) $pendapatanWeek,
     ];
 }
 

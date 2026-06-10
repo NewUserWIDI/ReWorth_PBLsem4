@@ -35,6 +35,9 @@ function render_topbar(string $title, array $user): void
             <?php endif; ?>
         </div>
         <div class="topbar-actions<?= $role === 'seller' ? ' topbar-actions-seller' : '' ?>">
+            <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Buka menu sidebar">
+                <span class="sidebar-toggle-icon" aria-hidden="true"></span>
+            </button>
             <!-- SEARCH BOX DIHAPUS -->
             <button class="topbar-icon" type="button" aria-label="Notifikasi">
                 <svg class="topbar-bell-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
