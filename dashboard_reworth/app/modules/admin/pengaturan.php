@@ -4,277 +4,196 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../core/middleware.php';
 require_once __DIR__ . '/../../layout/main_layout.php';
-require_once __DIR__ . '/../../components/admin_helpers.php';
+require_once __DIR__ . '/../../components/admin_management_helpers.php';
 
 require_role('admin');
 
-$tab = $_GET['tab'] ?? 'profil_admin';
+$tab = (string) ($_GET['tab'] ?? 'profil_admin');
 $allowed = ['profil_admin', 'profil_sistem'];
 if (!in_array($tab, $allowed, true)) {
     $tab = 'profil_admin';
 }
 
-// Fungsi helper untuk setting
-function get_setting($key, $default = '') {
-    $result = supabase_fetch_one('pengaturan', 'setting_value', ['setting_key' => 'eq.' . $key]);
-    return $result['setting_value'] ?? $default;
-}
+$sessionUser = current_user() ?? [];
 
-function update_setting($key, $value) {
-    $existing = supabase_fetch_one('pengaturan', 'id_setting', ['setting_key' => 'eq.' . $key]);
-    if ($existing) {
-        return supabase_update('pengaturan', 
-            ['setting_value' => $value, 'updated_at' => date('Y-m-d H:i:s')],
-            ['setting_key' => 'eq.' . $key]
-        );
-    } else {
-        return supabase_insert('pengaturan', [
-            'setting_key' => $key,
-            'setting_value' => $value,
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-    }
-}
-
-// Proses update pengaturan
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user = current_user();
-    $userId = $user['id'] ?? null;
-    $profileId = trim((string) ($user['profile_id'] ?? ''));
-    $dashboardUserId = trim((string) ($user['dashboard_user_id'] ?? ''));
-    
     if ($tab === 'profil_admin') {
-        $updateData = [];
-        if (!empty($_POST['nama_admin'])) {
-            $updateData['nama_lengkap'] = $_POST['nama_admin'];
+        $result = admin_save_admin_profile($sessionUser, $_POST, $_FILES);
+        if (($result['success'] ?? false) === true) {
+            $_SESSION['dashboard_user'] = admin_refresh_session_user(
+                $sessionUser,
+                is_array($result['profile'] ?? null) ? $result['profile'] : [],
+                is_array($result['dashboard_user'] ?? null) ? $result['dashboard_user'] : null
+            );
         }
-        if (!empty($_POST['email_admin'])) {
-            $updateData['email'] = $_POST['email_admin'];
-        }
-        if (!empty($updateData)) {
-            if ($profileId !== '') {
-                $result = supabase_update('profiles', $updateData, ['id' => 'eq.' . $profileId]);
-            } elseif ($dashboardUserId !== '') {
-                $result = supabase_update('dashboard_users', $updateData, ['id' => 'eq.' . $dashboardUserId]);
-            } else {
-                $result = null;
-            }
-
-            if (is_array($result)) {
-                set_flash('success', 'Profil admin berhasil diupdate.');
-            } else {
-                set_flash('danger', 'Gagal update profil admin.');
-            }
-        } else {
-            set_flash('info', 'Tidak ada perubahan pada profil admin.');
-        }
-        
-    } elseif ($tab === 'profil_sistem') {
-        update_setting('app_name', $_POST['nama_platform'] ?? 'ReWorth');
-        update_setting('contact_email', $_POST['email_kontak'] ?? '');
-        update_setting('contact_phone', $_POST['telepon'] ?? '');
-        update_setting('app_description', $_POST['deskripsi'] ?? '');
-        set_flash('success', 'Pengaturan sistem berhasil disimpan.');
+    } else {
+        $result = admin_save_system_settings($sessionUser, $_POST, $_FILES);
     }
-    
+
+    set_flash(($result['success'] ?? false) ? 'success' : 'danger', (string) ($result['message'] ?? 'Terjadi kesalahan.'));
     redirect('app/modules/admin/pengaturan.php?tab=' . urlencode($tab));
 }
 
-// Ambil data admin yang login
-$admin = current_user();
-$adminName = $admin['nama_lengkap'] ?? $admin['nama'] ?? 'Admin ReWorth';
-$adminEmail = $admin['email'] ?? 'admin@reworth.app';
+$sessionUser = current_user() ?? [];
+$profile = admin_find_profile_for_staff($sessionUser, 'admin');
+$dashboardUser = admin_fetch_dashboard_user_by_id((string) ($sessionUser['dashboard_user_id'] ?? ''));
 
-// Ambil nilai setting untuk tampilan
-$appName = get_setting('app_name', 'ReWorth');
-$contactEmail = get_setting('contact_email', 'support@reworth.app');
-$contactPhone = get_setting('contact_phone', '+62 812 0000 1111');
-$appDescription = get_setting('app_description', 'ReWorth adalah platform ekosistem pelaporan sampah dan mini market produk daur ulang.');
+$adminName = (string) (($profile['nama_lengkap'] ?? $dashboardUser['nama_lengkap'] ?? $sessionUser['nama_lengkap'] ?? $sessionUser['nama'] ?? 'Admin ReWorth') ?: 'Admin ReWorth');
+$adminEmail = (string) (($profile['email'] ?? $dashboardUser['email'] ?? $sessionUser['email'] ?? 'admin@reworth.app') ?: 'admin@reworth.app');
+$adminPhone = (string) (($profile['no_telp'] ?? '') ?: '');
+$adminPhoto = (string) (($profile['foto_profil'] ?? '') ?: '');
 
-render_layout('Pengaturan', function () use ($tab, $adminName, $adminEmail, $appName, $contactEmail, $contactPhone, $appDescription): void {
+$appName = admin_setting_value('app_name', 'ReWorth');
+$contactEmail = admin_setting_value('contact_email', 'support@reworth.app');
+$contactPhone = admin_setting_value('contact_phone', '+62 812 0000 1111');
+$appDescription = admin_setting_value('app_description', 'ReWorth adalah platform ekosistem pelaporan sampah dan mini market produk daur ulang.');
+$appLogo = admin_setting_value('app_logo', 'assets/logo_reworth.jpeg');
+
+render_layout('Pengaturan Profile', function () use (
+    $tab,
+    $adminName,
+    $adminEmail,
+    $adminPhone,
+    $adminPhoto,
+    $appName,
+    $contactEmail,
+    $contactPhone,
+    $appDescription,
+    $appLogo
+): void {
     ?>
     <style>
-        .settings-layout {
-            display: flex;
-            gap: 24px;
-            margin-top: 20px;
-        }
-        .settings-tabs {
-            width: 200px;
-            flex-shrink: 0;
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 8px;
-        }
-        .settings-tabs a {
-            display: block;
-            padding: 12px 16px;
-            color: #374151;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        .settings-tabs a:hover {
-            background: #e5e7eb;
-        }
-        .settings-tabs a.active {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-        }
-        .form-stack {
-            flex: 1;
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 24px;
-        }
-        .form-field {
-            display: block;
-            margin-bottom: 20px;
-        }
-        .form-field span {
-            display: block;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 8px;
-        }
-        .form-field input, .form-field select, .form-field textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
-        }
-        .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
-            outline: none;
-            border-color: #22c55e;
-            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-        }
-        .form-field input:disabled, .form-field input:read-only {
-            background: #f3f4f6;
-            cursor: not-allowed;
-        }
-        .form-grid {
+        .settings-preview {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 96px minmax(0, 1fr);
             gap: 16px;
-        }
-        .card-actions {
-            margin-top: 24px;
-            padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .btn-save {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            border: none;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            background: #f9fafb;
         }
-        .btn-save:hover {
-            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+        .settings-preview-media {
+            width: 96px;
+            height: 96px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e5f7dd, #f5fbf1);
+            display: grid;
+            place-items: center;
+            color: #2e7d32;
+            font-weight: 700;
         }
-        @media (max-width: 768px) {
-            .settings-layout {
-                flex-direction: column;
-            }
-            .settings-tabs {
-                width: 100%;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            .settings-tabs a {
-                flex: 1;
-                text-align: center;
-            }
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
+        .settings-preview-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .settings-helper {
+            margin-top: 6px;
+            color: #6b7280;
+            font-size: 12px;
         }
     </style>
 
     <section class="panel">
         <div class="panel-header">
             <div>
-                <h2>Pengaturan</h2>
-                <p>Konfigurasi admin dan sistem ReWorth.</p>
+                <h2>Pengaturan Profile</h2>
+                <p>Kelola profil admin dan konfigurasi aplikasi dari tabel `profiles` dan `pengaturan`.</p>
             </div>
         </div>
+
         <div class="settings-layout">
             <nav class="settings-tabs">
-                <a class="<?= $tab === 'profil_admin' ? 'active' : '' ?>" href="?tab=profil_admin">Profil Admin</a>
-                <a class="<?= $tab === 'profil_sistem' ? 'active' : '' ?>" href="?tab=profil_sistem">Profil Sistem</a>
+                <a class="<?= $tab === 'profil_admin' ? 'active' : '' ?>" href="<?= e(url('app/modules/admin/pengaturan.php?tab=profil_admin')) ?>">Profil Admin</a>
+                <a class="<?= $tab === 'profil_sistem' ? 'active' : '' ?>" href="<?= e(url('app/modules/admin/pengaturan.php?tab=profil_sistem')) ?>">Profil Sistem</a>
             </nav>
-            
-            <form class="form-stack" method="post" enctype="multipart/form-data">
+
+            <form method="post" enctype="multipart/form-data" class="form-stack">
                 <?php if ($tab === 'profil_admin'): ?>
-                    <div class="form-field">
+                    <div class="settings-preview">
+                        <div class="settings-preview-media">
+                            <?php if ($adminPhoto !== ''): ?>
+                                <img src="<?= e($adminPhoto) ?>" alt="Foto admin">
+                            <?php else: ?>
+                                <span><?= e(strtoupper(substr($adminName, 0, 1))) ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <strong><?= e($adminName) ?></strong>
+                            <div style="color:#6b7280;margin-top:6px;"><?= e($adminEmail) ?></div>
+                            <div style="color:#6b7280;margin-top:4px;"><?= e($adminPhone !== '' ? $adminPhone : 'Nomor telepon belum diisi') ?></div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <label class="form-field">
+                            <span>Nama Admin</span>
+                            <input type="text" name="nama_admin" value="<?= e($adminName) ?>" required>
+                        </label>
+                        <label class="form-field">
+                            <span>Email Admin</span>
+                            <input type="email" name="email_admin" value="<?= e($adminEmail) ?>" required>
+                        </label>
+                        <label class="form-field">
+                            <span>Nomor Telepon</span>
+                            <input type="text" name="no_telp_admin" value="<?= e($adminPhone) ?>" placeholder="Contoh: 081234567890">
+                        </label>
+                        <label class="form-field">
+                            <span>Role</span>
+                            <input type="text" value="admin" readonly>
+                        </label>
+                    </div>
+
+                    <label class="form-field">
                         <span>Foto Admin</span>
                         <input type="file" name="foto_admin" accept="image/*">
-                        <small style="color: #6b7280;">Ukuran maksimal 2MB. Format: JPG, PNG</small>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-field">
-                            <span>Nama</span>
-                            <input type="text" name="nama_admin" value="<?= e($adminName) ?>">
+                        <small class="settings-helper">Format JPG/PNG, maksimal 2MB.</small>
+                    </label>
+                <?php else: ?>
+                    <div class="settings-preview">
+                        <div class="settings-preview-media" style="border-radius:16px;">
+                            <img src="<?= e($appLogo !== '' ? $appLogo : url('assets/logo_reworth.jpeg')) ?>" alt="Logo aplikasi">
                         </div>
-                        <div class="form-field">
-                            <span>Email</span>
-                            <input type="email" name="email_admin" value="<?= e($adminEmail) ?>">
-                        </div>
-                        <div class="form-field">
-                            <span>Role</span>
-                            <input type="text" value="admin" readonly disabled>
+                        <div>
+                            <strong><?= e($appName) ?></strong>
+                            <div style="color:#6b7280;margin-top:6px;"><?= e($contactEmail) ?></div>
+                            <div style="color:#6b7280;margin-top:4px;"><?= e($contactPhone) ?></div>
                         </div>
                     </div>
-                    
-                <?php elseif ($tab === 'profil_sistem'): ?>
+
                     <div class="form-grid">
-                        <div class="form-field">
+                        <label class="form-field">
                             <span>Nama Platform</span>
-                            <input type="text" name="nama_platform" value="<?= e($appName) ?>">
-                        </div>
-                        <div class="form-field">
+                            <input type="text" name="nama_platform" value="<?= e($appName) ?>" required>
+                        </label>
+                        <label class="form-field">
                             <span>Email Kontak</span>
                             <input type="email" name="email_kontak" value="<?= e($contactEmail) ?>">
-                        </div>
-                        <div class="form-field">
-                            <span>Nomor Telepon</span>
+                        </label>
+                        <label class="form-field">
+                            <span>Nomor Telepon Kontak</span>
                             <input type="text" name="telepon" value="<?= e($contactPhone) ?>">
-                        </div>
+                        </label>
+                        <label class="form-field">
+                            <span>Logo Aplikasi</span>
+                            <input type="file" name="logo_platform" accept="image/*">
+                            <small class="settings-helper">Logo akan disimpan ke pengaturan `app_logo`.</small>
+                        </label>
                     </div>
-                    <div class="form-field">
-                        <span>Logo Platform</span>
-                        <input type="file" name="logo_platform" accept="image/*">
-                        <small style="color: #6b7280;">Rekomendasi ukuran: 200x200px</small>
-                    </div>
-                    <div class="form-field">
+
+                    <label class="form-field">
                         <span>Deskripsi Platform</span>
-                        <textarea name="deskripsi" rows="4"><?= e($appDescription) ?></textarea>
-                    </div>
+                        <textarea name="deskripsi" rows="5"><?= e($appDescription) ?></textarea>
+                    </label>
                 <?php endif; ?>
-                
+
                 <div class="card-actions">
-                    <button class="btn-save" type="submit">
-                        <i class="fas fa-save"></i> Simpan Perubahan
-                    </button>
+                    <button class="btn btn-primary" type="submit">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
     </section>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <?php
 });

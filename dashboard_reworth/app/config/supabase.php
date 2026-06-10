@@ -109,6 +109,106 @@ function supabase_request(string $method, string $path, array $query = [], ?arra
     ];
 }
 
+function supabase_auth_request(string $method, string $path, ?array $payload = null, array $headers = []): array
+{
+    supabase_set_last_error(null);
+
+    if (!supabase_is_configured()) {
+        supabase_set_last_error('Konfigurasi Supabase belum lengkap.');
+        return ['status' => 0, 'data' => null, 'headers' => []];
+    }
+
+    $url = rtrim(SUPABASE_URL, '/') . '/auth/v1/' . ltrim($path, '/');
+    $responseHeaders = [];
+    $curlHeaders = array_merge([
+        'apikey: ' . SUPABASE_API_KEY,
+        'Authorization: Bearer ' . SUPABASE_API_KEY,
+        'Content-Type: application/json',
+        'Accept: application/json',
+    ], $headers);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, strtoupper($method));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_HEADERFUNCTION, static function ($curl, string $line) use (&$responseHeaders): int {
+        $trimmed = trim($line);
+        if ($trimmed === '' || !str_contains($trimmed, ':')) {
+            return strlen($line);
+        }
+
+        [$name, $value] = explode(':', $trimmed, 2);
+        $responseHeaders[strtolower(trim($name))] = trim($value);
+        return strlen($line);
+    });
+
+    if ($payload !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    $raw = curl_exec($ch);
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($raw === false || $curlError !== '') {
+        supabase_set_last_error('cURL error: ' . $curlError);
+        return ['status' => 0, 'data' => null, 'headers' => $responseHeaders];
+    }
+
+    $decoded = json_decode((string) $raw, true);
+    if ($httpCode < 200 || $httpCode >= 300) {
+        if (is_array($decoded) && isset($decoded['msg'])) {
+            supabase_set_last_error('Supabase auth error: ' . (string) $decoded['msg']);
+        } elseif (is_array($decoded) && isset($decoded['message'])) {
+            supabase_set_last_error('Supabase auth error: ' . (string) $decoded['message']);
+        } else {
+            supabase_set_last_error('Supabase auth error HTTP ' . $httpCode);
+        }
+
+        return ['status' => $httpCode, 'data' => $decoded, 'headers' => $responseHeaders];
+    }
+
+    return [
+        'status' => $httpCode,
+        'data' => $decoded,
+        'headers' => $responseHeaders,
+    ];
+}
+
+function supabase_auth_admin_create_user(array $payload): array
+{
+    if (SUPABASE_SERVICE_ROLE_KEY === '') {
+        supabase_set_last_error('Service role key Supabase belum dikonfigurasi.');
+        return [];
+    }
+
+    $result = supabase_auth_request('POST', 'admin/users', $payload);
+    $data = $result['data'] ?? [];
+
+    return is_array($data) ? $data : [];
+}
+
+function supabase_auth_admin_delete_user(string $userId): bool
+{
+    if ($userId === '') {
+        return false;
+    }
+
+    if (SUPABASE_SERVICE_ROLE_KEY === '') {
+        supabase_set_last_error('Service role key Supabase belum dikonfigurasi.');
+        return false;
+    }
+
+    $result = supabase_auth_request('DELETE', 'admin/users/' . rawurlencode($userId));
+    $status = (int) ($result['status'] ?? 0);
+
+    return $status >= 200 && $status < 300;
+}
+
 function supabase_fetch(string $table, string $select = '*', array $query = []): array
 {
     if (strpos($table, '?') !== false) {
@@ -176,4 +276,92 @@ function supabase_count(string $table, string $idColumn = 'id'): int
 
     $rows = $result['data'] ?? [];
     return is_array($rows) ? count($rows) : 0;
+}
+
+function supabase_storage_public_url(string $bucket, string $path): string
+{
+    $bucket = trim($bucket, '/');
+    $segments = array_values(array_filter(explode('/', trim($path, '/')), static fn (string $segment): bool => $segment !== ''));
+    $encodedPath = implode('/', array_map('rawurlencode', $segments));
+
+    return rtrim(SUPABASE_URL, '/') . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $encodedPath;
+}
+
+function supabase_storage_upload(string $bucket, string $path, string $binary, string $contentType = 'application/octet-stream'): bool
+{
+    return supabase_storage_request(
+        'POST',
+        $bucket,
+        $path,
+        $binary,
+        [
+            'Content-Type: ' . $contentType,
+            'x-upsert: true',
+        ]
+    )['success'];
+}
+
+function supabase_storage_delete(string $bucket, string $path): bool
+{
+    return supabase_storage_request('DELETE', $bucket, $path)['success'];
+}
+
+function supabase_storage_request(
+    string $method,
+    string $bucket,
+    string $path,
+    ?string $binary = null,
+    array $headers = []
+): array {
+    supabase_set_last_error(null);
+
+    if (!supabase_is_configured()) {
+        supabase_set_last_error('Konfigurasi Supabase belum lengkap.');
+        return ['success' => false, 'status' => 0, 'body' => null];
+    }
+
+    $bucket = trim($bucket, '/');
+    $segments = array_values(array_filter(explode('/', trim($path, '/')), static fn (string $segment): bool => $segment !== ''));
+    $encodedPath = implode('/', array_map('rawurlencode', $segments));
+    $url = rtrim(SUPABASE_URL, '/') . '/storage/v1/object/' . rawurlencode($bucket) . '/' . $encodedPath;
+
+    $curlHeaders = array_merge([
+        'apikey: ' . SUPABASE_API_KEY,
+        'Authorization: Bearer ' . SUPABASE_API_KEY,
+    ], $headers);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, strtoupper($method));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    if ($binary !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $binary);
+    }
+
+    $raw = curl_exec($ch);
+    $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($raw === false || $curlError !== '') {
+        supabase_set_last_error('cURL error: ' . $curlError);
+        return ['success' => false, 'status' => 0, 'body' => null];
+    }
+
+    if ($httpCode < 200 || $httpCode >= 300) {
+        $decoded = json_decode((string) $raw, true);
+        if (is_array($decoded) && isset($decoded['message'])) {
+            supabase_set_last_error('Supabase storage error: ' . (string) $decoded['message']);
+        } else {
+            supabase_set_last_error('Supabase storage error HTTP ' . $httpCode);
+        }
+
+        return ['success' => false, 'status' => $httpCode, 'body' => $raw];
+    }
+
+    return ['success' => true, 'status' => $httpCode, 'body' => $raw];
 }

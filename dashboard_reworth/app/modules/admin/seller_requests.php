@@ -5,4 +5,4 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../core/middleware.php';
 
 require_role('admin');
-redirect('app/modules/admin/sellers.php?status_verifikasi=menunggu');
+redirect('app/modules/admin/sellers.php?status=menunggu');

@@ -14,7 +14,10 @@ require_role('admin');
 // Ganti mock dengan fungsi real dari database
 $overview = admin_overview();  // ← SUDAH DARI DATABASE, BUKAN MOCK
 $activities = admin_activities();
-$pendingSellers = array_values(array_filter(admin_sellers(), fn (array $item): bool => ($item['status_verifikasi'] ?? '') === 'menunggu'));
+$pendingSellers = admin_sellers([
+    'status_verifikasi' => 'menunggu',
+    'include_pending' => true,
+]);
 $illustration = admin_illustration_path();
 
 render_layout('Dashboard Admin', function () use ($overview, $activities, $pendingSellers, $illustration): void {
@@ -85,8 +88,7 @@ render_layout('Dashboard Admin', function () use ($overview, $activities, $pendi
                                 <p><?= e((string) $seller['email']) ?> | Daftar: <?= e((string) $seller['tanggal_bergabung']) ?></p>
                                 <div class="report-meta">
                                     <span class="status-badge badge-warning">Menunggu</span>
-                                    <a class="btn btn-primary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Verifikasi</a>
-                                    <a class="btn btn-danger" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Tolak</a>
+                                    <a class="btn btn-primary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']) . '&source=verification')) ?>">Tinjau</a>
                                 </div>
                             </div>
                         </article>

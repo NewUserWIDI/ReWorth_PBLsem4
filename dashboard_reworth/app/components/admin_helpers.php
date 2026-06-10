@@ -30,14 +30,12 @@ function admin_users(array $filters = []): array
     $query = ['select' => '*'];
     
     if (!empty($filters['role']) && $filters['role'] !== 'semua') {
-        $roleMap = [
-            'masyarakat' => 'user',
-            'admin' => 'admin',
-            'dlh' => 'dlh',
-            'seller' => 'seller',
-        ];
-        $dbRole = $roleMap[$filters['role']] ?? $filters['role'];
-        $query['role'] = 'eq.' . $dbRole;
+        $normalizedRole = strtolower(trim((string) $filters['role']));
+        if (in_array($normalizedRole, ['user', 'masyarakat'], true)) {
+            $query['role'] = 'in.(user,masyarakat)';
+        } else {
+            $query['role'] = 'eq.' . $normalizedRole;
+        }
     }
     
     if (!empty($filters['q'])) {
@@ -51,12 +49,14 @@ function admin_users(array $filters = []): array
     }
     
     return array_map(function ($user) {
+        $rawRole = strtolower(trim((string) ($user['role'] ?? 'user')));
         return [
+            'id' => (string) ($user['id'] ?? ''),
             'id_user' => substr($user['id'] ?? '', 0, 8) . '...',
             'nama' => $user['nama_lengkap'] ?? $user['nama'] ?? '-',
             'email' => $user['email'] ?? '-',
-            'role' => ($user['role'] ?? 'user') === 'user' ? 'masyarakat' : ($user['role'] ?? 'masyarakat'),
-            'status' => 'aktif',
+            'no_telp' => $user['no_telp'] ?? $user['nomor_hp'] ?? '-',
+            'role' => in_array($rawRole, ['user', 'masyarakat'], true) ? 'user' : $rawRole,
             'tanggal_bergabung' => format_date($user['created_at'] ?? null),
             'total_laporan' => (int) ($user['total_laporan_valid'] ?? 0),
             'total_poin' => (int) ($user['total_poin'] ?? 0),
@@ -73,18 +73,20 @@ function admin_user_by_id(string $id): ?array
     }
     
     $user = $result[0];
+    $rawRole = strtolower(trim((string) ($user['role'] ?? 'user')));
     return [
         'id_user' => $user['id'] ?? '',
         'nama' => $user['nama_lengkap'] ?? $user['nama'] ?? '-',
         'email' => $user['email'] ?? '-',
-        'role' => ($user['role'] ?? 'user') === 'user' ? 'masyarakat' : ($user['role'] ?? 'masyarakat'),
-        'status' => 'aktif',
+        'no_telp' => $user['no_telp'] ?? $user['nomor_hp'] ?? '-',
+        'role' => in_array($rawRole, ['user', 'masyarakat'], true) ? 'user' : $rawRole,
         'tanggal_bergabung' => format_date($user['created_at'] ?? null),
         'total_laporan' => (int) ($user['total_laporan_valid'] ?? 0),
         'total_poin' => (int) ($user['total_poin'] ?? 0),
-        'no_telp' => $user['no_telp'] ?? '-',
         'foto_profil' => $user['foto_profil'] ?? null,
         'status_pengajuan_seller' => $user['status_pengajuan_seller'] ?? 'Belum Daftar',
+        'laporan_valid' => (int) ($user['laporan_valid'] ?? 0),
+        'setor_sampah_kg' => (float) ($user['setor_sampah_kg'] ?? 0),
     ];
 }
 
@@ -111,7 +113,7 @@ function admin_sellers(array $filters = []): array
     
     if (is_array($verifiedSellers)) {
         foreach ($verifiedSellers as $seller) {
-            $profile = supabase_fetch_one('profiles', 'nama_lengkap,email', ['id' => 'eq.' . $seller['id_masyarakat']]);
+            $profile = supabase_fetch_one('profiles', 'nama_lengkap,email,no_telp', ['id' => 'eq.' . $seller['id_masyarakat']]);
             $isActive = ($seller['aktif'] ?? true);
             
             $result[] = [
@@ -119,7 +121,7 @@ function admin_sellers(array $filters = []): array
                 'nama_toko' => $seller['nama_toko'] ?? '-',
                 'pemilik' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
                 'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
-                'jumlah_produk' => count_produk_by_seller($seller['id_masyarakat']),
+                'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
                 'status_verifikasi' => $isActive ? 'terverifikasi' : 'nonaktif',
                 'status_toko' => $isActive ? 'aktif' : 'nonaktif',
                 'tanggal_bergabung' => format_date($seller['tanggal_disetujui'] ?? $seller['created_at'] ?? null),
@@ -129,31 +131,33 @@ function admin_sellers(array $filters = []): array
         }
     }
     
-    $pendingQuery = ['select' => '*', 'status_pengajuan' => 'eq.Pending'];
-    
-    if (!empty($filters['q'])) {
-        $pendingQuery['or'] = '(nama_toko_usulan.ilike.%' . $filters['q'] . '%,username_usulan.ilike.%' . $filters['q'] . '%)';
-    }
-    
-    $pendingSellers = supabase_fetch('pengajuan_seller', '*', $pendingQuery);
-    
-    if (is_array($pendingSellers)) {
-        foreach ($pendingSellers as $pengajuan) {
-            $profile = supabase_fetch_one('profiles', 'nama_lengkap,email', ['id' => 'eq.' . $pengajuan['id_masyarakat']]);
-            
-            $result[] = [
-                'id_seller' => 'PEN-' . ($pengajuan['id_pengajuan'] ?? ''),
-                'nama_toko' => $pengajuan['nama_toko_usulan'] ?? '-',
-                'pemilik' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
-                'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
-                'jumlah_produk' => 0,
-                'status_verifikasi' => 'menunggu',
-                'status_toko' => 'pending',
-                'tanggal_bergabung' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
-                'alasan_penolakan' => $pengajuan['alasan_penolakan'] ?? '',
-                'is_pengajuan' => true,
-                'id_pengajuan' => $pengajuan['id_pengajuan'],
-            ];
+    if (!empty($filters['include_pending'])) {
+        $pendingQuery = ['select' => '*', 'status_pengajuan' => 'eq.Pending'];
+        
+        if (!empty($filters['q'])) {
+            $pendingQuery['or'] = '(nama_toko_usulan.ilike.%' . $filters['q'] . '%,username_usulan.ilike.%' . $filters['q'] . '%)';
+        }
+        
+        $pendingSellers = supabase_fetch('pengajuan_seller', '*', $pendingQuery);
+        
+        if (is_array($pendingSellers)) {
+            foreach ($pendingSellers as $pengajuan) {
+                $profile = supabase_fetch_one('profiles', 'nama_lengkap,email,no_telp', ['id' => 'eq.' . $pengajuan['id_masyarakat']]);
+                
+                $result[] = [
+                    'id_seller' => 'PEN-' . ($pengajuan['id_pengajuan'] ?? ''),
+                    'nama_toko' => $pengajuan['nama_toko_usulan'] ?? '-',
+                    'pemilik' => is_array($profile) ? ($profile['nama_lengkap'] ?? '-') : '-',
+                    'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
+                    'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
+                    'status_verifikasi' => 'menunggu',
+                    'status_toko' => 'pending',
+                    'tanggal_bergabung' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
+                    'alasan_penolakan' => $pengajuan['alasan_penolakan'] ?? '',
+                    'is_pengajuan' => true,
+                    'id_pengajuan' => $pengajuan['id_pengajuan'],
+                ];
+            }
         }
     }
     
@@ -162,7 +166,8 @@ function admin_sellers(array $filters = []): array
         $result = array_filter($result, function($item) use ($q) {
             return str_contains(strtolower($item['nama_toko']), $q) ||
                    str_contains(strtolower($item['pemilik']), $q) ||
-                   str_contains(strtolower($item['email']), $q);
+                   str_contains(strtolower($item['email']), $q) ||
+                   str_contains(strtolower((string) ($item['no_telp'] ?? '')), $q);
         });
     }
     
@@ -211,8 +216,11 @@ function admin_seller_by_id(string $id): ?array
             'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
             'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
             'status_verifikasi' => 'menunggu',
+            'status_pengajuan' => (string) ($pengajuan['status_pengajuan'] ?? 'Pending'),
             'status_toko' => 'pending',
             'tanggal_bergabung' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
+            'tanggal_pengajuan' => format_date($pengajuan['tanggal_pengajuan'] ?? null),
+            'tanggal_diproses' => format_date($pengajuan['tanggal_diproses'] ?? null),
             'alasan_penolakan' => $pengajuan['alasan_penolakan'] ?? '',
             'username_usulan' => $pengajuan['username_usulan'] ?? '',
             'kategori_jualan' => $pengajuan['kategori_jualan'] ?? '',
@@ -232,6 +240,10 @@ function admin_seller_by_id(string $id): ?array
     }
     
     $profile = supabase_fetch_one('profiles', '*', ['id' => 'eq.' . $seller['id_masyarakat']]);
+    $pengajuan = null;
+    if (!empty($seller['id_pengajuan'])) {
+        $pengajuan = supabase_fetch_one('pengajuan_seller', '*', ['id_pengajuan' => 'eq.' . $seller['id_pengajuan']]);
+    }
     
     return [
         'id_seller' => (string) ($seller['id_seller'] ?? ''),
@@ -244,10 +256,16 @@ function admin_seller_by_id(string $id): ?array
         'email' => is_array($profile) ? ($profile['email'] ?? '-') : '-',
         'no_telp' => is_array($profile) ? ($profile['no_telp'] ?? '-') : '-',
         'status_verifikasi' => map_verification_status($seller['status_verifikasi'] ?? 'Pending'),
+        'status_verifikasi_raw' => (string) ($seller['status_verifikasi'] ?? 'Pending'),
         'status_toko' => ($seller['aktif'] ?? true) ? 'aktif' : 'nonaktif',
         'tanggal_bergabung' => format_date($seller['tanggal_disetujui'] ?? $seller['created_at'] ?? null),
+        'tanggal_disetujui' => format_date($seller['tanggal_disetujui'] ?? null),
+        'tanggal_dibuat' => format_date($seller['created_at'] ?? null),
         'alasan_penolakan' => $seller['alasan_penolakan'] ?? '',
         'username_dashboard' => $seller['username_dashboard'] ?? '',
+        'kategori_jualan' => is_array($pengajuan) ? (string) ($pengajuan['kategori_jualan'] ?? '') : '',
+        'jenis_produk_jualan' => is_array($pengajuan) ? (string) ($pengajuan['jenis_produk_jualan'] ?? '') : '',
+        'aktif' => (bool) ($seller['aktif'] ?? false),
         'is_pengajuan' => false,
     ];
 }

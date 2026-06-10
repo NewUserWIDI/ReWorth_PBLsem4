@@ -13,50 +13,56 @@ $filters = [
     'q' => $_GET['q'] ?? '',
     'status_verifikasi' => $_GET['status_verifikasi'] ?? '',
     'status_toko' => $_GET['status_toko'] ?? '',
+    'include_pending' => false,
 ];
+
+$modeStatus = (string) ($_GET['status'] ?? '');
+if ($modeStatus === 'menunggu') {
+    $filters['status_verifikasi'] = 'menunggu';
+    $filters['include_pending'] = true;
+} else {
+    $filters['status_verifikasi'] = '';
+}
 
 $rows = admin_sellers($filters);
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $pagination = admin_paginate($rows, $page, 10);
 
-render_layout('Manajemen Seller', function () use ($filters, $pagination): void {
+render_layout($modeStatus === 'menunggu' ? 'Verifikasi Pengajuan Seller' : 'Data Seller', function () use ($filters, $pagination, $modeStatus): void {
     ?>
     <section class="panel">
         <div class="panel-header">
             <div>
-                <h2>Manajemen Seller</h2>
-                <p>Kelola semua seller dan verifikasi toko.</p>
+                <h2><?= e($modeStatus === 'menunggu' ? 'Verifikasi Pengajuan Seller' : 'Data Seller') ?></h2>
+                <p><?= e($modeStatus === 'menunggu' ? 'Lihat detail informasi pengajuan seller, lalu setujui atau tolak dengan alasan penolakan.' : 'Lihat data seller yang sudah disetujui dan tersimpan pada tabel seller.') ?></p>
             </div>
         </div>
         
-        <!-- PERBAIKAN: Form filter dengan flexbox agar tombol tidak kejauhan -->
         <form method="get" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px;">
+            <?php if ($modeStatus !== ''): ?>
+                <input type="hidden" name="status" value="<?= e($modeStatus) ?>">
+            <?php endif; ?>
             <div style="flex: 2; min-width: 200px;">
                 <input class="input" type="search" name="q" value="<?= e((string) $filters['q']) ?>" placeholder="Cari seller..." style="width: 100%;">
             </div>
             
-            <div style="flex: 1; min-width: 150px;">
-                <select class="select" name="status_verifikasi" style="width: 100%;">
-                    <option value="">Semua status verifikasi</option>
-                    <option value="menunggu" <?= ($filters['status_verifikasi'] ?? '') === 'menunggu' ? 'selected' : '' ?>>Menunggu</option>
-                    <option value="terverifikasi" <?= ($filters['status_verifikasi'] ?? '') === 'terverifikasi' ? 'selected' : '' ?>>Terverifikasi</option>
-                    <option value="ditolak" <?= ($filters['status_verifikasi'] ?? '') === 'ditolak' ? 'selected' : '' ?>>Ditolak</option>
-                    <option value="nonaktif" <?= ($filters['status_verifikasi'] ?? '') === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
-                </select>
-            </div>
-            
-            <div style="flex: 1; min-width: 150px;">
-                <select class="select" name="status_toko" style="width: 100%;">
-                    <option value="">Semua status toko</option>
-                    <option value="aktif" <?= ($filters['status_toko'] ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
-                    <option value="nonaktif" <?= ($filters['status_toko'] ?? '') === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
-                    <option value="pending" <?= ($filters['status_toko'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
-                </select>
-            </div>
+            <?php if ($modeStatus === 'menunggu'): ?>
+                <div style="flex: 1; min-width: 150px;">
+                    <input class="input" type="text" value="Menunggu Verifikasi" readonly style="width: 100%;">
+                </div>
+            <?php else: ?>
+                <div style="flex: 1; min-width: 150px;">
+                    <select class="select" name="status_toko" style="width: 100%;">
+                        <option value="">Semua status toko</option>
+                        <option value="aktif" <?= ($filters['status_toko'] ?? '') === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                        <option value="nonaktif" <?= ($filters['status_toko'] ?? '') === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                    </select>
+                </div>
+            <?php endif; ?>
             
             <div>
                 <button class="btn btn-primary" type="submit">Filter</button>
-                <a href="<?= e(url('app/modules/admin/sellers.php')) ?>" class="btn btn-secondary" style="margin-left: 8px;">Reset</a>
+                <a href="<?= e(url('app/modules/admin/sellers.php' . ($modeStatus !== '' ? '?status=' . urlencode($modeStatus) : ''))) ?>" class="btn btn-secondary" style="margin-left: 8px;">Reset</a>
             </div>
         </form>
     </section>
@@ -66,13 +72,13 @@ render_layout('Manajemen Seller', function () use ($filters, $pagination): void 
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID Seller</th>
+                        <th><?= e($modeStatus === 'menunggu' ? 'ID Pengajuan' : 'ID Seller') ?></th>
                         <th>Nama Toko</th>
                         <th>Pemilik</th>
                         <th>Email</th>
-                        <th>Jumlah Produk</th>
-                        <th>Status Verifikasi</th>
-                        <th>Tanggal Bergabung</th>
+                        <th>No. Telepon</th>
+                        <th><?= e($modeStatus === 'menunggu' ? 'Status Pengajuan' : 'Status Toko') ?></th>
+                        <th><?= e($modeStatus === 'menunggu' ? 'Tanggal Pengajuan' : 'Tanggal Disetujui') ?></th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -86,10 +92,10 @@ render_layout('Manajemen Seller', function () use ($filters, $pagination): void 
                                 <td><?= e((string) $seller['nama_toko']) ?></td>
                                 <td><?= e((string) $seller['pemilik']) ?></td>
                                 <td><?= e((string) $seller['email']) ?></td>
-                                <td><?= e((string) $seller['jumlah_produk']) ?></td>
-                                <td><?php badge_status((string) $seller['status_verifikasi']); ?></td>
+                                <td><?= e((string) ($seller['no_telp'] ?? '-')) ?></td>
+                                <td><?php badge_status((string) ($modeStatus === 'menunggu' ? $seller['status_verifikasi'] : $seller['status_toko'])); ?></td>
                                 <td><?= e((string) $seller['tanggal_bergabung']) ?></td>
-                                <td><a class="btn btn-secondary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']))) ?>">Detail</a></td>
+                                <td><a class="btn btn-secondary" href="<?= e(url('app/modules/admin/seller_detail.php?id=' . urlencode((string) $seller['id_seller']) . '&source=' . urlencode($modeStatus === 'menunggu' ? 'verification' : 'data'))) ?>"><?= e('Detail') ?></a></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
