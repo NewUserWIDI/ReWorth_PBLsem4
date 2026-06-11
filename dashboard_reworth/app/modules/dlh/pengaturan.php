@@ -17,41 +17,20 @@ render_layout('Profil Akun', function () use ($currentUser): void {
 .profile-page{
     width:100%;
     padding:24px 32px 64px;
-}
-
-.profile-breadcrumb{
-    font-size:13px;
-    color:#98A2B3;
-    margin-bottom:16px;
-}
-
-.profile-header{
-    margin-bottom:32px;
-}
-
-.profile-header h1{
-    margin:0;
-    font-size:42px;
-    font-weight:700;
-    color:#111827;
-}
-
-.profile-header p{
-    margin-top:8px;
-    font-size:16px;
-    color:#667085;
+    box-sizing:border-box;
 }
 
 .profile-hero-card,
 .account-card{
+    width:100%;
     background:#FFFFFF;
     border:1px solid #ECEEF1;
     border-radius:28px;
     box-shadow:0 8px 32px rgba(0,0,0,.03);
+    box-sizing:border-box;
 }
 
 .profile-hero-card{
-    width:100%;
     padding:40px;
     display:flex;
     align-items:flex-start;
@@ -75,6 +54,7 @@ render_layout('Profil Akun', function () use ($currentUser): void {
 
 .profile-main-info{
     flex:1;
+    min-width:0;
 }
 
 .profile-top{
@@ -112,17 +92,12 @@ render_layout('Profil Akun', function () use ($currentUser): void {
     background:#FFFFFF;
     font-weight:600;
     cursor:pointer;
-    transition:.2s;
-}
-
-.btn-edit:hover{
-    background:#F9FAFB;
 }
 
 .profile-grid{
     display:grid;
-    grid-template-columns:repeat(4,minmax(180px,1fr));
-    gap:24px 32px;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:24px;
 }
 
 .profile-item{
@@ -140,6 +115,7 @@ render_layout('Profil Akun', function () use ($currentUser): void {
     font-size:17px;
     font-weight:600;
     color:#111827;
+    word-break:break-word;
 }
 
 .text-success{
@@ -162,6 +138,7 @@ render_layout('Profil Akun', function () use ($currentUser): void {
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap:24px;
     border-bottom:1px solid #ECEEF1;
 }
 
@@ -178,9 +155,11 @@ render_layout('Profil Akun', function () use ($currentUser): void {
     font-size:16px;
     font-weight:600;
     color:#111827;
+    text-align:right;
+    word-break:break-word;
 }
 
-@media(max-width:992px){
+@media (max-width:992px){
 
     .profile-hero-card{
         flex-direction:column;
@@ -190,21 +169,35 @@ render_layout('Profil Akun', function () use ($currentUser): void {
         grid-template-columns:repeat(2,1fr);
     }
 
-}
-
-@media(max-width:640px){
-
-    .profile-grid{
-        grid-template-columns:1fr;
-    }
-
     .profile-top{
         flex-direction:column;
         gap:20px;
     }
 
+}
+
+@media (max-width:640px){
+
+    .profile-page{
+        padding:16px;
+    }
+
+    .profile-grid{
+        grid-template-columns:1fr;
+    }
+
     .profile-top h2{
-        font-size:36px;
+        font-size:32px;
+    }
+
+    .info-row{
+        flex-direction:column;
+        align-items:flex-start;
+        padding:12px 0;
+    }
+
+    .info-row strong{
+        text-align:left;
     }
 
 }
@@ -213,103 +206,88 @@ render_layout('Profil Akun', function () use ($currentUser): void {
 
 <section class="profile-page">
 
+    <div class="profile-hero-card">
 
-<div class="profile-breadcrumb">
-    Pengaturan > Profil Akun
-</div>
+        <div class="profile-avatar">
+            <?= strtoupper(substr($currentUser['nama_lengkap'] ?? 'P', 0, 1)) ?>
+        </div>
 
-<div class="profile-header">
-    <h1>Profil Akun</h1>
-    <p>Kelola informasi akun petugas DLH.</p>
-</div>
+        <div class="profile-main-info">
 
-<div class="profile-hero-card">
+            <div class="profile-top">
 
-    <div class="profile-avatar">
-        <?= strtoupper(substr($currentUser['nama_lengkap'] ?? 'P',0,1)) ?>
-    </div>
+                <div>
+                    <h2><?= e($currentUser['nama_lengkap'] ?? 'Petugas DLH') ?></h2>
 
-    <div class="profile-main-info">
+                    <div class="status-badge">
+                        Akun Aktif
+                    </div>
+                </div>
 
-        <div class="profile-top">
+                <button class="btn-edit" type="button">
+                    Edit Profil
+                </button>
 
-            <div>
+            </div>
 
-                <h2>
-                    <?= e($currentUser['nama_lengkap'] ?? 'Petugas DLH') ?>
-                </h2>
+            <div class="profile-grid">
 
-                <div class="status-badge">
-                    Akun Aktif
+                <div class="profile-item">
+                    <span>Email</span>
+                    <strong><?= e($currentUser['email'] ?? '-') ?></strong>
+                </div>
+
+                <div class="profile-item">
+                    <span>Username</span>
+                    <strong><?= e($currentUser['username'] ?? '-') ?></strong>
+                </div>
+
+                <div class="profile-item">
+                    <span>Role</span>
+                    <strong><?= strtoupper(e($currentUser['role'] ?? '-')) ?></strong>
+                </div>
+
+                <div class="profile-item">
+                    <span>Status</span>
+                    <strong class="text-success">Aktif</strong>
                 </div>
 
             </div>
 
-            <button class="btn-edit" type="button">
-                Edit Profil
-            </button>
-
-        </div>
-
-        <div class="profile-grid">
-
-            <div class="profile-item">
-                <span>Email</span>
-                <strong><?= e($currentUser['email'] ?? '-') ?></strong>
-            </div>
-
-            <div class="profile-item">
-                <span>Username</span>
-                <strong><?= e($currentUser['username'] ?? '-') ?></strong>
-            </div>
-
-            <div class="profile-item">
-                <span>Role</span>
-                <strong><?= strtoupper(e($currentUser['role'] ?? '-')) ?></strong>
-            </div>
-
-            <div class="profile-item">
-                <span>Status</span>
-                <strong class="text-success">Aktif</strong>
-            </div>
-
         </div>
 
     </div>
 
-</div>
+    <div class="account-card">
 
-<div class="account-card">
+        <h3>Informasi Akun</h3>
 
-    <h3>Informasi Akun</h3>
+        <div class="info-row">
+            <span>Nama Lengkap</span>
+            <strong><?= e($currentUser['nama_lengkap'] ?? '-') ?></strong>
+        </div>
 
-    <div class="info-row">
-        <span>Nama Lengkap</span>
-        <strong><?= e($currentUser['nama_lengkap'] ?? '-') ?></strong>
+        <div class="info-row">
+            <span>Email</span>
+            <strong><?= e($currentUser['email'] ?? '-') ?></strong>
+        </div>
+
+        <div class="info-row">
+            <span>Username</span>
+            <strong><?= e($currentUser['username'] ?? '-') ?></strong>
+        </div>
+
+        <div class="info-row">
+            <span>Role</span>
+            <strong><?= strtoupper(e($currentUser['role'] ?? '-')) ?></strong>
+        </div>
+
+        <div class="info-row">
+            <span>Status Akun</span>
+            <strong class="text-success">Aktif</strong>
+        </div>
+
     </div>
-
-    <div class="info-row">
-        <span>Email</span>
-        <strong><?= e($currentUser['email'] ?? '-') ?></strong>
-    </div>
-
-    <div class="info-row">
-        <span>Username</span>
-        <strong><?= e($currentUser['username'] ?? '-') ?></strong>
-    </div>
-
-    <div class="info-row">
-        <span>Role</span>
-        <strong><?= strtoupper(e($currentUser['role'] ?? '-')) ?></strong>
-    </div>
-
-    <div class="info-row">
-        <span>Status Akun</span>
-        <strong class="text-success">Aktif</strong>
-    </div>
-
-</div>
-
 
 </section>
 
